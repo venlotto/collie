@@ -1,3 +1,7 @@
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { StatusArea } from "@/components/status-area";
+import { HomeRoute } from "@/routes/home";
+import "@/components/bot-workspaces.css";
 import { useEffect, useState } from "react";
 import { rememberPanePictures } from "@/lib/project-picture";
 import { reportPushPictureTrace } from "@/lib/push-picture-trace";
@@ -106,6 +110,8 @@ export function RootLayout() {
   // The scope rides along so a "look now" on foreground lands on the machine and session the page is
   // actually showing — a refresh aimed at the lead would leave a peer's herd exactly as stale.
   const location = useLocation();
+  const singleColumn = useMediaQuery("(max-width: 759px)");
+  const chatScreen = location.pathname === "/" || /^\/pane\/[^/]+(?:\/zoom)?\/?$/u.test(location.pathname);
   const launch = paneId === undefined ? undefined : readAgentLaunch(location.state, paneId, data.scope);
   const pollMs = usePolling(data, paneId, data.scope, undefined, launch?.id);
   // Surface the busy bar when a navigation or a poll runs slow, each against its own threshold —
@@ -152,7 +158,7 @@ export function RootLayout() {
   // sets is not visible to the parent's effect in the same commit, so a `paused` that started false
   // would fire the prompt before `TourHost` had decided anything.
   const [tourDecision, setTourDecision] = useState<"pending" | "open" | "closed">("pending");
-  usePushSetup(tourDecision !== "closed");
+  usePushSetup(!chatScreen && tourDecision !== "closed");
 
   // TWO FACTS PUBLISHED OUT OF THIS ROUTER, and nothing mounted (M28/01). The update screen lives in
   // `App.tsx`, beside the wrapper it makes inert, so it has no loader data and no `CrewProvider` — and
@@ -197,7 +203,7 @@ export function RootLayout() {
           so the push setup above can hold its prompt back. It sits beside the band rather than
           inside it because it is not a strip: it covers the screen, it does not share the top of
           it. */}
-      <TourHost home={data} onDecision={setTourDecision} />
+      {!chatScreen && <TourHost home={data} onDecision={setTourDecision} />}
       {/* Report a problem (ADR 0123): the one sheet the composer's card, the pane menu and Settings open
           through lib/report/store.ts. Renders nothing until the first open, and loads the sheet then. */}
       <ReportDoor />
@@ -207,7 +213,7 @@ export function RootLayout() {
           also clips an absolute element no closer box contains (an `sr-only` word deep in a list).
           Without it such an element grew the DOCUMENT, and the page scrolled under the header
           (1.27.1). Its box is the viewport's, so nothing that was placed against the page moves. */}
-      <div className="relative flex h-(--app-h) flex-col overflow-hidden">
+      <div className="relative flex h-(--app-h) flex-col overflow-hidden" data-bots={chatScreen || undefined}>
         {/* THE ONE HEADER, and the first thing on the screen in every state. It survives a
             navigation because it is rendered HERE rather than inside `<Outlet/>`: all six routes used
             to mount their own copy, and a header inside the outlet unmounts and remounts on every
@@ -247,7 +253,7 @@ export function RootLayout() {
                 whichever of those is true. Mounted unconditionally so the bundle self-updater's
                 controller runs (and can auto-update) for the app's lifetime; it registers no slot
                 when it has nothing to say. */}
-            <UpdateRibbon />
+            {!chatScreen && <UpdateRibbon />}
             {/* A RUN THIS DEVICE DID NOT ASK FOR, as one line. The sheet that takes the screen is
                 mounted in `App.tsx`, outside the router; only its collapsed form belongs in the
                 band, and `useOptionalUpdateScreen` is how the one reading reaches across that
@@ -276,15 +282,17 @@ export function RootLayout() {
                 and everything that must survive a navigation (the header shell, the band, the mark's
                 37 animations) is already outside it. It is not the View Transitions API and may not
                 become one; see the file's header. */}
-            <ScreenTransition>
-              <Outlet />
-            </ScreenTransition>
+            {chatScreen ? <div className="bot-layout" data-detail={!!paneId}>
+              <aside inert={singleColumn && !!paneId} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
+              <main className="bot-detail">{paneId ? <Outlet /> : <p className="bot-placeholder">Selecciona un chat</p>}</main>
+              <div className="bot-notice"><StatusArea /></div>
+            </div> : <ScreenTransition><Outlet /></ScreenTransition>}
           </StripHost>
         </AppHeaderHost>
       </div>
       {/* The floating pictures of the tricks (the `float` place): one layer over the page, under the toast and the
           sheets, tap-through. It draws on the Dashboard and a session only, and stays out of the way of every card. */}
-      <TrickFloatLayer pane={openPane} trickSessions={data.trickSessions ?? NO_TRICK_SESSIONS} />
+      {!chatScreen && <TrickFloatLayer pane={openPane} trickSessions={data.trickSessions ?? NO_TRICK_SESSIONS} />}
       {/* The desktop shortcuts' two surfaces (M108): the mode bar along the foot of the window while the
           prefix or a sticky mode is active, and the shortcut list's sheet, which the `help` action and the
           Settings row open. Both read the keymap that `useShortcuts` above publishes. */}
@@ -299,7 +307,7 @@ export function RootLayout() {
       <AsksAnswerDoor />
       {/* The one-time hint for a device that has shown a hardware key press: a card at the top right,
           below the header (components/keyboard-hint-card.tsx). */}
-      <KeyboardHintCard />
+      {!chatScreen && <KeyboardHintCard />}
     </CrewProvider>
   );
 }

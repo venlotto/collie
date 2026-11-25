@@ -9,7 +9,6 @@ import { isReloadInFlight } from "@/lib/pwa";
 import { UPDATE_MODE_HOLD, isReloadHeldBy, subscribeReloadHeld } from "@/lib/reload-guard";
 
 import { BootSplash, RootError, RootLayout } from "@/routes/root";
-import { HomeRoute } from "@/routes/home";
 import { SlotRoute } from "@/routes/slot";
 import { SpaceRoute } from "@/routes/space";
 import { TrickSessionRoute } from "@/routes/trick-session";
@@ -72,7 +71,7 @@ export const routes: RouteObject[] = [
     errorElement: <RootError />,
     HydrateFallback: BootSplash,
     children: [
-      { index: true, element: <HomeRoute /> },
+      { index: true, element: <></> },
       // A permanent address for one browser tab; it replaces itself with that tab's last pane (lib/slots.ts).
       { path: "slot/:slot", element: <SlotRoute /> },
       { path: "space/:spaceId", element: <SpaceRoute /> },
