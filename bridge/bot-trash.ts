@@ -63,9 +63,12 @@ export class BotTrash {
 
   lookup(session: string, terminalId: string) {
     const row = this.rows.get(key(session, terminalId));
-    if (row) return { originalWorkspaceId: row.originalWorkspaceId, trashedAt: row.trashedAt,
-      ...(row.workspaceLabel !== undefined ? { workspaceLabel: row.workspaceLabel } : {}) };
-    return undefined;
+    if (!row) return undefined;
+    const trash: Pick<Entry, "originalWorkspaceId" | "trashedAt" | "workspaceLabel"> = {
+      originalWorkspaceId: row.originalWorkspaceId, trashedAt: row.trashedAt,
+    };
+    if (row.workspaceLabel !== undefined) trash.workspaceLabel = row.workspaceLabel;
+    return trash;
   }
 
   private save(session: string, terminalId: string, entry?: Entry) {
@@ -119,9 +122,10 @@ export class BotTrash {
           const id = key(session, pane.terminalId);
           const old = next.get(id);
           if (old?.deleting || old?.workspaceLabel !== undefined) throw new Error("El workspace cambió en Papelera.");
-          next.set(id, { session, terminalId: pane.terminalId, originalWorkspaceId: workspaceId,
-            workspaceLabel: space.label || workspaceId, trashedAt: at,
-            ...(old ? { previousTrash: { originalWorkspaceId: old.originalWorkspaceId, trashedAt: old.trashedAt } } : {}) });
+          const member: Entry = { session, terminalId: pane.terminalId, originalWorkspaceId: workspaceId,
+            workspaceLabel: space.label || workspaceId, trashedAt: at };
+          if (old) member.previousTrash = { originalWorkspaceId: old.originalWorkspaceId, trashedAt: old.trashedAt };
+          next.set(id, member);
         }
       }
       // All members enter or leave together, through the same atomic ledger write as a single chat.

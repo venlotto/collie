@@ -2667,7 +2667,7 @@ export function startServer(opts: {
         const snap = rt.engine.current();
         const visible = new Map([...snap.agents, ...snap.shellPanes].map(p => [chatOrderId(p), p.workspaceId]));
         return Response.json(chatOrder.read(rt.name).map(group => ({
-          ...group, paneIds: group.paneIds.filter(id => visible.get(id) === group.workspaceId),
+          workspaceId: group.workspaceId, paneIds: group.paneIds.filter(id => visible.get(id) === group.workspaceId),
         })).filter(group => group.paneIds.length > 0));
       }
       const body = asJsonRecord(await req.json().catch(() => null));
@@ -2678,9 +2678,10 @@ export function startServer(opts: {
       const current = rt.engine.current();
       const inSpace = snapshot.panes.filter(p => p.spaceId === body.workspaceId);
       const ids = new Set(inSpace.map(chatOrderId));
-      const live = [...new Set([...current.agents, ...current.shellPanes].map(chatOrderId).filter(id => ids.has(id)).concat([...ids]))];
+      const listed = [...current.agents, ...current.shellPanes].map(chatOrderId).filter(id => ids.has(id));
+      const members = [...new Set([...listed, ...ids])];
       try {
-        const saved = chatOrder.place(rt.name, body.workspaceId, live, body.paneId, body.before);
+        const saved = chatOrder.place(rt.name, body.workspaceId, members, body.paneId, body.before);
         caller.audit.record({ action: "chat.order", session: rt.name, device: caller.device(), paneId: body.paneId });
         return Response.json(saved);
       } catch (error) {

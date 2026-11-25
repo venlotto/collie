@@ -11,6 +11,10 @@ export interface WorkspaceChoice {
   scope: Scope;
 }
 
+function selectName(field: HTMLInputElement | null) {
+  if (field) { field.focus(); field.select(); }
+}
+
 export function WorkspaceMenu({ space, spaces, move, close, refresh }: {
   space: WorkspaceChoice; spaces: WorkspaceChoice[];
   move: (before: string | null) => Promise<void>; close: () => void; refresh: () => void;
@@ -56,7 +60,7 @@ export function WorkspaceMenu({ space, spaces, move, close, refresh }: {
           const res = await renameSpace(space.id, name.trim(), space.scope);
           if (!res.ok) throw new Error(res.error);
         }); }}>
-          <input aria-label="Nombre del workspace" value={name} autoFocus maxLength={80} onChange={e => setName(e.target.value)} />
+          <input aria-label="Nombre del workspace" value={name} ref={selectName} maxLength={80} onChange={e => setName(e.target.value)} />
           <button disabled={!name.trim()}>Guardar</button>
         </form>}
         {view === "move" && <>

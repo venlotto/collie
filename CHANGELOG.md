@@ -39,6 +39,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Chat messages name the bot that sent or received them.** The thread counts messages and participating bots. A microphone adds dictation, and the green waveform sends a typed reply or opens voice input when the field is empty.
 - **Bot portraits identify participants in a conversation.** The thread shows their faces beside the message count and the sender or recipient. The reply controls and list previews keep the same proportions on desktop and phone.
 
+- **Renaming a workspace selects its name for editing.** Type a replacement directly in the workspace sheet.
+
 ### Fixed
 
 - **On macOS, a linked Claude Code session takes your phone messages by data.** After `collie harness link claude`, the Collie plugin inside Claude Code could not read its process id on a Mac, so it never bound and every message was typed into the terminal. The plugin now names its Claude Code session instead, and Collie takes the process id from the hook events of that session (`collie hooks install claude` sends them). The first answer often says that it does not know the session yet, because the hook event comes a moment later, so the plugin asks again after 1, 3, 10 and 30 seconds. Linux is unchanged. `collie harness unlink claude` turns the link off. Thanks @wraithyy (#864).
