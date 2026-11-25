@@ -33,10 +33,11 @@ export function HomeRoute() {
     <p className="bot-access" role="status">Acceso restringido <a href={mounted(PROXY_AUTH_PATH)}>{t("connection.auth.signIn")}</a></p>
   ) : isReadOnly(data.device) ? <p className="bot-access" role="status">{t("space.readOnly.deviceUnauthorised")}</p> : null;
   return <>
-    <MobileAgentHub panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured} accessNotice={accessNotice}
+    <MobileAgentHub panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured}
+      deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
       onPress={p => { void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}
       onNew={writable || accessNotice ? () => setCreate({ beside: featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
-    {create && <CreateBot {...create} writable={writable} accessNotice={accessNotice} close={() => setCreate(null)} />}
+    {create && <CreateBot {...create} writable={writable} close={() => setCreate(null)} />}
   </>;
 }

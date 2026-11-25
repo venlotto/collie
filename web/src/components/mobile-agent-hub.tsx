@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UsersRound } from "lucide-react";
+import { ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
+import { graphemeSegmenter } from "@/lib/env";
 import { fetchChat } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
 import { paneRowKey } from "@/lib/hosts";
@@ -18,6 +19,7 @@ interface Props {
   onOpen: (pane: AgentView) => void;
   onPress: (pane: AgentView) => void;
   onNew?: () => void;
+  deviceName?: string;
   accessNotice?: ReactNode;
 }
 
@@ -58,7 +60,9 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
   return <span ref={ref} className="bot-line">{Icon && <Icon size={13} aria-hidden />}<span>{text}</span></span>;
 }
 
-export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, accessNotice }: Props) {
+const segmenter = graphemeSegmenter();
+
+export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
   const [query, setQuery] = useState("");
   const [folded, setFolded] = useState<Set<string>>(new Set());
   const scroll = useRef<HTMLDivElement>(null);
@@ -106,37 +110,40 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
     setFolded((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   }
   const featuredBot = featured && identityOf(featured, scopeOf(featured));
+  const initial = (segmenter?.segment(deviceName).containing(0)?.segment ?? Array.from(deviceName)[0])?.toLocaleUpperCase();
   return <div className="bot-index" aria-label="Chats">
-    <header className="bot-bar">
-      <span className="bot-user" aria-label="Perfil de Janez">J</span>
-      <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
-    </header>
-    <div className="bot-scroll" ref={scroll} onScroll={measure}>
-      {accessNotice}
-      {featured && featuredBot && !needle && <button className="bot-featured" onClick={() => onOpen(featured)}>
-        <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
-        <span className="bot-featured-name">{featuredBot.name}</span>
-      </button>}
-      {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key}>
-        <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
-        {(!folded.has(key) || !!needle) && <ul>{group.rows.map(p => {
-          const scope = scopeOf(p);
-          const bot = identityOf(p, scope);
-          const selected = !!active && paneRowKey(active) === paneRowKey(p);
-          return <li key={paneRowKey(p)}><button className="bot-row" aria-current={selected || undefined}
-            onPointerDown={() => onPress(p)} onClick={() => onOpen(p)}>
-            <BlobAvatar {...bot} />
-            <span className="bot-copy">
-              <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
-              <span className="bot-row-preview"><Preview pane={p} scope={scope} active={selected} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>
-            </span>
-          </button></li>;
-        })}</ul>}
-      </section>)}
-      {!accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
+    <div className="bot-list-surface">
+      <header className="bot-bar">
+        <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
+        <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
+      </header>
+      <div className="bot-scroll" ref={scroll} onScroll={measure}>
+        {accessNotice}
+        {featured && featuredBot && !needle && <button className="bot-featured" onClick={() => onOpen(featured)}>
+          <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
+          <span className="bot-featured-name">{featuredBot.name}</span>
+        </button>}
+        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key}>
+          <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
+          {(!folded.has(key) || !!needle) && <ul>{group.rows.map(p => {
+            const scope = scopeOf(p);
+            const bot = identityOf(p, scope);
+            const selected = !!active && paneRowKey(active) === paneRowKey(p);
+            return <li key={paneRowKey(p)}><button className="bot-row" aria-current={selected || undefined}
+              onPointerDown={() => onPress(p)} onClick={() => onOpen(p)}>
+              <BlobAvatar {...bot} />
+              <span className="bot-copy">
+                <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
+                <span className="bot-row-preview"><Preview pane={p} scope={scope} active={selected} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>
+              </span>
+            </button></li>;
+          })}</ul>}
+        </section>)}
+        {!accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
+      </div>
+      {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
+      {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
     </div>
-    {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
-    {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
     <div className="bot-search-foot" ref={footer}>
       {groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
         <div className="bot-picker" id={picker} popover="auto">{Array.from(groups, ([key, section]) =>

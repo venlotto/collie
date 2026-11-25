@@ -36,6 +36,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the list in place, including on a desktop where the same phone-width column is centered.
 
+- **The chat list shows the paired device’s initial.** A device without a name shows a profile icon. Opening the bot form shrinks and dims the list, keeps sign-in in the list, and leaves space between the bot preview and its name.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
