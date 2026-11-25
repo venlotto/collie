@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { Select } from "@/components/ui/select";
 import { BottomSheet } from "@/components/ui/sheet";
@@ -14,6 +14,7 @@ import type { WorkspaceGroup } from "@/lib/pane-groups";
 import { cn } from "@/lib/utils";
 import { FOCUS_RING, HOVER_FILL, TRIGGER_OPEN } from "@/components/ui/button";
 import { Icon } from "@/components/icons/icon";
+import { Segmented } from "@/components/ui/segmented";
 
 // The two controls under the dashboard's summary line (2026-10-07): the workspace filter on the left,
 // the pane order on the right. They replaced the chip strip and the three-glyph order toggle, which
@@ -121,6 +122,7 @@ export function WorkspaceFilter({
   onIsolate,
   onShowHidden,
   onShowMachine,
+  renderOpen,
   className,
 }: {
   /** The strip's entries (lib/dash-view.ts): a workspace, or the one stand-in for a hidden machine. */
@@ -135,12 +137,20 @@ export function WorkspaceFilter({
   /** Bring back every hidden workspace. Withheld, the row is not offered. */
   onShowHidden?: ((groups: readonly WorkspaceGroup[]) => void) | undefined;
   onShowMachine?: ((host: string) => void) | undefined;
+  /**
+   * The phone's workspace navigator. When present the sheet opens on this browse view and keeps the
+   * existing multi-workspace filter behind a second tab. Large screens omit it and retain the
+   * filter-only sheet they have always used.
+   */
+  renderOpen?: ((close: () => void) => ReactNode) | undefined;
   className?: string;
 }) {
   useLocale();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"open" | "filter">("open");
   const labelId = useId();
   const valueId = useId();
+  const panelId = useId();
   const spaces = entries.flatMap((e) => (e.kind === "space" ? [e.group] : []));
   const chosen = spaces.filter((g) => isolatedKeys.has(g.key));
   const hiddenGroups = spaces.filter(isHidden);
@@ -148,6 +158,45 @@ export function WorkspaceFilter({
     const on = chosen.includes(group);
     onIsolate(spaces.filter((g) => (g === group ? !on : chosen.includes(g))));
   };
+  const close = () => {
+    setOpen(false);
+    setMode("open");
+  };
+  const filterRows = (
+    <div className="flex flex-col gap-1">
+      <CheckRow
+        checked={chosen.length === 0}
+        label={t("home.workspaceFilter.all")}
+        words={[]}
+        onToggle={() => onIsolate([])}
+      />
+      {entries.map((entry) => {
+        if (entry.kind === "machine") {
+          const name = hostName(servers, entry.host) ?? entry.host;
+          return (
+            <ActionRow
+              key={`machine\u0000${entry.host}`}
+              label={t("home.machineHidden.show", { name })}
+              onClick={() => onShowMachine?.(entry.host)}
+            />
+          );
+        }
+        const words = [stateWord(worstTriage(entry.group.panes)), isHidden(entry.group) ? t("home.workspace.hidden") : null];
+        return (
+          <CheckRow
+            key={entry.group.key}
+            checked={isolatedKeys.has(entry.group.key)}
+            label={entry.group.label}
+            words={words.filter((word) => word !== null)}
+            onToggle={() => toggle(entry.group)}
+          />
+        );
+      })}
+      {hiddenGroups.length > 0 && onShowHidden !== undefined && (
+        <ActionRow label={t("home.workspaceFilter.showHidden")} onClick={() => onShowHidden(hiddenGroups)} />
+      )}
+    </div>
+  );
   return (
     <div className={cn("relative", className)}>
       <span id={labelId} className="sr-only">
@@ -160,7 +209,10 @@ export function WorkspaceFilter({
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-labelledby={`${labelId} ${valueId}`}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setMode("open");
+          setOpen(true);
+        }}
         className={cn("flex h-11 w-full items-center rounded-lg border border-border bg-background pl-3 pr-8 text-left text-sm text-foreground", FOCUS_RING, HOVER_FILL, TRIGGER_OPEN)}
       >
         <span id={valueId} className="min-w-0 truncate">
@@ -172,40 +224,28 @@ export function WorkspaceFilter({
         aria-hidden
         className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
       />
-      <BottomSheet open={open} onClose={() => setOpen(false)} title={t("home.workspaceFilter.title")}>
-        <div className="flex flex-col gap-1">
-          <CheckRow
-            checked={chosen.length === 0}
-            label={t("home.workspaceFilter.all")}
-            words={[]}
-            onToggle={() => onIsolate([])}
-          />
-          {entries.map((entry) => {
-            if (entry.kind === "machine") {
-              const name = hostName(servers, entry.host) ?? entry.host;
-              return (
-                <ActionRow
-                  key={`machine\u0000${entry.host}`}
-                  label={t("home.machineHidden.show", { name })}
-                  onClick={() => onShowMachine?.(entry.host)}
-                />
-              );
-            }
-            const words = [stateWord(worstTriage(entry.group.panes)), isHidden(entry.group) ? t("home.workspace.hidden") : null];
-            return (
-              <CheckRow
-                key={entry.group.key}
-                checked={isolatedKeys.has(entry.group.key)}
-                label={entry.group.label}
-                words={words.filter((w) => w !== null)}
-                onToggle={() => toggle(entry.group)}
-              />
-            );
-          })}
-          {hiddenGroups.length > 0 && onShowHidden !== undefined && (
-            <ActionRow label={t("home.workspaceFilter.showHidden")} onClick={() => onShowHidden(hiddenGroups)} />
-          )}
-        </div>
+      <BottomSheet open={open} onClose={close} title={t("home.workspaceFilter.title")}>
+        {renderOpen === undefined ? filterRows : (
+          <div className="flex flex-col gap-3">
+            <Segmented
+              semantics="tabs"
+              label={t("home.workspaceBrowser.aria")}
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: "open", label: t("home.workspaceBrowser.open"), controls: panelId },
+                { value: "filter", label: t("home.workspaceBrowser.filter"), controls: panelId },
+              ]}
+            />
+            <div
+              id={panelId}
+              role="tabpanel"
+              aria-label={mode === "open" ? t("home.workspaceBrowser.open") : t("home.workspaceBrowser.filter")}
+            >
+              {mode === "open" ? renderOpen(close) : filterRows}
+            </div>
+          </div>
+        )}
       </BottomSheet>
     </div>
   );

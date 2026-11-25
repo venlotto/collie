@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -192,6 +193,18 @@ describe("the large-screen dashboard's header and command row", () => {
     expect(footBar()).not.toBeNull();
     expect(document.querySelector('[data-slot="fab-layer"]')).not.toBeNull();
     expect(document.querySelector<HTMLElement>('[data-slot="header-row"]')!.className).toContain("min-h-15");
+  });
+
+  it("keeps the workspace control filter-only in Files on a large screen", async () => {
+    windowOf(1280, 800);
+    renderHome(homeData());
+    await waitFor(() => expect(views()).not.toBeNull());
+    await userEvent.click(within(views()!).getByRole("tab", { name: t("files.title") }));
+    const workspace = await screen.findByRole("button", { name: /^Space / });
+    await userEvent.click(workspace);
+    const sheet = screen.getByRole("dialog", { name: t("home.workspaceFilter.title") });
+    expect(within(sheet).queryByRole("tab", { name: t("home.workspaceBrowser.open") })).toBeNull();
+    expect(within(sheet).getByRole("checkbox", { name: t("home.workspaceFilter.all") })).toBeInTheDocument();
   });
 });
 

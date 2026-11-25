@@ -12,6 +12,7 @@ import { ProgramSection } from "@/components/program-section";
 import { TrickSpaceSection } from "@/components/trick-session";
 import { LaunchStrip } from "@/components/launch-strip";
 import { SpaceOverview } from "@/components/space-overview";
+import { WorkspaceList, WorkspaceNewSpaceButton } from "@/components/workspace-list";
 import { StatusArea } from "@/components/status-area";
 import { ToastViewport } from "@/components/ui/toast-viewport";
 import { BuildStamp } from "@/components/build-stamp";
@@ -36,6 +37,7 @@ import { useNewTabOrSheet } from "@/hooks/use-new-tab-or-sheet";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { useNav } from "@/hooks/use-nav";
 import { useNewEntry } from "@/hooks/use-new-entry";
+import { useMuxCapability } from "@/lib/mux-capability";
 import { usePaneOpen } from "@/hooks/use-pane-open";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import { useElementWidth } from "@/hooks/use-element-width";
@@ -154,9 +156,9 @@ function PhoneParts({ on, children }: { on: boolean; children: ReactNode }) {
 // order (lib/pane-groups.ts, ADR 0063); urgency is a mark on a row and a heading and one summary
 // line on top, never a position (the one exception: on a large screen a band above the grid repeats the
 // sessions that need you, and no row leaves its place, ADR 0158). The operator may ask for Activity or Cache order instead, with the
-// order select under that line (ADR 0071): one ranked list, read once and held. The Spaces navigator sits
-// under the thing it navigates to, and the Programs section (M55 spec 13) sits after it, or above Launch
-// while a program has a question that waits on you.
+// order select under that line (ADR 0071): one ranked list, read once and held. On a phone the Space
+// control opens the compact navigator; the large-screen navigator stays below the grid. The Programs
+// section (M55 spec 13) sits after it, or above Launch while a program has a question that waits on you.
 // Launchers sit directly above Spaces: they are one-tap act-on-able actions like the herd above
 // them, but they CREATE rather than triage, so they sit under the herd and above the navigator
 // their new Space will appear in. Tapping an agent opens its pane; tapping a space drills into
@@ -213,6 +215,9 @@ export function HomeRoute() {
   // The Launch section folds on the same terms. Its count comes from the component (it owns the
   // config read), so the un-chosen default is decided there against the same threshold.
   const launchOpen = prefs.launchOpen;
+  // The compact workspace drawer's search is ephemeral: it survives closing the sheet while this
+  // dashboard is mounted, but never becomes a device preference or changes the dashboard filter.
+  const [workspaceQuery, setWorkspaceQuery] = useState("");
 
   // A row is opened with the PANE's host, never the ambient one: the dashboard is one list across
   // every machine (hosts are a label, not a split), so the row you tapped may well live somewhere
@@ -305,6 +310,7 @@ export function HomeRoute() {
   });
   const fabOffered = view === "dashboard" && newEntry.offered;
   const openNew = newEntry.open;
+  const newSpace = useMuxCapability("createSpace", data.scope);
   // The Actions palette's New agent… and New shell on the dashboard (ADR 0165): the New page, as the New
   // button opens it, and for New shell the same page with Shell already chosen. Offered where that button is.
   useShortcutHandler("new_agent", fabOffered ? openNew : undefined);
@@ -391,6 +397,36 @@ export function HomeRoute() {
   // FILES_VIEW_MAX px that starts at the grid's left edge, under the mark, and scrolls with the page.
   const filesWide = wide && view === "changes";
   const filesWidth = Math.min(gridWidth(columns), FILES_VIEW_MAX);
+  const renderWorkspaceBrowser = !wide && view === "dashboard"
+    ? (close: () => void) => (
+        <div className="flex flex-col gap-2">
+          {newSpace.capable && fabOffered && (
+            <div className="flex justify-end">
+              <WorkspaceNewSpaceButton
+                creating={creatingSpace}
+                onNewSpace={() => {
+                  close();
+                  openNew();
+                }}
+              />
+            </div>
+          )}
+          <WorkspaceList
+            workspaces={data.workspaces}
+            agents={navPanes.agents}
+            shellPanes={navPanes.shellPanes}
+            query={workspaceQuery}
+            onQueryChange={setWorkspaceQuery}
+            host={navHost}
+            createNote={!newSpace.capable ? newSpace.note : ""}
+            onOpen={(workspaceId) => {
+              close();
+              drillInto(workspaceId);
+            }}
+          />
+        </div>
+      )
+    : undefined;
   const narrowed = (node: ReactNode) =>
     wide && !gridList ? (
       filesWide ? (
@@ -588,6 +624,7 @@ export function HomeRoute() {
               scope={data.scope}
               sessions={data.sessions}
               onShowMachine={(host) => setMachineHidden(host, false, data.servers)}
+              renderWorkspaceBrowser={renderWorkspaceBrowser}
               pins={pins}
               // The same per-device preference the pane switcher and Settings write (ADR 0071).
               order={prefs.paneOrder}
@@ -627,9 +664,10 @@ export function HomeRoute() {
             />,
             )
           )}
-          {/* Launch and the Spaces navigator belong to the whole herd, so they sit under the Dashboard
-              with the needs-you switch off. The filtered list and the other tabs are narrower, and
-              a launcher under them would read as part of that list. */}
+          {/* Launch and, on a large screen, the in-flow Spaces navigator belong to the whole herd, so
+              they sit under the Dashboard with the needs-you switch off. The compact navigator lives
+              in the Space control above; an empty herd keeps this in-flow fallback because AgentList's
+              first-agent state intentionally has no filter control. */}
           {view === "dashboard" && needsYouOnly && !screenless &&
             underGrid(<ProgramSection programs={programsWaiting} servers={data.servers} onOpen={openProgram} />)}
           {view === "dashboard" && !needsYouOnly && !screenless &&
@@ -639,7 +677,7 @@ export function HomeRoute() {
               {programsFirst && <ProgramSection programs={programs} servers={data.servers} onOpen={openProgram} />}
               <LaunchStrip open={launchOpen} onOpenChange={setLaunchOpen} scope={data.scope} />
               {/* With no Space and no session the centred empty state is the whole page: no "Spaces (0)" beside it. */}
-              {!(wide && herdEmpty && data.workspaces.length === 0) && (
+              {(wide || herdEmpty) && !(wide && herdEmpty && data.workspaces.length === 0) && (
               <SpaceOverview
                 workspaces={isolateSpaces(data.workspaces, isolatedSpaces)}
                 agents={navPanes.agents}

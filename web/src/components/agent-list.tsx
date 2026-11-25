@@ -152,6 +152,12 @@ interface AgentListProps {
   /** Pick a hidden machine's "Show <machine>'s panes" option: show that machine again. */
   onShowMachine?: (host: string) => void;
   /**
+   * The compact dashboard's workspace browser. The filter sheet owns its close action and supplies it
+   * here so opening a workspace dismisses the sheet before navigation. Wide dashboards intentionally
+   * keep their existing filter-only control.
+   */
+  renderWorkspaceBrowser?: (close: () => void) => ReactNode;
+  /**
    * The "needs you" switch (issue 270, ADR 0066; the old Focus tab, now a switch by ADR 0085): a group
    * shows only its panes that need you, and a group with none is dropped. A filter, never a sort. The
    * workspace filter, the summary line and every heading's counts still count ALL panes, so the filter never
@@ -358,6 +364,7 @@ export function AgentList({
   scope: viewScope,
   sessions: registry,
   onShowMachine,
+  renderWorkspaceBrowser,
   needsYouOnly = false,
   onNeedsYouOnlyChange,
   renderBody,
@@ -802,6 +809,7 @@ export function AgentList({
       onIsolate={(chosen) => onIsolate?.(chosen.map(workspacePrefKey))}
       onShowHidden={onToggleHidden && ((hiddenGroups) => hiddenGroups.forEach((g) => onToggleHidden(workspacePrefKey(g))))}
       onShowMachine={onShowMachine}
+      renderOpen={wide === undefined ? renderWorkspaceBrowser : undefined}
     />
   );
   const magnifier = offered && filterEntry === "button" && (

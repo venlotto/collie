@@ -94,6 +94,19 @@ function renderHome(data: HomeData, initialPath?: string) {
  *  on any more, since a pane no longer moves to a section of its own. */
 const settled = () => screen.findByRole("button", { name: /^Space / });
 
+const workspaceSheet = () => screen.getByRole("dialog", { name: "Spaces" });
+
+async function openWorkspaceBrowser(): Promise<HTMLElement> {
+  await userEvent.click(await settled());
+  return workspaceSheet();
+}
+
+async function openWorkspaceFilter(): Promise<HTMLElement> {
+  const sheet = await openWorkspaceBrowser();
+  await userEvent.click(within(sheet).getByRole("tab", { name: "Filter" }));
+  return sheet;
+}
+
 /** The `<section>` a workspace heading owns, scoped away from the workspace filter's own rows,
  *  which carry the same workspace name a heading does (agent-list.tsx). */
 const groupSection = (label: string) => screen.getByRole("heading", { name: label }).closest("section")!;
@@ -209,9 +222,7 @@ describe("the space navigator on a crew, addressed at a peer (#209)", () => {
         { host: "workshop" },
       ),
     );
-    await settled();
-    const spacesBody = document.getElementById("spaces-body");
-    if (!spacesBody) throw new Error("the Spaces section did not render");
+    const spacesBody = await openWorkspaceBrowser();
     const spaceRow = within(spacesBody).getByRole("button", { name: /moonward/i });
     // Keyed on the LEAD instead, this row's status lookup misses entirely and shows no dot at all —
     // the bug this test pins.
@@ -364,8 +375,8 @@ describe("the dashboard across sessions", () => {
     // paint the `work` session's panes onto the ambient space of the same number and count them
     // twice. One row per workspace, never one per (workspace × session).
     renderHome(widened(), "/?all=1");
-    await settled();
-    expect(screen.getAllByLabelText(/1 pane/i).length).toBe(1);
+    const spacesBody = await openWorkspaceBrowser();
+    expect(within(spacesBody).getAllByLabelText(/1 pane/i).length).toBe(1);
   });
 });
 
@@ -574,9 +585,9 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
     expect(screen.getByRole("heading", { name: "webapp" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "collie" })).not.toBeInTheDocument();
     // The filter still offers every workspace: the switch removes rows, never places.
-    await userEvent.click(await settled());
-    expect(within(screen.getByRole("dialog", { name: "Spaces" })).getByRole("checkbox", { name: /^collie/ })).toBeInTheDocument();
-    await userEvent.click(within(screen.getByRole("dialog", { name: "Spaces" })).getByRole("button", { name: "Close" }));
+    const sheet = await openWorkspaceFilter();
+    expect(within(sheet).getByRole("checkbox", { name: /^collie/ })).toBeInTheDocument();
+    await userEvent.click(within(sheet).getByRole("button", { name: "Close" }));
     expect(stored().needsYouOnly).toBe(true);
     // A new mount reads it back.
     cleanup();
@@ -610,8 +621,8 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
 
   it("the workspace filter shows chosen workspaces alone, and the choice is remembered", async () => {
     renderHome(solo());
-    await userEvent.click(await settled());
-    const sheet = () => screen.getByRole("dialog", { name: "Spaces" });
+    await openWorkspaceFilter();
+    const sheet = workspaceSheet;
     expect(within(sheet()).getByRole("checkbox", { name: "All spaces" })).toBeChecked();
     expect(within(sheet()).getAllByRole("checkbox").map((o) => o.textContent)).toEqual([
       "All spaces",
@@ -631,12 +642,20 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
     // A new mount reads it back, and "All spaces" clears it.
     cleanup();
     renderHome(solo());
-    await userEvent.click(await settled());
+    await openWorkspaceFilter();
     expect(within(sheet()).getByRole("checkbox", { name: /^collie/ })).toBeChecked();
     expect(screen.queryByRole("heading", { name: "webapp" })).not.toBeInTheDocument();
     await userEvent.click(within(sheet()).getByRole("checkbox", { name: "All spaces" }));
     expect(screen.getByRole("heading", { name: "webapp" })).toBeInTheDocument();
     expect(stored().isolatedSpaces).toEqual([]);
+  });
+
+  it("opens a workspace from the compact browser", async () => {
+    const router = renderHome(solo());
+    const browser = await openWorkspaceBrowser();
+    await userEvent.click(within(browser).getByRole("button", { name: /collie.*2 panes/i }));
+    await waitFor(() => expect(url(router)).toBe("/space/w2"));
+    expect(screen.queryByRole("dialog", { name: "Spaces" })).not.toBeInTheDocument();
   });
 
   it("folds linked worktrees under their open root workspace in the filter and pane list (issue #587)", async () => {
@@ -690,8 +709,8 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
       ],
     });
     renderHome(data);
-    await userEvent.click(await settled());
-    const sheet = () => screen.getByRole("dialog", { name: "Spaces" });
+    await openWorkspaceFilter();
+    const sheet = workspaceSheet;
     // Only the root workspace and the unrelated workspace are listed in the filter sheet;
     // the root's state word reflects its blocked worktree pane.
     expect(within(sheet()).getAllByRole("checkbox").map((o) => o.textContent)).toEqual([
@@ -812,10 +831,11 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
     // Clicking "+" on the root heading opens a tab in the root workspace (`w1`), not the worktree (`w2`).
     await userEvent.click(screen.getByRole("button", { name: "New tab in membero" }));
     await waitFor(() => expect(JSON.parse(createdTabBody)).toEqual({ workspaceId: "w1", requestId: expect.any(String) }));
-    // Spaces below also shows both membero and lucky-meadow-d1ec, not lucky-meadow-d1ec alone.
-    expect(screen.getByRole("button", { name: /membero.*0 panes/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /lucky-meadow-d1ec.*1 pane/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /collie.*1 pane/i })).not.toBeInTheDocument();
+    // The browser is navigation, not the dashboard filter: it keeps every workspace reachable.
+    const browser = await openWorkspaceBrowser();
+    expect(within(browser).getByRole("button", { name: /membero.*0 panes/i })).toBeInTheDocument();
+    expect(within(browser).getByRole("button", { name: /lucky-meadow-d1ec.*1 pane/i })).toBeInTheDocument();
+    expect(within(browser).getByRole("button", { name: /collie.*1 pane/i })).toBeInTheDocument();
   });
 
   it("folds a peer machine's linked worktree under its root workspace when loaded through rootLoader on a crew (#587)", async () => {
@@ -883,8 +903,8 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
     const { rootLoader } = await import("@/lib/loaders");
     const data = await rootLoader({ request: new Request("http://localhost/") });
     renderHome(data);
-    await userEvent.click(await settled());
-    const sheet = () => screen.getByRole("dialog", { name: "Spaces" });
+    await openWorkspaceFilter();
+    const sheet = workspaceSheet;
     expect(within(sheet()).getAllByRole("checkbox").map((o) => o.textContent)).toEqual([
       "All spaces",
       "collie",
@@ -896,8 +916,8 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
   it("a device that stored the single-workspace choice keeps its old filter", async () => {
     // Learn the key the collie workspace is remembered by from a first visit.
     renderHome(solo());
-    await userEvent.click(await settled());
-    await userEvent.click(within(screen.getByRole("dialog", { name: "Spaces" })).getByRole("checkbox", { name: /^collie/ }));
+    const sheet = await openWorkspaceFilter();
+    await userEvent.click(within(sheet).getByRole("checkbox", { name: /^collie/ }));
     const key: unknown = stored().isolatedSpaces[0];
     expect(key).toEqual(expect.stringContaining("collie"));
     cleanup();
@@ -938,16 +958,20 @@ describe("the dashboard's footer (ADR 0066, ADR 0085)", () => {
     expect(summary.compareDocumentPosition(workspace) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("the launch strip, the Spaces navigator and the pin hint show only while the switch is off", async () => {
+  it("the launch strip and pin hint follow the switch while the workspace browser stays reachable", async () => {
     renderHome(solo());
     await settled();
-    expect(screen.getByRole("heading", { name: /^Spaces/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^Spaces/ })).not.toBeInTheDocument();
     expect(screen.getByText(/pin it here/)).toBeInTheDocument();
+    await userEvent.click(await settled());
+    expect(workspaceSheet()).toBeInTheDocument();
+    await userEvent.click(within(workspaceSheet()).getByRole("button", { name: "Close" }));
     await userEvent.click(needsSwitch());
     expect(screen.queryByRole("heading", { name: /^Spaces/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/pin it here/)).not.toBeInTheDocument();
+    expect(await settled()).toBeInTheDocument();
     await userEvent.click(needsSwitch());
-    expect(screen.getByRole("heading", { name: /^Spaces/ })).toBeInTheDocument();
+    expect(screen.getByText(/pin it here/)).toBeInTheDocument();
   });
 
   it("Files draws no switch, and keeps an invisible slot so the summary line does not jump", async () => {

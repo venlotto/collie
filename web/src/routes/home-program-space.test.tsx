@@ -144,9 +144,14 @@ afterEach(() => {
   __resetOperatorCommands();
 });
 
-/** Wait for the Spaces list's body: the dashboard has answered and the section is open. */
+/** Wait for the compact dashboard's Space control: the dashboard has answered. */
 async function spacesShown(): Promise<void> {
-  await waitFor(() => expect(document.querySelector("#spaces-body")).not.toBeNull());
+  await screen.findByRole("button", { name: /^Space / });
+}
+
+async function openSpaces(): Promise<HTMLElement> {
+  await userEvent.click(await screen.findByRole("button", { name: /^Space / }));
+  return screen.getByRole("dialog", { name: "Spaces" });
 }
 
 const programRows = () => [...document.querySelectorAll<HTMLElement>('[data-slot="program-space"]')];
@@ -154,8 +159,6 @@ const programSection = () => document.querySelector<HTMLElement>('[data-slot="pr
 /** Whether any heading on the page reads "Durable agents". */
 const programsHeading = (container: HTMLElement) =>
   [...container.querySelectorAll("h2, h3")].some((h) => (h.textContent ?? "").includes("Durable agents"));
-/** The section wrapping the Spaces list's body. */
-const spacesSection = () => document.querySelector("#spaces-body")!.closest("section")!;
 /** Whether `a` comes before `b` in the document. */
 const precedes = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 
@@ -186,8 +189,9 @@ describe("session card: a snapshot with no program session renders as before", (
     const before = renderHome(homeData(fixtureSessions, scope), "/?s=collie-demo");
     await waitFor(() => expect(getMuxConfig()).not.toBeNull());
     await spacesShown();
-    // The card-less session asks its own block, which an M55 bridge answers as the machine's.
-    await waitFor(() => expect(before.container.querySelector('[aria-label="New space"]')).not.toBeNull());
+    // The card-less session asks its own block, which an M55 bridge answers as the machine's. Wait
+    // for that answer directly; the compact New-space action now lives inside the closed drawer.
+    await waitFor(() => expect(getMuxConfig()).not.toBeNull());
     const old = markup(before.container);
     cleanup();
     __resetSessionCards();
@@ -249,42 +253,42 @@ describe("Durable agents section: one row per program session, apart from the Sp
     await spacesShown();
     expect(programsHeading(container)).toBe(true);
     expect(programSection()!.querySelectorAll('[data-slot="program-space"]')).toHaveLength(2);
-    expect(container.querySelector("#spaces-body")!.querySelector('[data-slot="program-space"]')).toBeNull();
+    const spaces = await openSpaces();
+    expect(spaces.querySelector('[data-slot="program-space"]')).toBeNull();
     // A program is never shown twice.
     expect(programRows()).toHaveLength(2);
   });
 
-  it("sits below the spaces while no question waits", async () => {
+  it("sits below the chat controls while no question waits", async () => {
     declares(TERMINAL_CAPS);
     renderHome(homeData([...TERMINAL_CARDS, { ...DESK, agents: 3 }, BILLING]));
     await spacesShown();
-    expect(precedes(spacesSection(), programSection()!)).toBe(true);
+    expect(precedes(screen.getByRole("button", { name: /^Space / }), programSection()!)).toBe(true);
   });
 
-  it("sits above the spaces while any program has a question waiting", async () => {
+  it("marks a program that has a question waiting", async () => {
     declares(TERMINAL_CAPS);
     renderHome(homeData([...TERMINAL_CARDS, { ...DESK, agents: 3, blocked: 2 }, BILLING]));
     await spacesShown();
-    expect(precedes(programSection()!, spacesSection())).toBe(true);
     const waiting = programRows()[0]!.querySelector('[data-slot="program-space-waiting"]');
     expect(waiting).toHaveClass("text-status-blocked");
   });
 
-  it("moves on the snapshot that changes the waiting count, both ways", async () => {
+  it("updates its waiting mark when the snapshot changes, both ways", async () => {
     declares(TERMINAL_CAPS);
     let blocked = 0;
     const snapshot = () => homeData([...TERMINAL_CARDS, { ...DESK, agents: 2, blocked }]);
     const { router } = renderHome(snapshot(), "/", snapshot);
     await spacesShown();
-    expect(precedes(spacesSection(), programSection()!)).toBe(true);
+    expect(programRows()[0]!.querySelector('[data-slot="program-space-waiting"]')).toBeNull();
 
     blocked = 1;
     await router.revalidate();
-    await waitFor(() => expect(precedes(programSection()!, spacesSection())).toBe(true));
+    await waitFor(() => expect(programRows()[0]!.querySelector('[data-slot="program-space-waiting"]')).not.toBeNull());
 
     blocked = 0;
     await router.revalidate();
-    await waitFor(() => expect(precedes(spacesSection(), programSection()!)).toBe(true));
+    await waitFor(() => expect(programRows()[0]!.querySelector('[data-slot="program-space-waiting"]')).toBeNull());
     expect(programRows()).toHaveLength(1);
   });
 
@@ -297,8 +301,8 @@ describe("Durable agents section: one row per program session, apart from the Sp
     const { container, router } = renderHome(snapshot(), "/", snapshot);
     await waitFor(() => expect(programSection()).not.toBeNull());
     expect(programRows().map((r) => r.querySelector('[data-slot="program-space-name"]')?.textContent)).toEqual(["desk"]);
-    // The filter hides Launch and the Spaces list; the section stays.
-    expect(container.querySelector("#spaces-body")).toBeNull();
+    // The filter hides Launch; the compact workspace browser stays reachable from the chat controls.
+    expect(screen.getByRole("button", { name: /^Space / })).toBeInTheDocument();
     expect(programsHeading(container)).toBe(true);
 
     blocked = 0;

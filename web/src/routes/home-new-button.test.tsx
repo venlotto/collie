@@ -130,7 +130,9 @@ describe("the floating New button on the dashboard", () => {
   it("the Spaces list's folder button goes to the same page", async () => {
     const router = renderHome(homeData());
     await screen.findByRole("button", { name: "New" });
-    await userEvent.click(screen.getByRole("button", { name: /new space/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^Space / }));
+    const sheet = screen.getByRole("dialog", { name: "Spaces" });
+    await userEvent.click(within(sheet).getByRole("button", { name: /new space/i }));
     await screen.findByTestId("new-page");
     expect(router.state.location.pathname).toBe("/new");
   });

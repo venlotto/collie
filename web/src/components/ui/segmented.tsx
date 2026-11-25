@@ -29,6 +29,8 @@ export interface SegmentedOption<V extends string | number> {
   icon?: ReactNode;
   /** ALREADY TRANSLATED. The tooltip of an icon segment, when it should say more than `label`. */
   title?: string;
+  /** Id of the panel this tab controls. Used only with `semantics="tabs"`. */
+  controls?: string;
   /**
    * This one segment is inert while the others are not: a choice that cannot be made here, with the
    * reason written by the caller beside the row (the Speech engine's "This phone"). The segment keeps
@@ -139,6 +141,7 @@ export function Segmented<V extends string | number>({
             type="button"
             role={tabs ? "tab" : "radio"}
             aria-selected={tabs ? on : undefined}
+            aria-controls={tabs ? option.controls : undefined}
             aria-checked={tabs ? undefined : on}
             // A mark is said in words: the name becomes "Alerts, alert firing" rather than a dot.
             // An icon segment has no visible word, so its name is always said.
