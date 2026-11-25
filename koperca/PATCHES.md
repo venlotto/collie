@@ -47,7 +47,9 @@ los correos `*.patch` inventariados.
 Después de reproducir y aprobar el overlay sobre una base nueva se registra el
 OID upstream completo en `UPSTREAM_BASE`. La punta del overlay debe estar
 limpia y comprometida antes de preparar otra candidata; de lo contrario el
-helper se niega a continuar para no omitir la interfaz del fork.
+helper se niega a continuar para no omitir la interfaz del fork. El destino
+nuevo también debe ser la base registrada o descender de ella: una versión
+estable anterior nunca es un punto válido para reconstruir la candidata.
 
 Para revisar rutas afectadas sin aplicar nada:
 

@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 
 import { BranchLabel } from "@/components/ui/branch-label";
 import { CrossfadeText } from "@/components/ui/crossfade-text";
@@ -8,6 +8,7 @@ import { LIST_ROW_CORNERS, ListGroup } from "@/components/ui/list-group";
 import { SQUARE_36_TAP_TARGET } from "@/components/ui/tap-target";
 import { timeAgo } from "@/lib/format";
 import { spaceKey } from "@/lib/hosts";
+import { useLocale } from "@/hooks/use-locale";
 import { t, tn } from "@/lib/i18n";
 import { shortcutTarget } from "@/lib/shortcuts/target";
 import {
@@ -29,9 +30,12 @@ export interface WorkspaceListProps {
   agents: AgentView[];
   /** Bare shells count when the list stamps a workspace's last-seen time. */
   shellPanes?: AgentView[];
-  /** Ephemeral search text, owned by the surface embedding the list. */
-  query: string;
-  onQueryChange: (query: string) => void;
+  /**
+   * Controlled search text. Omit both search props for a sheet-local query that resets when the
+   * list unmounts; SpaceOverview passes both so folding it does not discard a query in progress.
+   */
+  query?: string;
+  onQueryChange?: (query: string) => void;
   onOpen: (workspaceId: string) => void;
   /** The addressed host; workspace ids repeat across a crew. */
   host?: string;
@@ -50,13 +54,17 @@ export function WorkspaceList({
   workspaces,
   agents,
   shellPanes = NO_PANES,
-  query,
-  onQueryChange,
+  query: controlledQuery,
+  onQueryChange: controlledQueryChange,
   onOpen,
   host,
   createNote = "",
   id,
 }: WorkspaceListProps) {
+  useLocale();
+  const [localQuery, setLocalQuery] = useState("");
+  const query = controlledQuery ?? localQuery;
+  const onQueryChange = controlledQueryChange ?? setLocalQuery;
   const panes = [...agents, ...shellPanes];
   // One pass over the panes, then map lookups — this component re-renders on every poll.
   const lastSeen = spaceLastSeenMap(panes);
@@ -123,7 +131,7 @@ export function WorkspaceList({
             >
               <div
                 className={cn(
-                  "flex flex-row items-center gap-3 px-3.5 py-2.5 shadow-[var(--edge-accent)_transparent]",
+                  "flex min-h-11 flex-row items-center gap-3 px-3.5 py-2.5 shadow-[var(--edge-accent)_transparent]",
                   LIST_ROW_CORNERS,
                   blocked &&
                     "bg-status-blocked/5 shadow-[var(--edge-accent)_var(--color-status-blocked),var(--edge-shadow)]",
@@ -177,6 +185,7 @@ export function WorkspaceNewSpaceButton({
   onNewSpace: () => void;
   creating?: boolean;
 }) {
+  useLocale();
   return (
     <button
       type="button"

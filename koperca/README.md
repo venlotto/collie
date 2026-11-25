@@ -45,7 +45,11 @@ koperca/bin/update-collie --target commit:<oid-completo-de-40-hex>
 
 Sin `--target`, el helper consulta upstream y elige su tag estable `vX.Y.Z` más
 reciente. El dry-run valida la base, el overlay y el destino, e imprime cada
-commit que reproduciría; no crea refs ni worktrees.
+commit que reproduciría; no crea refs ni worktrees. Descarga el objeto elegido
+en `FETCH_HEAD` para comprobar su historia: el destino debe ser
+`UPSTREAM_BASE` o un descendiente suyo. Un tag anterior o una historia
+divergente se rechazan, incluso si esa referencia es el último estable
+publicado, para impedir un downgrade silencioso.
 
 Solo `--apply` crea la rama y el worktree y ejecuta un `git cherry-pick` ordenado
 de **todos** los commits `UPSTREAM_BASE..<overlay-ref>`:

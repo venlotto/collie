@@ -263,6 +263,26 @@ else
     die "no se pudo resolver el tag estable '$target_tag'"
 fi
 
+# The remote lookup is authoritative, but merge-base needs the object locally.
+# Fetching into FETCH_HEAD downloads the object without creating a branch or tag.
+if [[ $source_kind == remote ]]; then
+  note "trayendo $source_ref desde $remote para validar su ascendencia"
+  git fetch --no-tags "$remote" "$source_ref"
+  fetched_target_oid=$(git rev-parse --verify 'FETCH_HEAD^{commit}')
+  [[ $fetched_target_oid == "$target_oid" ]] ||
+    die "la referencia remota cambió durante la validación ($target_oid -> $fetched_target_oid); repite el comando"
+fi
+
+git cat-file -e "${target_oid}^{commit}" 2>/dev/null ||
+  die "el commit destino $target_oid no está disponible localmente"
+if [[ $target_oid != "$overlay_base" ]]; then
+  if git merge-base --is-ancestor "$target_oid" "$overlay_base"; then
+    die "el destino $source_ref ($target_oid) es anterior a UPSTREAM_BASE ($overlay_base); se rechaza el downgrade"
+  fi
+  git merge-base --is-ancestor "$overlay_base" "$target_oid" ||
+    die "el destino $source_ref no desciende de UPSTREAM_BASE; revisa la divergencia antes de reproducir el overlay"
+fi
+
 target_label=${source_ref#refs/tags/}
 target_label=${target_label#refs/heads/}
 target_label=${target_label#local:}

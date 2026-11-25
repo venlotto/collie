@@ -61,6 +61,20 @@ describe("WorkspaceList", () => {
     expect(screen.getByText("This multiplexer cannot create a space.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /needs you.*beta/i })).toBeInTheDocument();
     expect(screen.getByLabelText("2 panes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /alpha/ }).firstElementChild).toHaveClass("min-h-11");
+  });
+
+  it("owns an ephemeral query when the embedding sheet does not need to persist one", async () => {
+    const user = userEvent.setup();
+    const props = { workspaces, agents, onOpen: vi.fn() };
+    const first = render(<WorkspaceList {...props} />);
+    await user.type(screen.getByRole("searchbox", { name: /filter spaces/i }), "beta");
+    expect(screen.queryByRole("button", { name: /alpha/ })).not.toBeInTheDocument();
+
+    first.unmount();
+    render(<WorkspaceList {...props} />);
+    expect(screen.getByRole("searchbox", { name: /filter spaces/i })).toHaveValue("");
+    expect(screen.getByRole("button", { name: /alpha/ })).toBeInTheDocument();
   });
 });
 

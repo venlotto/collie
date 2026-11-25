@@ -215,10 +215,6 @@ export function HomeRoute() {
   // The Launch section folds on the same terms. Its count comes from the component (it owns the
   // config read), so the un-chosen default is decided there against the same threshold.
   const launchOpen = prefs.launchOpen;
-  // The compact workspace drawer's search is ephemeral: it survives closing the sheet while this
-  // dashboard is mounted, but never becomes a device preference or changes the dashboard filter.
-  const [workspaceQuery, setWorkspaceQuery] = useState("");
-
   // A row is opened with the PANE's host, never the ambient one: the dashboard is one list across
   // every machine (hosts are a label, not a split), so the row you tapped may well live somewhere
   // other than where the URL currently points. Resolving it here is what stops a reply landing on the
@@ -415,8 +411,6 @@ export function HomeRoute() {
             workspaces={data.workspaces}
             agents={navPanes.agents}
             shellPanes={navPanes.shellPanes}
-            query={workspaceQuery}
-            onQueryChange={setWorkspaceQuery}
             host={navHost}
             createNote={!newSpace.capable ? newSpace.note : ""}
             onOpen={(workspaceId) => {
