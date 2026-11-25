@@ -209,7 +209,7 @@
 .bot-featured:disabled { opacity: .6; }
 .bot-index [data-drag-space] :is(.bot-row,.bot-group) { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .bot-index [data-drag-space] .bot-row {
-  transform: translateY(var(--drag-shift, 0px));
+  transform: var(--drag-shift, none);
   transition: transform 170ms ease-out, opacity 140ms ease-out, background .15s;
 }
 .bot-index [data-lifted] { opacity: .2; }

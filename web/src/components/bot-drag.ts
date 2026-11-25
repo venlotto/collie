@@ -102,7 +102,7 @@ export function useBotDrag(listRef: RefObject<HTMLDivElement | null>, enabled: b
         before = (siblings.indexOf(pending.section) < index ? siblings[index + 1] : section)?.dataset.workspace ?? null;
       }
       for (const node of shifted) if (!shifts.has(node)) { node.style.removeProperty("--drag-shift"); shifted.delete(node); }
-      for (const [node, dy] of shifts) { node.style.setProperty("--drag-shift", dy + "px"); shifted.add(node); }
+      for (const [node, dy] of shifts) { node.style.setProperty("--drag-shift", `translateY(${dy}px)`); shifted.add(node); }
       drop = section || overTrash ? { source, pane: pending.pane, target: section?.dataset.workspace ?? source, before, trash: overTrash } : null;
     }
     function tick() { frameAtPointer(); if (ghost) frame = requestAnimationFrame(tick); }

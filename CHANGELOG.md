@@ -51,6 +51,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **A tap restores a workspace immediately after its deletion.** The completed hold consumes only its own click.
 
+- **Only moving rows need a transform during a drag.** Resting chats keep their ordinary rendering as a sheet opens or closes.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
