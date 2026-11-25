@@ -1,3 +1,4 @@
+import type { AgentView } from "@/lib/types";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
 
@@ -2176,6 +2177,13 @@ export function closePane(paneId: string, scope?: Scope): Promise<ActionResponse
 export function focusPane(paneId: string, scope?: Scope): Promise<ActionResponse> {
   return req<ActionResponse>(withScope(`/api/pane/${encodeURIComponent(paneId)}/focus`, scope), {
     method: "POST",
+  });
+}
+
+export type BotAction = "move" | "trash" | "restore" | "purge";
+export function actOnBot(action: BotAction, pane: AgentView, scope: Scope, workspaceId?: string) {
+  return req<{ ok: boolean }>(withScope("/api/bot-action", scope), {
+    method: "POST", body: JSON.stringify({ action, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),
   });
 }
 

@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
+import { saveBot, forgetBot } from "@/lib/bot-identity";
+import { BotRow, BotActionSheet } from "./bot-selection";
+import { FolderInput, Trash2, Undo2, ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
 import { graphemeSegmenter } from "@/lib/env";
-import { fetchChat } from "@/lib/api";
+import { actOnBot, fetchChat, type BotAction } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
 import { paneRowKey } from "@/lib/hosts";
 import { activityAt } from "@/lib/pane-order";
@@ -11,6 +13,9 @@ import type { AgentView, TranscriptEntry, WorkspaceView } from "@/lib/types";
 import { BlobAvatar, botTime, identityOf } from "./bot-identity";
 
 interface Props {
+  writable: boolean;
+  listScope: Scope;
+  onChanged: () => void;
   panes: readonly AgentView[];
   workspaces: readonly WorkspaceView[];
   featured?: AgentView;
@@ -62,9 +67,17 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
 
 const segmenter = graphemeSegmenter();
 
-export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
+export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
   const [query, setQuery] = useState("");
   const [folded, setFolded] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<"chats" | "trash" | null>(null);
+  const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [sheet, setSheet] = useState<"move" | "restore" | "purge" | null>(null);
+  const [sheetOptions, setSheetOptions] = useState<{ id: string; title: string }[]>([]);
+  const [leaving, setLeaving] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const lock = useRef(false);
   const scroll = useRef<HTMLDivElement>(null);
   const picker = useId();
   const footer = useRef<HTMLDivElement>(null);
@@ -86,7 +99,7 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
     setAbove(outside.above.length);
     setBelow(outside.below.length);
   }
-  useEffect(measure, [panes, workspaces, featured, query, folded, accessNotice]);
+  useEffect(measure, [panes, workspaces, featured, query, folded, accessNotice, mode]);
   useEffect(() => {
     if (!scroll.current || !footer.current || !window.ResizeObserver) return;
     const observer = new ResizeObserver(measure);
@@ -95,63 +108,160 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
     return () => observer.disconnect();
   }, []);
   const needle = query.trim().toLocaleLowerCase();
-  const groups = new Map<string, { title: string; rows: AgentView[] }>();
+  const groups = new Map<string, { title: string; id: string; scope: Scope; rows: AgentView[] }>();
   function sectionFor(host: string | undefined, session: string | undefined, id: string, label: string) {
     const key = JSON.stringify([host, session, id]);
-    if (!groups.has(key)) groups.set(key, { title: label || id, rows: [] });
+    if (!groups.has(key)) groups.set(key, { title: label || id, id, scope: { host, session }, rows: [] });
     return groups.get(key)!;
   }
-  for (const w of workspaces) sectionFor(w.host, undefined, w.workspaceId, w.label);
+  for (const w of workspaces) sectionFor(w.host ?? listScope.host, listScope.session, w.workspaceId, w.label);
+  const trashRows: AgentView[] = [];
   for (const p of panes) {
-    const section = sectionFor(p.host, scopeOf(p).session, p.workspaceId, p.workspaceLabel);
+    if (p.trash) {
+      if (!needle || identityOf(p, scopeOf(p)).name.toLocaleLowerCase().includes(needle)) trashRows.push(p);
+      continue;
+    }
+    const section = sectionFor(scopeOf(p).host, scopeOf(p).session, p.workspaceId, p.workspaceLabel);
     if (!needle || [identityOf(p, scopeOf(p)).name, section.title, p.agent, p.subtitle].join(" ").toLocaleLowerCase().includes(needle)) section.rows.push(p);
   }
   function toggle(key: string) {
     setFolded((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   }
+  const groupRows = [...groups.values()].flatMap(group => group.rows);
+  const selectable = (p: AgentView) => writable && !!p.terminalId && !scopeOf(p).host;
+  const choices = (mode === "trash" ? trashRows : groupRows).filter(selectable);
+  const rowId = (p: AgentView) => JSON.stringify([scopeOf(p).session, p.terminalId, p.trash?.trashedAt]);
+  const chosen = choices.filter(p => selection.has(rowId(p)));
+  const destinations = [...groups.values()].filter(g => chosen.length > 0 && chosen.every(p =>
+    scopeOf(p).session === g.scope.session && !g.scope.host));
+  function select(p: AgentView, add: boolean) {
+    if (!selectable(p) || busy) return;
+    const target = p.trash ? "trash" : "chats";
+    const id = rowId(p);
+    setError("");
+    setSelection(prev => {
+      const next = new Set(mode === target ? prev : []);
+      if (next.has(id) && !add) next.delete(id); else next.add(id);
+      return next;
+    });
+    setMode(target);
+  }
+  function done() { setMode(null); setSelection(new Set()); setError(""); }
+  function openSheet(next: typeof sheet) {
+    setSheetOptions(destinations.map(({ id, title }) => ({ id, title })));
+    setSheet(next);
+    setLeaving(false);
+    setError("");
+  }
+  async function apply(action: BotAction, workspaceId?: string) {
+    if (!writable || lock.current || leaving || !chosen.length) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      for (const p of chosen) {
+        const scope = scopeOf(p);
+        const portrait = identityOf(p, scope);
+        await actOnBot(action, p, scope, workspaceId);
+        if (p.terminalId) {
+          if (action === "purge") forgetBot(scope, p.terminalId);
+          else saveBot(scope, p.terminalId, portrait);
+          forgetBot(scope, p.paneId);
+        }
+        setSelection(prev => { const next = new Set(prev); next.delete(rowId(p)); return next; });
+      }
+      if (sheet) setLeaving(true);
+      done();
+    } catch {
+      setError("No se pudo completar la acción. Revisa la selección y vuelve a intentar.");
+    } finally {
+      lock.current = false;
+      setBusy(false);
+      onChanged();
+    }
+  }
+  function row(p: AgentView) {
+    const scope = scopeOf(p);
+    const bot = identityOf(p, scope);
+    const current = !!active && paneRowKey(active) === paneRowKey(p);
+    const matching = mode === (p.trash ? "trash" : "chats");
+    const days = p.trash && Math.max(0, Math.ceil(7 - (Date.now() - p.trash.trashedAt) / 86_400_000));
+    return <li key={paneRowKey(p)}><BotRow current={current}
+      checked={mode ? matching && selection.has(rowId(p)) : undefined}
+      disabled={busy || (!!mode && (!selectable(p) || !matching))}
+      onHold={selectable(p) ? () => select(p, true) : undefined}
+      onPress={() => { if (!mode && !p.trash) onPress(p); }}
+      onOpen={() => { if (mode || p.trash) select(p, false); else onOpen(p); }}>
+      <BlobAvatar {...bot} />
+      <span className="bot-copy">
+        <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
+        {days !== undefined ? <span className="bot-line">Se elimina en {days} {days === 1 ? "día" : "días"}</span> :
+          <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
+      </span>
+    </BotRow></li>;
+  }
   const featuredBot = featured && identityOf(featured, scopeOf(featured));
   const initial = (segmenter?.segment(deviceName).containing(0)?.segment ?? Array.from(deviceName)[0])?.toLocaleUpperCase();
   return <div className="bot-index" aria-label="Chats">
     <div className="bot-list-surface">
-      <header className="bot-bar">
+      {mode ? <header className="bot-bar bot-select-bar">
+        <button disabled={busy} onClick={done}>Listo</button>
+        <strong aria-live="polite">{chosen.length} {chosen.length === 1 ? "seleccionado" : "seleccionados"}</strong>
+        <button disabled={busy} onClick={() => setSelection(new Set(choices.map(rowId)))}>Seleccionar todo</button>
+      </header> : <header className="bot-bar">
         <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
         <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
-      </header>
+      </header>}
       <div className="bot-scroll" ref={scroll} onScroll={measure}>
         {accessNotice}
-        {featured && featuredBot && !needle && <button className="bot-featured" onClick={() => onOpen(featured)}>
+        {error && !sheet && <p className="bot-access" role="alert">{error}</p>}
+        {featured && featuredBot && !needle && <button disabled={!!mode} className="bot-featured" onClick={() => onOpen(featured)}>
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
         {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key}>
           <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
-          {(!folded.has(key) || !!needle) && <ul>{group.rows.map(p => {
-            const scope = scopeOf(p);
-            const bot = identityOf(p, scope);
-            const selected = !!active && paneRowKey(active) === paneRowKey(p);
-            return <li key={paneRowKey(p)}><button className="bot-row" aria-current={selected || undefined}
-              onPointerDown={() => onPress(p)} onClick={() => onOpen(p)}>
-              <BlobAvatar {...bot} />
-              <span className="bot-copy">
-                <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
-                <span className="bot-row-preview"><Preview pane={p} scope={scope} active={selected} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>
-              </span>
-            </button></li>;
-          })}</ul>}
+          {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}
-        {!accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
+        {trashRows.length > 0 && <section data-workspace="trash">
+          <button className="bot-group" aria-expanded={!folded.has("trash")} onClick={() => toggle("trash")}>Papelera<ChevronDown size={14} /></button>
+          {!folded.has("trash") && <ul>{trashRows.map(row)}</ul>}
+        </section>}
+        {!trashRows.length && !accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
       </div>
       {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
       {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
     </div>
     <div className="bot-search-foot" ref={footer}>
-      {groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
+      {mode ? <div className="bot-search bot-actions" role="toolbar" aria-label="Acciones de selección">
+        {mode === "chats" ? <>
+          <button disabled={!chosen.length || !destinations.length || busy} onClick={() => openSheet("move")}><FolderInput size={18} />Mover</button>
+          <button disabled={!chosen.length || busy} onClick={() => void apply("trash")}><Trash2 size={18} />Eliminar</button>
+        </> : <>
+          <button disabled={!chosen.length || busy} onClick={() => {
+            if (chosen.every(p => p.workspaceId === p.trash?.originalWorkspaceId ||
+              destinations.some(g => g.id === p.trash?.originalWorkspaceId))) void apply("restore");
+            else openSheet("restore");
+          }}><Undo2 size={18} />Restaurar</button>
+          <button disabled={!chosen.length || busy} onClick={() => openSheet("purge")}><Trash2 size={18} />Eliminar</button>
+        </>}
+      </div> : <>{groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
         <div className="bot-picker" id={picker} popover="auto">{Array.from(groups, ([key, section]) =>
           <button key={key} popoverTarget={picker} popoverTargetAction="hide" onClick={() => {
             setQuery("");
             setFolded(prev => { const next = new Set(prev); next.delete(key); return next; });
             requestAnimationFrame(() => Array.from(scroll.current?.querySelectorAll("section") ?? []).find(el => el.dataset.workspace === key)?.scrollIntoView({ block: "start" }));
           }}>{section.title}</button>)}</div></>}
-      <label className="bot-search"><Search size={18} /><input type="search" aria-label="Buscar" placeholder="Buscar" value={query} onChange={e => setQuery(e.target.value)} /></label></div>
+      <label className="bot-search"><Search size={18} /><input type="search" aria-label="Buscar" placeholder="Buscar" value={query} onChange={e => setQuery(e.target.value)} /></label></>}</div>
+    {sheet && <BotActionSheet busy={busy} leaving={leaving} dismiss={() => setLeaving(true)} close={() => { setSheet(null); setLeaving(false); }}
+      title={sheet === "purge" ? "Eliminar definitivamente" : sheet === "restore" ? "Restaurar en" : "Mover a"}>
+      {sheet === "purge" ? <>
+        <p>Se cerrarán los chats seleccionados. Esta acción es permanente.</p>
+        <button className="bot-choice bot-danger" disabled={busy || leaving || !chosen.length} onClick={() => void apply("purge")}>Eliminar definitivamente</button>
+        <button className="bot-choice" disabled={busy || leaving} onClick={() => setLeaving(true)}>Cancelar</button>
+      </> : sheetOptions.map(g => <button key={g.id} className="bot-choice" disabled={busy || leaving}
+        onClick={() => void apply(sheet, g.id)}>{g.title}</button>)}
+      {error && <p role="alert">{error}</p>}
+    </BotActionSheet>}
   </div>;
 }

@@ -27,6 +27,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **A chat can move without restarting its terminal.** Herdr gives the running pane a tab in the destination workspace and keeps its shell and scrollback.
 - **Chats in Trash stay recoverable for seven days.** Collie keeps the terminal running until permanent deletion or expiry, even across a bridge restart.
+- **Hold a chat to select one or several.** The list offers Move and Delete, and Trash lets you restore selected chats or confirm permanent deletion.
 
 ### Changed
 

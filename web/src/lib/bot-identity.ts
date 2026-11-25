@@ -13,6 +13,12 @@ function address(scope: Scope, id: string) {
   return prefix + encodeURIComponent(paneScopeKey(scope, id));
 }
 
+export function forgetBot(scope: Scope, id: string) {
+  const key = address(scope, id);
+  memory.delete(key);
+  try { localStorage.removeItem(key); } catch { /* Storage may be unavailable. */ }
+}
+
 export function forgetBots() {
   memory.clear();
   try {
