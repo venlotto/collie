@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureSnapshot, fixtureWalkyAgent } from "@/test/handlers";
 import type { AgentView } from "@/lib/types";
@@ -17,7 +17,7 @@ async function screenshot(page: Page, label: string) {
   const dir = process.env.BOT_SCREENSHOTS;
   if (!dir) return;
   const project = test.info().project.name;
-  const prefix = project.includes("webkit") ? "iphone-webkit" : project.includes("phone") ? "movil" : "escritorio";
+  const prefix = project.includes("desktop") ? "escritorio" : project.includes("webkit") ? "iphone-webkit" : project.includes("phone") ? "movil" : "escritorio";
   await mkdir(dir, { recursive: true });
   await page.screenshot({ path: join(dir, prefix + "-" + label + ".png"), animations: "disabled" });
 }
@@ -138,3 +138,131 @@ for (const pairedGate of [false, true]) {
     await expect(sheet.getByRole("link")).toBeVisible();
   });
 }
+
+test("the chat stack slides horizontally and keeps both footers and the list in place", async ({ page, browserName }) => {
+  await installApiStub(page);
+  const panes = Array.from({ length: 18 }, (_, i) => ({
+    ...fixtureAgents[0]!, paneId: "w1:p" + (i + 1), paneLabel: "Kanban " + (i + 1),
+  }));
+  await page.route(url => url.pathname === "/api/snapshot", route => route.fulfill({
+    json: { ...fixtureSnapshot, agents: panes, shellPanes: [] },
+  }));
+  if (browserName === "chromium") {
+    const session = await page.context().newCDPSession(page);
+    await session.send("Emulation.setSafeAreaInsetsOverride", { insets: { bottom: 34 } });
+  }
+  await page.goto("/");
+  const row = page.locator(".bot-row").first();
+  await expect(row).toBeVisible();
+  await page.locator(".bot-scroll").evaluate(el => { el.scrollTop = 60; });
+  const shell = await page.locator("[data-bots]").elementHandle();
+  const list = await page.locator(".bot-scroll").elementHandle();
+
+  // WebKit on Linux has no home indicator. Exercise its native viewport first,
+  // then the same CSS layout with the 34px clearance from the phone recording.
+  const insets = browserName === "webkit" ? [null, 34] : [null];
+  for (const inset of insets) {
+    if (inset) await page.addStyleTag({ content: `[data-bots] { --bot-bottom: ${inset}px; }` });
+    const start = await page.evaluateHandle(() => {
+      const stack = document.querySelector<HTMLElement>(".bot-layout")!;
+      const scroll = stack.querySelector(".bot-scroll")!;
+      const panel = stack.querySelector("main")!;
+      const search = stack.querySelector(".bot-search")!;
+      const frames: { ms: number; open: boolean; x: number; search: number; composer: number | null; scroll: number }[] = [];
+      const t0 = performance.now();
+      let raf = 0;
+      function sample() {
+        const box = panel.querySelector('[data-slot="composer-box"]')?.getBoundingClientRect();
+        frames.push({ ms: performance.now() - t0, open: stack.dataset.detail === "true",
+          x: panel.getBoundingClientRect().left - stack.getBoundingClientRect().left,
+          search: search.getBoundingClientRect().bottom, composer: box?.height ? box.bottom : null,
+          scroll: scroll.scrollTop });
+        raf = requestAnimationFrame(sample);
+      }
+      sample();
+      return () => { cancelAnimationFrame(raf); return frames; };
+    });
+    const dir = process.env.BOT_SCREENSHOTS;
+    // Capture actual paints while the independent rAF sampler measures every layout frame.
+    const burst = async (direction: string, action: () => Promise<void>) => {
+      if (!inset || !dir) { await action(); return; }
+      const folder = join(dir, "brinco", direction);
+      await mkdir(folder, { recursive: true });
+      const shot = (i: number) => page.screenshot({ path: join(folder, String(i).padStart(2, "0") + ".png"), scale: "css" });
+      await shot(0);
+      await Promise.all([action(), (async () => {
+        await page.waitForFunction(open => document.querySelector<HTMLElement>(".bot-layout")?.dataset.detail === String(open), direction === "ida");
+        const begin = Date.now();
+        for (let i = 1; Date.now() - begin < 540; i++) await shot(i);
+      })()]);
+    };
+    await burst("ida", () => row.click());
+    const field = page.locator('[data-slot="composer-box"] textarea').first();
+    await expect(field).toBeInViewport();
+    await page.waitForFunction(() => document.querySelector(".bot-detail")!.getBoundingClientRect().left === document.querySelector(".bot-layout")!.getBoundingClientRect().left);
+    const composer = await field.elementHandle();
+    if (inset) await burst("vuelta", async () => { await page.goBack(); });
+    else await page.getByRole("button", { name: "Volver a los chats" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await page.waitForFunction(() => document.querySelector(".bot-detail")!.getBoundingClientRect().left >= document.querySelector(".bot-layout")!.getBoundingClientRect().right);
+    // Sample the settled pop as well as the last moving frame.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const frames = await start.evaluate(finish => finish());
+    const width = await page.locator(".bot-layout").evaluate(el => el.clientWidth);
+    expect(width).toBe(390);
+    expect(await shell?.evaluate(el => el.isConnected)).toBe(true);
+    expect(await list?.evaluate(el => el.isConnected)).toBe(true);
+    expect(await composer?.evaluate(el => el.isConnected)).toBe(true);
+    for (const open of [true, false]) {
+      const moving = frames.filter(f => f.open === open && f.x > 0 && f.x < width);
+      expect(moving.length).toBeGreaterThan(0);
+      expect(moving.every(f => f.composer !== null)).toBe(true);
+    }
+    expect(frames[0]!.scroll).toBeGreaterThan(0);
+    expect(new Set(frames.map(f => f.scroll)).size).toBe(1);
+    expect(new Set(frames.map(f => f.search)).size).toBe(1);
+    const composerEdges = frames.flatMap(f => f.composer === null ? [] : [f.composer]);
+    expect(Math.max(...composerEdges) - Math.min(...composerEdges)).toBeLessThan(0.51);
+    if (inset || browserName === "chromium") expect(frames[0]!.search).toBeCloseTo(page.viewportSize()!.height - 34, 1);
+    if (dir) {
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, `${test.info().project.name}-frames-${inset ?? "native"}.json`), JSON.stringify(frames, null, 2));
+    }
+  }
+});
+
+test("desktop paints the same list and chat as a 390px column", async ({ page }) => {
+  await installApiStub(page);
+  await page.goto("/");
+  const row = page.locator(".bot-row").first();
+  await expect(row).toBeVisible();
+  const column = page.locator(".bot-layout");
+  async function compare(view: string) {
+    const boxes = column.locator(".bot-index header, .bot-featured, .bot-row, .bot-search, .bot-chat-bar, .bot-terminal, [data-slot=composer-box], [data-slot=composer-box] button");
+    const geometry = () => boxes.evaluateAll(elements => elements.map(el => {
+      const { x, y, width, height } = el.getBoundingClientRect();
+      return { x: x - el.closest(".bot-layout")!.getBoundingClientRect().left, y, width, height };
+    }));
+    const dir = process.env.BOT_SCREENSHOTS;
+    const save = async (size: string) => {
+      if (!dir) return;
+      await mkdir(dir, { recursive: true });
+      await column.screenshot({ path: join(dir, `${test.info().project.name}-${view}-columna-${size}.png`), scale: "css", animations: "disabled" });
+    };
+    await page.setViewportSize({ width: 390, height: 800 });
+    const narrow = await geometry();
+    await save("390");
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const rect = await column.boundingBox();
+    expect(rect?.width).toBe(390);
+    expect(rect?.x).toBe(445);
+    expect(await geometry()).toEqual(narrow);
+    await save("1280");
+  }
+  await compare("lista");
+  await row.click();
+  await expect(page.locator('[data-slot="composer-box"]')).toBeInViewport();
+  await page.waitForFunction(() => document.querySelector(".bot-detail")!.getBoundingClientRect().left === document.querySelector(".bot-layout")!.getBoundingClientRect().left);
+  await page.mouse.move(0, 0);
+  await compare("chat");
+});
