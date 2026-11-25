@@ -288,6 +288,11 @@ export function HomeRoute() {
   const revalidator = useRevalidator();
   const { refused: notPaired } = usePairing();
   const readOnly = isReadOnly(data.device) || notPaired;
+  const widthClass = useWidthClass();
+  const wide = widthClass === "expanded";
+  const coarsePointer = useMediaQuery("(any-pointer: coarse)");
+  const phoneShell = widthClass === "compact" && Math.min(window.innerWidth, window.innerHeight) < 600 && coarsePointer && navigator.maxTouchPoints > 0;
+  const mobileHome = phoneShell && !data.error && !data.authError && !notPaired;
 
   // THE FLOATING NEW BUTTON (DESIGN.md §1, M48 spec 01), on the Dashboard tab only: Crew and Files
   // are other lists, and a create entry over them would read as theirs. Drawn when this machine can
@@ -306,7 +311,7 @@ export function HomeRoute() {
     readOnly,
     launcherCount: launchers.length,
   });
-  const fabOffered = view === "dashboard" && newEntry.offered;
+  const fabOffered = (view === "dashboard" || mobileHome) && newEntry.offered;
   const openNew = newEntry.open;
   const newSpace = useMuxCapability("createSpace", data.scope);
   // The Actions palette's New agent… and New shell on the dashboard (ADR 0165): the New page, as the New
@@ -343,10 +348,6 @@ export function HomeRoute() {
   // 640px column: the header, the grid of Spaces and the tab bar are as wide as the grid. The number of
   // columns is read from the width of the scroller itself, the room inside it without its scrollbar, and never
   // from the window. Compact and medium, and Off at any width, draw the phone's column exactly as before.
-  const widthClass = useWidthClass();
-  const wide = widthClass === "expanded";
-  const coarsePointer = useMediaQuery("(any-pointer: coarse)");
-  const phoneShell = widthClass === "compact" && Math.min(window.innerWidth, window.innerHeight) < 600 && coarsePointer && navigator.maxTouchPoints > 0;
   // A pane's `open_space` (lib/space-landing.ts) lands on a space's column, and only the Dashboard view draws
   // columns: Crew and Files stand in the way, so the view goes back to the Dashboard. Taken on arrival only.
   useEffect(() => {
@@ -507,7 +508,7 @@ export function HomeRoute() {
   // On a phone the product is a chat client. Keep Collie's operational dashboard intact for every
   // wider layout, but do not make a thumb pass through its filters, strips, launchers and footer to
   // reach the same panes. This branch is intentionally after every hook above.
-  if (phoneShell && !data.error && !data.authError && !notPaired) {
+  if (mobileHome) {
     return (
       <div className="mx-auto flex min-h-0 w-full max-w-screen-sm flex-1 flex-col">
         <RouteHeader width="column" rightLead={<ActionsButton />} rightTrail={<SettingsGear scope={data.scope} />} />

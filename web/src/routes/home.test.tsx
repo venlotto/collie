@@ -183,6 +183,14 @@ describe("the touch-phone chat shell", () => {
 
     await waitFor(() => expect(document.querySelector('[data-slot="mobile-agent-hub"]')).not.toBeInTheDocument());
   });
+
+  it("keeps New available when a desktop-only view was stored before opening the phone", async () => {
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ dashView: "crew" }));
+    renderHome(solo());
+
+    expect(await screen.findByRole("heading", { name: "Conversations" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New" })).toBeInTheDocument();
+  });
 });
 
 describe("the dashboard on ONE machine is untouched", () => {
