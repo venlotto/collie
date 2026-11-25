@@ -1,0 +1,375 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly STABLE_TAG_RE='^v[0-9]+[.][0-9]+[.][0-9]+$'
+readonly FULL_OID_RE='^[0-9a-fA-F]{40}$'
+
+apply=false
+remote=upstream
+requested_target=''
+overlay_ref=${COLLIE_KOPERCA_OVERLAY_REF:-HEAD}
+legacy_migration=false
+patch_dir=${COLLIE_KOPERCA_PATCH_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/herdr/plugins/config/herdr.collie/patches}
+patch_dir_requested=false
+candidate_branch=''
+candidate_worktree=''
+
+usage() {
+  cat <<'EOF'
+Uso:
+  koperca/bin/update-collie [opciones]
+
+Prepara una candidata desde upstream y reproduce encima los commits del overlay
+Koperca comprendidos entre koperca/UPSTREAM_BASE y una referencia local.
+
+Sin --apply solo muestra y valida el plan; no crea refs ni worktrees. La cola
+histórica de siete parches NO forma parte del flujo normal.
+
+Opciones:
+  --dry-run              Validar y mostrar el plan (predeterminado).
+  --apply                Crear la candidata y reproducir el overlay.
+  --target REF           Tag o rama del remote upstream. Una referencia local
+                         con el mismo nombre nunca tiene precedencia. Sin REF,
+                         usa el tag estable vX.Y.Z más reciente del remote.
+  --target local:REF     Usar deliberadamente una referencia Git local.
+  --target commit:OID    Usar deliberadamente un commit local de 40 hex.
+  --overlay-ref REF      Punta local del overlay (predeterminado: HEAD o
+                         COLLIE_KOPERCA_OVERLAY_REF).
+  --remote NAME          Remote upstream (predeterminado: upstream).
+  --legacy-migration     Después del overlay, aplicar la cola antigua solamente
+                         para auditar/migrar; nunca para una actualización normal.
+  --patch-dir DIR        Cola externa para --legacy-migration.
+  --candidate BRANCH     Nombre de la rama candidata.
+  --worktree DIR         Ruta del worktree candidato.
+  -h, --help             Mostrar esta ayuda.
+EOF
+}
+
+die() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+note() {
+  printf '==> %s\n' "$*"
+}
+
+while (($#)); do
+  case "$1" in
+    --dry-run)
+      apply=false
+      ;;
+    --apply)
+      apply=true
+      ;;
+    --target)
+      (($# >= 2)) || die '--target requiere una referencia'
+      requested_target=$2
+      shift
+      ;;
+    --overlay-ref)
+      (($# >= 2)) || die '--overlay-ref requiere una referencia local'
+      overlay_ref=$2
+      shift
+      ;;
+    --remote)
+      (($# >= 2)) || die '--remote requiere un nombre'
+      remote=$2
+      shift
+      ;;
+    --legacy-migration)
+      legacy_migration=true
+      ;;
+    --patch-dir)
+      (($# >= 2)) || die '--patch-dir requiere una ruta'
+      patch_dir=$2
+      patch_dir_requested=true
+      shift
+      ;;
+    --candidate)
+      (($# >= 2)) || die '--candidate requiere una rama'
+      candidate_branch=$2
+      shift
+      ;;
+    --worktree)
+      (($# >= 2)) || die '--worktree requiere una ruta'
+      candidate_worktree=$2
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "opción desconocida: $1"
+      ;;
+  esac
+  shift
+done
+
+repo_root=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel) ||
+  die 'el helper debe ejecutarse dentro del repositorio Collie'
+cd "$repo_root"
+
+git remote get-url "$remote" >/dev/null 2>&1 ||
+  die "no existe el remote '$remote'"
+
+if [[ $patch_dir_requested == true && $legacy_migration == false ]]; then
+  die '--patch-dir solo es válido junto con --legacy-migration'
+fi
+
+base_file="$repo_root/koperca/UPSTREAM_BASE"
+[[ -f $base_file ]] || die 'falta koperca/UPSTREAM_BASE'
+overlay_base=$(tr -d '[:space:]' < "$base_file")
+[[ $overlay_base =~ $FULL_OID_RE ]] ||
+  die 'UPSTREAM_BASE debe contener un commit exacto de 40 hex, no un tag o rama'
+git cat-file -e "${overlay_base}^{commit}" 2>/dev/null ||
+  die "el commit base $overlay_base no existe localmente; trae upstream primero"
+
+overlay_oid=$(git rev-parse --verify "${overlay_ref}^{commit}" 2>/dev/null) ||
+  die "no existe la referencia local del overlay '$overlay_ref'"
+git merge-base --is-ancestor "$overlay_base" "$overlay_oid" ||
+  die "UPSTREAM_BASE no es ancestro de $overlay_ref; no se puede delimitar el overlay"
+
+head_oid=$(git rev-parse --verify 'HEAD^{commit}')
+if [[ $overlay_oid == "$head_oid" ]] &&
+  [[ -n $(git status --porcelain=v1 --untracked-files=all) ]]; then
+  die "el overlay $overlay_ref apunta al checkout actual, que tiene cambios sin commit; la candidata los omitiría"
+fi
+
+mapfile -t overlay_commits < <(
+  git rev-list --reverse --topo-order "$overlay_base..$overlay_oid"
+)
+((${#overlay_commits[@]} > 0)) ||
+  die "el overlay $overlay_ref no contiene commits después de UPSTREAM_BASE"
+[[ -z $(git rev-list --merges "$overlay_base..$overlay_oid") ]] ||
+  die 'el overlay contiene merges; mantén una serie lineal para poder reproducirla sin ambigüedad'
+git diff --quiet "$overlay_base" "$overlay_oid" &&
+  die 'el overlay solo contiene commits vacíos y no puede representar la personalización del fork'
+
+patches=()
+manifest=''
+if [[ $legacy_migration == true ]]; then
+  [[ -d $patch_dir ]] || die "no existe la carpeta de parches: $patch_dir"
+  patch_dir=$(realpath "$patch_dir")
+  repo_root=$(realpath "$repo_root")
+  case "$patch_dir/" in
+    "$repo_root/"*)
+      die 'la cola histórica debe vivir fuera del repositorio'
+      ;;
+  esac
+
+  mapfile -d '' patches < <(
+    find "$patch_dir" -maxdepth 1 -type f -name '*.patch' -print0 | sort -z
+  )
+  ((${#patches[@]} > 0)) || die "no hay parches *.patch en $patch_dir"
+
+  for patch in "${patches[@]}"; do
+    grep -q '^From ' "$patch" || die "no parece un correo de Git: $patch"
+    grep -q '^Subject:' "$patch" || die "falta Subject en: $patch"
+  done
+
+  manifest="$repo_root/koperca/PATCH_QUEUE.sha256"
+  [[ -f $manifest ]] || die "falta el manifiesto: $manifest"
+  manifest_names=$(awk '{print $2}' "$manifest" | sort)
+  queue_names=$(printf '%s\n' "${patches[@]##*/}" | sort)
+  [[ $manifest_names == "$queue_names" ]] ||
+    die 'los nombres de la cola no coinciden con PATCH_QUEUE.sha256'
+  (
+    cd "$patch_dir"
+    sha256sum --check --strict "$manifest"
+  ) >/dev/null || die 'la cola externa no coincide con PATCH_QUEUE.sha256'
+fi
+
+source_kind=''
+source_ref=''
+target_oid=''
+
+resolve_remote_ref() {
+  local candidate=$1
+  local output=''
+  local -a refs=()
+
+  if [[ $candidate == refs/* ]]; then
+    output=$(git ls-remote "$remote" "$candidate" "${candidate}^{}") ||
+      die "no se pudo consultar $remote"
+  else
+    output=$(git ls-remote "$remote" \
+      "refs/tags/$candidate" "refs/tags/${candidate}^{}" \
+      "refs/heads/$candidate") || die "no se pudo consultar $remote"
+  fi
+
+  mapfile -t refs < <(
+    awk 'NF >= 2 && $2 !~ /\^\{\}$/ {print $2}' <<<"$output" | sort -u
+  )
+  ((${#refs[@]} > 0)) || return 1
+  ((${#refs[@]} == 1)) ||
+    die "la referencia '$candidate' es ambigua en $remote"
+
+  source_ref=${refs[0]}
+  target_oid=$(awk -v ref="${source_ref}^{}" '$2 == ref {print $1}' <<<"$output")
+  if [[ -z $target_oid ]]; then
+    target_oid=$(awk -v ref="$source_ref" '$2 == ref {print $1}' <<<"$output")
+  fi
+  [[ -n $target_oid ]] || die "no se pudo resolver $source_ref"
+  source_kind=remote
+}
+
+resolve_local_ref() {
+  local candidate=$1
+  [[ -n $candidate ]] || die 'local: requiere una referencia'
+  target_oid=$(git rev-parse --verify "${candidate}^{commit}" 2>/dev/null) ||
+    die "no existe la referencia Git local '$candidate'"
+  source_kind=local
+  source_ref="local:$candidate"
+}
+
+resolve_exact_commit() {
+  local candidate=$1
+  [[ $candidate =~ $FULL_OID_RE ]] ||
+    die 'commit: requiere un OID completo de 40 hex'
+  target_oid=$(git rev-parse --verify "${candidate}^{commit}" 2>/dev/null) ||
+    die "el commit local '$candidate' no existe"
+  source_kind=local
+  source_ref="commit:$candidate"
+}
+
+if [[ -n $requested_target ]]; then
+  case "$requested_target" in
+    local:*)
+      resolve_local_ref "${requested_target#local:}"
+      ;;
+    commit:*)
+      resolve_exact_commit "${requested_target#commit:}"
+      ;;
+    *)
+      resolve_remote_ref "$requested_target" ||
+        die "no existe la referencia '$requested_target' en $remote; usa local:REF o commit:OID para una fuente local"
+      ;;
+  esac
+else
+  remote_tags=$(git ls-remote --tags --refs "$remote" 'refs/tags/v*') ||
+    die "no se pudieron consultar los tags de $remote"
+  target_tag=$(awk -v pattern="$STABLE_TAG_RE" '
+    {
+      sub("refs/tags/", "", $2)
+      if ($2 ~ pattern) print $2
+    }
+  ' <<<"$remote_tags" | sort -V | tail -n 1)
+
+  [[ -n $target_tag ]] || die "upstream no publicó ningún tag estable vX.Y.Z en $remote"
+  resolve_remote_ref "$target_tag" ||
+    die "no se pudo resolver el tag estable '$target_tag'"
+fi
+
+target_label=${source_ref#refs/tags/}
+target_label=${target_label#refs/heads/}
+target_label=${target_label#local:}
+target_label=${target_label#commit:}
+target_slug=$(printf '%s' "$target_label" | sed 's/[^A-Za-z0-9._-]/-/g')
+[[ -n $target_slug ]] || die 'la referencia no produce un nombre de candidata'
+
+if [[ -z $candidate_branch ]]; then
+  candidate_branch="koperca/candidate/$target_slug"
+fi
+git check-ref-format --branch "$candidate_branch" >/dev/null 2>&1 ||
+  die "rama candidata no válida: $candidate_branch"
+
+if [[ -z $candidate_worktree ]]; then
+  candidate_root=${KOPERCA_CANDIDATE_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/collie-koperca/candidates}
+  candidate_worktree="$candidate_root/$target_slug"
+fi
+candidate_worktree=$(realpath --canonicalize-missing "$candidate_worktree")
+case "$candidate_worktree/" in
+  "$repo_root/"*)
+    die 'el worktree candidato debe vivir fuera del repositorio'
+    ;;
+esac
+
+cat <<EOF
+
+Plan Koperca
+  modo:              $([[ $apply == true ]] && printf apply || printf dry-run)
+  remote upstream:   $remote
+  destino:           $source_ref
+  commit destino:    $target_oid
+  base del overlay:  $overlay_base
+  punta del overlay: $overlay_ref ($overlay_oid)
+  commits overlay:   ${#overlay_commits[@]}
+  cola histórica:    $([[ $legacy_migration == true ]] && printf 'ACTIVA (solo migración/auditoría)' || printf 'desactivada')
+  rama candidata:    $candidate_branch
+  worktree:          $candidate_worktree
+EOF
+
+printf '\nOverlay ordenado:\n'
+for commit in "${overlay_commits[@]}"; do
+  printf '  %s\n' "$(git show -s --format='%h %s' "$commit")"
+done
+
+if [[ $legacy_migration == true ]]; then
+  printf '\nCola histórica ordenada:\n'
+  for patch in "${patches[@]}"; do
+    printf '  %s\n' "$(basename "$patch")"
+  done
+fi
+
+if [[ $apply == false ]]; then
+  cat <<'EOF'
+
+Dry-run terminado. No se crearon refs, ramas ni worktrees y no se aplicó nada.
+EOF
+  exit 0
+fi
+
+git show-ref --verify --quiet "refs/heads/$candidate_branch" &&
+  die "ya existe la rama $candidate_branch"
+[[ ! -e $candidate_worktree ]] ||
+  die "ya existe la ruta candidata $candidate_worktree"
+
+base_oid=$target_oid
+if [[ $source_kind == remote ]]; then
+  note "trayendo $source_ref desde $remote"
+  git fetch --no-tags "$remote" "$source_ref"
+  base_oid=$(git rev-parse --verify 'FETCH_HEAD^{commit}')
+  [[ $base_oid == "$target_oid" ]] ||
+    die "la referencia remota cambió durante la preparación ($target_oid -> $base_oid); repite el dry-run"
+fi
+
+note "creando $candidate_branch en $candidate_worktree"
+mkdir -p "$(dirname "$candidate_worktree")"
+git worktree add -b "$candidate_branch" "$candidate_worktree" "$base_oid"
+
+note 'reproduciendo los commits del overlay con git cherry-pick'
+if ! git -C "$candidate_worktree" cherry-pick "${overlay_commits[@]}"; then
+  printf 'El overlay entró en conflicto; abortando cherry-pick.\n' >&2
+  if ! git -C "$candidate_worktree" cherry-pick --abort; then
+    printf 'AVISO: cherry-pick --abort también falló; revisa %s.\n' \
+      "$candidate_worktree" >&2
+  fi
+  die 'la candidata no es compatible con esta referencia upstream'
+fi
+
+if [[ $legacy_migration == true ]]; then
+  note 'aplicando la cola histórica con git am --3way (auditoría/migración)'
+  if ! git -C "$candidate_worktree" am --3way "${patches[@]}"; then
+    printf 'La cola histórica entró en conflicto; abortando git am.\n' >&2
+    if ! git -C "$candidate_worktree" am --abort; then
+      printf 'AVISO: git am --abort también falló; revisa %s.\n' \
+        "$candidate_worktree" >&2
+    fi
+    die 'la cola histórica no es compatible; el overlay reproducido permanece para inspección'
+  fi
+fi
+
+cat <<EOF
+
+Candidata preparada, sin despliegue ni promoción:
+  rama:           $candidate_branch
+  worktree:       $candidate_worktree
+  upstream:       $base_oid
+  overlay origen: $overlay_base..$overlay_oid
+
+Antes de promover: prueba la candidata y actualiza koperca/UPSTREAM_BASE al
+commit upstream exacto $base_oid en un commit revisado de la candidata.
+EOF
