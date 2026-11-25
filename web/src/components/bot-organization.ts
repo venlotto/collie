@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { dragBotAction, fetchChatOrder, placeChat, placeWorkspace } from "@/lib/api";
+import { identityOf } from "./bot-identity";
+import { forgetBot, saveBot } from "@/lib/bot-identity";
+import { actOnBot, fetchChatOrder, placeChat, placeWorkspace } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
 import { chatOrderId, type ChatOrder } from "@/lib/chat-order";
 import type { Scope } from "@/lib/scope";
@@ -18,7 +20,7 @@ async function move(space: WorkspaceChoice, before: string | null) {
 export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows: AgentView[] }>,
   list: RefObject<HTMLDivElement | null>, enabled: boolean, refresh: () => void) {
   const [order, setOrder] = useState<Map<string, string[]>>(new Map());
-  const [menu, setMenu] = useState<string | null>(null);
+  const [menu, setMenu] = useState<WorkspaceChoice | null>(null);
   const [error, setError] = useState("");
   const locked = useRef(false);
   const revision = useRef(0);
@@ -65,13 +67,18 @@ export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows:
     try {
       if (!drop.pane) {
         if (space !== target) await move(space, drop.before ? groups.get(drop.before)!.id : null);
-      } else if (drop.trash) {
-        const result = await dragBotAction(space.scope, drop.pane, "trash");
-        if (!result.ok) throw new Error(result.error);
       } else {
+        const pane = space.rows.find(p => p.terminalId === drop.pane);
+        if (!pane?.terminalId) return;
+        if (drop.trash) {
+          await actOnBot("trash", pane, space.scope);
+          return;
+        }
         if (space !== target) {
-          const result = await dragBotAction(space.scope, drop.pane, "move", target.id);
-          if (!result.ok) throw new Error(result.error);
+          const portrait = identityOf(pane, space.scope);
+          await actOnBot("move", pane, space.scope, target.id);
+          saveBot(space.scope, pane.terminalId, portrait);
+          if (pane.paneId !== pane.terminalId) forgetBot(space.scope, pane.paneId);
           transferred = true;
         }
         const saved: ChatOrder = await placeChat(target.scope, target.id, drop.pane, drop.before);
@@ -84,8 +91,8 @@ export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows:
       refresh();
     }
   }
-  const dragging = useBotDrag(list, enabled, drop => { void apply(drop); }, key => { if (!locked.current) setMenu(key); });
-  const space = menu && groups.get(menu);
+  const dragging = useBotDrag(list, enabled, drop => { void apply(drop); }, key => { if (!locked.current) setMenu(groups.get(key) ?? null); });
+  const space = menu && (groups.get(sectionKey(menu.scope, menu.id)) ?? menu);
   return { dragging, error, menu: space && enabled ? {
     space, spaces: [...groups.values()].filter(s => dragScope(s.scope) === dragScope(space.scope)),
     move: (before: string | null) => move(space, before), refresh, close: () => setMenu(null),

@@ -13,7 +13,7 @@ export function BlobAvatar({ silhouette, color, large = false }: { silhouette: n
 }
 
 export function identityOf(pane: AgentView, scope: Scope): BotIdentity {
-  const saved = savedBot(scope, pane.paneId);
+  const saved = (pane.terminalId ? savedBot(scope, pane.terminalId) : undefined) ?? savedBot(scope, pane.paneId);
   if (saved) return { ...saved, name: pane.paneLabel || saved.name };
   const seed = hashId(paneScopeKey(scope, pane.paneId));
   return { name: paneName(pane), silhouette: seed % silhouetteCount, color: [8, 5, 3, 9, 7, 10, 6][Math.floor(seed / 7) % 7]! };

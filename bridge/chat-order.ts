@@ -30,6 +30,12 @@ export class ChatOrderStore {
     return Array.from(groups, ([workspaceId, paneIds]) => ({ workspaceId, paneIds }));
   }
 
+  forget(session: string, paneId: string): void {
+    if (!existsSync(join(this.stateDir, "chat-order.sqlite"))) return;
+    using db = this.open();
+    db.run("DELETE FROM positions WHERE session=? AND pane=?", [session, paneId]);
+  }
+
   /** Insert relative to a live neighbour. A concurrent edit retains the other panes' order. */
   place(session: string, workspaceId: string, live: string[], paneId: string, before: string | null): ChatOrder {
     if (!live.includes(paneId) || (before !== null && (!live.includes(before) || paneId === before))) {

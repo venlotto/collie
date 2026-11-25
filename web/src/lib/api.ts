@@ -1,3 +1,4 @@
+import type { AgentView } from "@/lib/types";
 import type { ChatOrder } from "./chat-order";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
@@ -2180,6 +2181,13 @@ export function focusPane(paneId: string, scope?: Scope): Promise<ActionResponse
   });
 }
 
+export type BotAction = "move" | "trash" | "restore" | "purge";
+export function actOnBot(action: BotAction, pane: AgentView, scope: Scope, workspaceId?: string) {
+  return req<{ ok: boolean }>(withScope("/api/bot-action", scope), {
+    method: "POST", body: JSON.stringify({ action, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),
+  });
+}
+
 /** Set (or clear) a pane's label. An empty/blank `label` clears it (the bridge sends `null` on). */
 export function renamePane(
   paneId: string,
@@ -2208,10 +2216,9 @@ export function placeWorkspace(scope: Scope, workspaceId: string, before: string
   });
 }
 
-// Shared bot-action endpoint provided by the selection and trash service.
-export function dragBotAction(scope: Scope, terminalId: string, action: "trash" | "move", workspaceId?: string) {
+export function restoreWorkspace(scope: Scope, workspaceId: string, trashedAt: number) {
   return req<ActionResponse>(withScope("/api/bot-action", scope), {
-    method: "POST", body: JSON.stringify({ action, terminalId, workspaceId }),
+    method: "POST", body: JSON.stringify({ action: "restoreWorkspace", workspaceId, trashedAt }),
   });
 }
 

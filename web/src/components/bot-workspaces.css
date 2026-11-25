@@ -193,6 +193,20 @@
 
 .bot-turn:not([data-revealed]) [data-slot="block-more"]:not(:focus-visible) { opacity: 0; pointer-events: none; }
 
+.bot-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y; }
+.bot-select-bar { grid-template-columns: auto 1fr auto; min-height: calc(57px + env(safe-area-inset-top)); font-size: 14px; }
+.bot-select-bar button { min-height: 40px; color: #0a84ff; }
+.bot-select-bar strong { font-weight: 600; }
+.bot-check { display: grid; place-items: center; width: 22px; height: 22px; flex: none; border: 1.5px solid #737376; border-radius: 50%; }
+.bot-row[aria-checked=true] .bot-check { background: #0a84ff; border-color: #0a84ff; }
+.bot-actions { justify-content: space-around; }
+.bot-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; height: 100%; }
+.bot-actions button:last-child, .bot-danger { color: #ff625a; }
+.bot-actions button:disabled, .bot-choice:disabled { opacity: .4; }
+.bot-action-sheet { height: auto; max-height: 78dvh; gap: 8px; }
+.bot-action-sheet p { padding: 12px 10px; color: #bbb; text-align: center; }
+.bot-choice { flex-shrink: 0; width: 100%; border-radius: 18px; background: #2c2c2e; padding: 13px 16px; }
+.bot-featured:disabled { opacity: .6; }
 .bot-index [data-drag-space] :is(.bot-row,.bot-group) { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .bot-index [data-drag-space] .bot-row {
   transform: translateY(var(--drag-shift, 0px));
@@ -203,16 +217,22 @@
 .bot-index section[data-over] > .bot-group { color: #b9dbff; background: #151b24; border-radius: 12px; }
 .bot-drop-trash { position: absolute; z-index: 4; bottom: 0; left: 18px; right: 18px; height: 44px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 999px; background: #302123; color: #ff8883; font-weight: 600; transition: transform 140ms ease-out; }
 .bot-drop-trash[data-trash-over] { background: #8f2828; color: white; transform: scale(1.02); }
-.bot-sheet.bot-workspace-menu { height: auto; max-height: 82dvh; overflow-y: auto; padding-bottom: 18px; }
-.bot-workspace-menu header h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.bot-workspace-menu fieldset { display: grid; gap: 6px; width: 100%; min-width: 0; }
-.bot-workspace-menu fieldset :is(button,label) { display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 46px; background: #2a2a2d; border-radius: 15px; width: 100%; }
-.bot-workspace-menu fieldset :is(select,input) { background: #28282a; border-radius: 999px; }
-.bot-workspace-menu select { margin-left: auto; padding: 4px 8px; }
-.bot-workspace-menu fieldset svg { width: 18px; }
-.bot-workspace-menu fieldset button:disabled { opacity: .4; }
-.bot-workspace-menu fieldset p { color: #bfbfc3; margin: 4px 12px 12px; }
-.bot-workspace-menu form { display: grid; gap: 8px; }
-.bot-workspace-menu form button { justify-content: center; }
-.bot-workspace-menu .danger { color: #ff716b; }
+.bot-sheet:has(.bot-workspace-fields) { height: auto; max-height: 82dvh; overflow-y: auto; padding-bottom: 18px; }
+.bot-sheet:has(.bot-workspace-fields) header h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.bot-workspace-fields { display: grid; gap: 6px; width: 100%; min-width: 0; }
+.bot-workspace-fields :is(button,label) { display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 46px; background: #2a2a2d; border-radius: 15px; width: 100%; }
+.bot-workspace-fields :is(select,input) { background: #28282a; border-radius: 999px; }
+.bot-workspace-fields select { margin-left: auto; padding: 4px 8px; }
+.bot-workspace-fields svg { width: 18px; }
+.bot-workspace-fields button:disabled { opacity: .4; }
+.bot-workspace-fields p { color: #bfbfc3; margin: 4px 12px 12px; }
+.bot-workspace-fields form { display: grid; gap: 8px; }
+.bot-workspace-fields form button { justify-content: center; }
+.bot-workspace-fields .danger { color: #ff716b; }
 @media (prefers-reduced-motion: reduce) { .bot-index [data-drag-space] .bot-row,.bot-drop-trash { transition: none; } }
+
+.bot-trashed-workspace { min-height: 70px; display: flex; gap: 10px; align-items: center; padding: 8px 10px; }
+.bot-trashed-workspace > span { flex: 1; min-width: 0; }
+.bot-trashed-workspace strong,.bot-trashed-workspace small { display: block; overflow: hidden; text-overflow: ellipsis; }
+.bot-trashed-workspace small { color: #8e8e93; }
+.bot-trashed-workspace button { min-height: 40px; padding: 0 12px; border-radius: 999px; background: #262628; font-size: 13px; }

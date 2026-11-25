@@ -11,6 +11,7 @@ import { packageCommand } from "../cli/package-command.ts";
 import { sendsReportRows } from "../cli/send-findings.ts";
 import { realExec, realFiles } from "../cli/sys.ts";
 import { collieBinary as collieBinaryOf, HOST, surfacePlatform } from "./host.ts";
+import { BotTrash, TRASH_INTERVAL } from "./bot-trash.ts";
 import { ActivityLedger } from "./activity.ts";
 import { trackActivity } from "./activity-tracking.ts";
 import { CacheTracker } from "./cache/tracker.ts";
@@ -4455,6 +4456,11 @@ const repoTricks =
 void officialTricks?.sweep();
 void repoTricks?.sweep();
 
+const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
+void botTrash.sweep();
+const trashTimer = setInterval(() => void botTrash.sweep(), TRASH_INTERVAL);
+trashTimer.unref();
+
 const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer({
   cfg,
   registry,
@@ -4493,6 +4499,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
   usage,
   gitHeads,
   projectPictures,
+  botTrash,
   walkyInstance: (session, paneId) => walkyInstances.tokenOf(session, paneId),
   // The pane read's `linked` (M99 spec 15): the session half of the send pick, one function.
   paneLinked: paneIsLinked,
@@ -4685,6 +4692,7 @@ const shutdown = async () => {
   // The CLI's read credential dies with the process that holds its hash (bridge/local-secret.ts).
   await removeLocalSecret(cfg.stateDir, localSecret);
   clearInterval(refreshTimer);
+  clearInterval(trashTimer);
   clearInterval(walkyInstanceTimer);
   edgeRouter?.stop();
   hookTarget?.remove();

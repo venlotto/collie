@@ -250,6 +250,21 @@ Two sibling structural ops remove panes. `tab.close` live-verified 2026-07-19 on
 - **Errors:** unknown id → `{code:"tab_not_found", message:"tab <id> not found"}`; a missing `tab_id`
   → ``{code:"invalid_request", message:"invalid request: missing field `tab_id` …"}``.
 
+## Moving a live pane to another workspace
+
+The hosted chat list calls `POST /api/bot-action` with `action: "move"`, the stable
+`terminalId` and the destination `workspaceId`. The bridge resolves the current pane
+address in a fresh snapshot and sends:
+
+```json
+{"method":"pane.move","params":{"pane_id":"w1:p1","destination":{"type":"new_tab","workspace_id":"w2"},"focus":false}}
+```
+
+On Herdr 0.7.5, `result.move_result.pane` carries the new pane and tab addresses.
+The terminal ID and shell PID survive the move. Herdr drops the source workspace
+when its last pane leaves. The isolated check runs with `python3 integration/bot-trash-herdr.py`
+after building Collie.
+
 ## Move methods — reorder tabs and workspaces (verified)
 
 Two sibling structural ops reorder objects. Both live-verified 2026-07-20 on the sandbox session.

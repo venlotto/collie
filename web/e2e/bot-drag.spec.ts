@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { AgentView } from "@/lib/types";
 import { fixtureAgents, fixtureSnapshot } from "@/test/handlers";
 import { installApiStub, pinLocale } from "./fixtures/api";
 
@@ -12,7 +13,7 @@ async function world(page: Page) {
   const spaces = ["Ideas", "Viajes", "Lecturas"].map((label, i) => Object.assign({}, fixtureSnapshot.workspaces[0]!, {
     label, workspaceId: "fixture-" + i, number: i + 1,
   }));
-  const agents = ["Bocetos", "Notas", "Rutas", "Mapas", "Libros"].map((paneLabel, i) => {
+  const agents: AgentView[] = ["Bocetos", "Notas", "Rutas", "Mapas", "Libros"].map((paneLabel, i) => {
     const w = spaces[Math.floor(i / 2)]!;
     const paneId = "fixture-chat-" + i;
     return Object.assign({}, fixtureAgents[0]!, { paneLabel, paneId, terminalId: paneId, workspaceId: w.workspaceId,
@@ -54,8 +55,11 @@ async function world(page: Page) {
     const target = spaces.find(w => w.workspaceId === workspaceId);
     if (action === "trashWorkspace") {
       expect(target).toBeTruthy();
-      spaces.splice(spaces.indexOf(target!), 1);
-      for (const p of agents.filter(candidate => candidate.workspaceId === workspaceId)) agents.splice(agents.indexOf(p), 1);
+      for (const member of agents.filter(p => p.workspaceId === workspaceId)) {
+        member.trash = { trashedAt: Date.now(), originalWorkspaceId: workspaceId, workspaceLabel: target!.label };
+      }
+    } else if (action === "restoreWorkspace") {
+      for (const member of agents.filter(p => p.workspaceId === workspaceId)) delete member.trash;
     } else {
       const p = agents.find(candidate => candidate.terminalId === terminalId)!;
       expect(p).toBeTruthy();
@@ -160,7 +164,7 @@ test("arrastrar filas, cambiar de workspace y soltar en Papelera", async ({ page
 
 test("long press, posición, renombrado y confirmación de workspace", async ({ page }) => {
   const { writes } = await world(page);
-  const headers = page.locator("section .bot-group");
+  const headers = page.locator("section[data-drag-space] .bot-group");
   const footer = page.locator(".bot-search-foot");
   const bottom = (await footer.boundingBox())!.y;
   const drag = await gesture(page, headers.first()); await drag.lift(); await drag.drop(headers.nth(1));
@@ -195,6 +199,11 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
   await page.getByRole("button", { name: "Enviar a Papelera" }).click();
   await expect(headers).toHaveCount(2);
   expect(writes.at(-1)).toBe("trashWorkspace");
+  await expect(page.locator(".bot-trashed-workspace")).toContainText("Taller");
+  await capture(page, "workspace-en-papelera");
+  await page.getByRole("button", { name: "Restaurar workspace" }).click();
+  await expect(headers.last()).toHaveText("Taller");
+  expect(writes.at(-1)).toBe("restoreWorkspace");
   await finishSampling();
   expect((await footer.boundingBox())!.y).toBe(bottom);
 });
