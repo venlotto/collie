@@ -21,6 +21,7 @@
 [data-bots] [data-slot="app-header"] { display: none; }
 .bot-layout, .bot-sidebar, .bot-index, .bot-detail { display: flex; min-width: 0; min-height: 0; }
 .bot-layout { flex: 1; position: relative; overflow: hidden; }
+.bot-sidebar { isolation: isolate; }
 .bot-sidebar, .bot-detail, .bot-index { flex: 1; flex-direction: column; }
 .bot-detail { background: #000; }
 .bot-index { position: relative; }
@@ -34,8 +35,7 @@
 .bot-plus:disabled { opacity: .38; }
 .bot-user { background: #008594; width: 37px; height: 37px; border: 3px solid #242428; font-size: 16px; }
 .bot-pill { min-width: 0; max-width: min(100%, 230px); gap: 6px; height: 36px; padding: 0 12px 0 7px; font-size: 15px; }
-.bot-pill > span:not(.bot-avatar), .bot-pill strong, .bot-copy strong, .bot-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bot-pill i { width: 8px; height: 8px; border-radius: 50%; background: #0a84ff; flex: none; }
+.bot-pill > span:not(.bot-avatar), .bot-pill strong, .bot-copy strong, .bot-line > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bot-avatar { width: 44px; height: 44px; display: inline-block; flex: none; }
 .bot-pill .bot-avatar { width: 24px; height: 24px; }
 .bot-scroll { overflow-y: auto; overscroll-behavior: contain; flex: 1; padding: 8px 8px 90px; scrollbar-width: thin; }
@@ -49,9 +49,12 @@
 .bot-copy strong, .bot-pill strong { font-weight: 600; }
 .bot-copy strong { font-size: 16px; line-height: 21px; }
 .bot-line { font-size: 14px; color: #8e8e93; line-height: 19px; }
-.bot-meta { align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-height: 40px; }
-.bot-meta time { color: #8e8e93; font-size: 12px; }
-.bot-unread, .bot-new-line span { background: #0a74dc; color: white; border-radius: 99px; padding: 2px 8px; font-size: 12px; line-height: 17px; }
+.bot-row-title, .bot-row-preview, .bot-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.bot-row-title, .bot-row-preview { justify-content: space-between; }
+.bot-row-title time, .bot-line svg { flex: none; }
+.bot-row-title time { color: #8e8e93; font-size: 12px; white-space: nowrap; }
+.bot-unread { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #0a84ff; }
+.bot-new-line span { background: #0a74dc; color: white; border-radius: 99px; padding: 2px 8px; font-size: 12px; line-height: 17px; }
 .bot-search-foot { position: absolute; bottom: 0; width: 100%; padding: 12px 20px max(18px,env(safe-area-inset-bottom)); background: linear-gradient(transparent,#000 90%); pointer-events: none; }
 .bot-search { pointer-events: auto; justify-content: flex-start; gap: 9px; width: 100%; height: 44px; padding: 0 15px; background: rgb(42 42 44 / 94%); backdrop-filter: blur(18px); }
 .bot-search input { width: 100%; min-width: 0; outline: none; font-size: 16px; background: transparent; }
@@ -123,10 +126,10 @@
 
 .bot-notice { position: absolute; z-index: 12; bottom: 74px; left: 16px; right: 16px; pointer-events: none; }
 
-.bot-featured { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 155px; margin-bottom: 6px; }
+.bot-featured { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 84px; margin-bottom: 6px; }
 .bot-featured-face { position: relative; }
-.bot-featured-face .bot-avatar { width: 84px; height: 84px; vertical-align: middle; }
-.bot-featured-face i { position: absolute; right: 0; bottom: 0; width: 24px; height: 24px; border: 3px solid #000; border-radius: 50%; background: #ff9500; display: grid; place-items: center; color: white; }
+.bot-featured-face .bot-avatar { width: 49px; height: 49px; vertical-align: middle; }
+.bot-featured-face i { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; border: 2px solid #000; border-radius: 50%; background: #ff9500; display: grid; place-items: center; color: white; }
 .bot-featured-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .bot-search-foot { display: flex; align-items: center; gap: 10px; }
 .bot-spaces { pointer-events: auto; background: #382c39; width: 43px; height: 43px; flex: none; }
@@ -142,3 +145,6 @@
 .bot-sheet { position: relative; }
 
 .bot-terminal pre { filter: none; color: #fafafa; background: transparent; }
+
+.bot-access { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 24px 8px; font-size: 14px; color: #aaa; }
+.bot-access a { flex: none; white-space: nowrap; color: #fff; background: #272729; border-radius: 99px; padding: 8px 14px; }

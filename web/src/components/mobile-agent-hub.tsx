@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDown, LayoutGrid, Plus, Search, Star, UserRound } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, LayoutGrid, MessageCircle, Plus, Search, Send, Star, UsersRound } from "lucide-react";
 import { fetchChat } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
 import { paneRowKey } from "@/lib/hosts";
@@ -18,11 +18,11 @@ interface Props {
   onOpen: (pane: AgentView) => void;
   onPress: (pane: AgentView) => void;
   onNew?: () => void;
-  user?: string;
+  accessNotice?: ReactNode;
 }
 
 function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; active: boolean }) {
-  const [line, setLine] = useState("");
+  const [preview, setPreview] = useState<{ text: string; outgoing: boolean } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
   const { host, session } = scope;
   useEffect(() => {
@@ -30,9 +30,9 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
     const show = (entries: readonly TranscriptEntry[]) => {
       const entry = entries.findLast(e => !e.abandoned && (e.role === "user" || e.role === "assistant") && e.parts.some(p => p.kind === "text"));
       const part = entry?.parts.findLast(p => p.kind === "text");
-      if (!abort.signal.aborted && part?.kind === "text") setLine(part.text.trim().slice(0, 180));
+      if (!abort.signal.aborted && part?.kind === "text") setPreview({ text: part.text.trim().slice(0, 180), outgoing: entry?.role === "user" });
     };
-    setLine("");
+    setPreview(null);
     let livePreview = false;
     const sensitive = pane.surface?.field === "secret";
     if (sensitive) return () => abort.abort();
@@ -51,34 +51,44 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
     observer.observe(node);
     return () => { observer.disconnect(); abort.abort(); };
   }, [host, session, pane.paneId, pane.instance, pane.hasSession, pane.surface?.field, active, pane.lastActiveAt]);
-  return <span ref={ref} className="bot-line">{line || pane.subtitle || pane.hint || pane.terminalTitle || pane.tabLabel || pane.agent}</span>;
+  const text = preview?.text || pane.subtitle || pane.hint || pane.terminalTitle || pane.tabLabel || pane.agent;
+  const Icon = /^(mensaje de |\[walky-talky )/iu.test(text) ? UsersRound
+    : preview?.outgoing || /^(le )?escribió a /iu.test(text) ? Send : MessageCircle;
+  return <span ref={ref} className="bot-line"><Icon size={13} aria-hidden /><span>{text}</span></span>;
 }
 
-export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, user }: Props) {
+export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, accessNotice }: Props) {
   const [query, setQuery] = useState("");
   const [folded, setFolded] = useState<Set<string>>(new Set());
   const scroll = useRef<HTMLDivElement>(null);
   const picker = useId();
-  const [compact, setCompact] = useState(false);
+  const footer = useRef<HTMLDivElement>(null);
   const [below, setBelow] = useState(0);
   const [above, setAbove] = useState(0);
   function unreadOutside() {
     const list = scroll.current;
     if (!list) return { above: [], below: [] };
     const bounds = list.getBoundingClientRect();
+    const bottom = footer.current?.getBoundingClientRect().top ?? bounds.bottom;
     const unread = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"));
     return {
-      above: unread.filter(el => el.getBoundingClientRect().bottom < bounds.top + 12),
-      below: unread.filter(el => el.getBoundingClientRect().top > bounds.bottom - 76),
+      above: unread.filter(el => el.getBoundingClientRect().bottom <= bounds.top),
+      below: unread.filter(el => el.getBoundingClientRect().top >= bottom),
     };
   }
   function measure() {
-    setCompact((scroll.current?.scrollTop ?? 0) > 115);
     const outside = unreadOutside();
     setAbove(outside.above.length);
     setBelow(outside.below.length);
   }
-  useEffect(measure, [panes, query, folded]);
+  useEffect(measure, [panes, workspaces, featured, query, folded, accessNotice]);
+  useEffect(() => {
+    if (!scroll.current || !footer.current || !window.ResizeObserver) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroll.current);
+    observer.observe(footer.current);
+    return () => observer.disconnect();
+  }, []);
   const needle = query.trim().toLocaleLowerCase();
   const groups = new Map<string, { title: string; rows: AgentView[] }>();
   function sectionFor(host: string | undefined, session: string | undefined, id: string, label: string) {
@@ -97,11 +107,11 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
   const featuredBot = featured && identityOf(featured, scopeOf(featured));
   return <div className="bot-index" aria-label="Chats">
     <header className="bot-bar">
-      <span className="bot-user" aria-label={user || "Perfil"}>{user ? user.slice(0, 1).toLocaleUpperCase() : <UserRound size={19} />}</span>
-      {compact && featured && featuredBot && <button className="bot-pill" onClick={() => onOpen(featured)}><BlobAvatar {...featuredBot} /><span>{featuredBot.name}</span>{isUnseen(featured) && <i />}</button>}
+      <span className="bot-user" aria-label="Perfil de Janez">J</span>
       <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
     </header>
     <div className="bot-scroll" ref={scroll} onScroll={measure}>
+      {accessNotice}
       {featured && featuredBot && !needle && <button className="bot-featured" onClick={() => onOpen(featured)}>
         <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
         <span className="bot-featured-name">{featuredBot.name}</span>
@@ -114,16 +124,19 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
           const selected = !!active && paneRowKey(active) === paneRowKey(p);
           return <li key={paneRowKey(p)}><button className="bot-row" aria-current={selected || undefined}
             onPointerDown={() => onPress(p)} onClick={() => onOpen(p)}>
-            <BlobAvatar {...bot} /><span className="bot-copy"><strong>{bot.name}</strong><Preview pane={p} scope={scope} active={selected} /></span>
-            <span className="bot-meta"><time>{botTime(p.lastActiveAt || activityAt(p))}</time>{isUnseen(p) && <span className="bot-unread">1 sin leer</span>}</span>
+            <BlobAvatar {...bot} />
+            <span className="bot-copy">
+              <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
+              <span className="bot-row-preview"><Preview pane={p} scope={scope} active={selected} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>
+            </span>
           </button></li>;
         })}</ul>}
       </section>)}
-      {(!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
+      {!accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
     </div>
     {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
     {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
-    <div className="bot-search-foot">
+    <div className="bot-search-foot" ref={footer}>
       {groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
         <div className="bot-picker" id={picker} popover="auto">{Array.from(groups, ([key, section]) =>
           <button key={key} popoverTarget={picker} popoverTargetAction="hide" onClick={() => {

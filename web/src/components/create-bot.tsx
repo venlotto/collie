@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { fetchLaunchers, renamePane } from "@/lib/api";
 import { useMuxCapability } from "@/lib/mux-capability";
 import { setStatus } from "@/lib/status";
@@ -13,7 +13,7 @@ import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity
 
 function localName() { setStatus("El nombre quedó guardado en este dispositivo.", "info"); }
 
-export function CreateBot({ scope, beside, close }: { scope: Scope; beside?: AgentView; close: () => void }) {
+export function CreateBot({ scope, beside, writable, accessNotice, close }: { scope: Scope; beside?: AgentView; writable: boolean; accessNotice: ReactNode; close: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState("");
   const [silhouette, setSilhouette] = useState(12);
@@ -40,7 +40,7 @@ export function CreateBot({ scope, beside, close }: { scope: Scope; beside?: Age
   const dismiss = () => { if (!busy) setLeaving(true); };
 
   async function create() {
-    if (!name.trim() || busy || leaving) return;
+    if (!writable || !name.trim() || busy || leaving) return;
     setError("");
     setPreparing(true);
     let catalog;
@@ -81,8 +81,9 @@ export function CreateBot({ scope, beside, close }: { scope: Scope; beside?: Age
         <button key={i} type="button" aria-label={`Forma ${i + 1}`} aria-pressed={silhouette === i} onClick={() => setSilhouette(i)}><BlobAvatar silhouette={i} color={color} /></button>)}</fieldset>
       <fieldset className="bot-colors" aria-label="Color">{colors.map((hex, i) =>
         <button key={hex} type="button" aria-label={colorNames[i]} aria-pressed={color === i} onClick={() => setColor(i)}><span style={{ background: hex }} /></button>)}</fieldset>
+      {accessNotice}
       {error && <p role="alert">{error}</p>}
-      <button className="bot-create" disabled={!name.trim() || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
+      <button className="bot-create" disabled={!writable || !name.trim() || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
     </form>
   </dialog>;
 }

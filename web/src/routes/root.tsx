@@ -31,6 +31,7 @@ import { useConnectionLost } from "@/hooks/use-connection-lost";
 import { UpdateRibbon } from "@/components/update-ribbon";
 import { UpdateRunStrip } from "@/components/update-run-strip";
 import { useOptionalUpdateScreen } from "@/components/update-screen-provider";
+import { usePairing } from "@/lib/pairing";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { AppHeaderHost } from "@/components/app-header";
 import { StripHost } from "@/components/ui/strip-host";
@@ -112,6 +113,9 @@ export function RootLayout() {
   const location = useLocation();
   const singleColumn = useMediaQuery("(max-width: 759px)");
   const chatScreen = location.pathname === "/" || /^\/pane\/[^/]+(?:\/zoom)?\/?$/u.test(location.pathname);
+  const { refused } = usePairing();
+  const chatAccessDenied = chatScreen && (data.authError || refused);
+  const showDetail = !!paneId && !chatAccessDenied;
   const launch = paneId === undefined ? undefined : readAgentLaunch(location.state, paneId, data.scope);
   const pollMs = usePolling(data, paneId, data.scope, undefined, launch?.id);
   // Surface the busy bar when a navigation or a poll runs slow, each against its own threshold —
@@ -266,7 +270,7 @@ export function RootLayout() {
                 amber "reconnecting…" only after ≥4s of sustained trouble (the flicker fix), escalates
                 to a red "not connected" cause + Retry/Reload at ≥15s, and flashes green on recovery.
                 Reads the same shared-clock signals as the header dog, so the two always agree. */}
-            <ConnectionBanner
+            {!chatAccessDenied && <ConnectionBanner
               bridge={data.bridge}
               muxFault={data.muxFault}
               host={data.scope.host}
@@ -274,7 +278,7 @@ export function RootLayout() {
               authError={data.authError}
               lastSeenAt={shownLastSeenAt(data, pane)}
               stale={shownStale(data, pane)}
-            />
+            />}
             {/* The everyday move, animated: dashboard → pane slides in from the right, back from
                 the left, and every other navigation (a poll revalidation, a scope change, pane to
                 pane) arrives with no animation at all. It wraps the OUTLET and sits BELOW the header
@@ -282,9 +286,9 @@ export function RootLayout() {
                 and everything that must survive a navigation (the header shell, the band, the mark's
                 37 animations) is already outside it. It is not the View Transitions API and may not
                 become one; see the file's header. */}
-            {chatScreen ? <div className="bot-layout" data-detail={!!paneId}>
-              <aside inert={singleColumn && !!paneId} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
-              <main className="bot-detail">{paneId ? <Outlet /> : <p className="bot-placeholder">Selecciona un chat</p>}</main>
+            {chatScreen ? <div className="bot-layout" data-detail={showDetail}>
+              <aside inert={singleColumn && showDetail} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
+              <main className="bot-detail">{showDetail ? <Outlet /> : !chatAccessDenied && <p className="bot-placeholder">Selecciona un chat</p>}</main>
               <div className="bot-notice"><StatusArea /></div>
             </div> : <ScreenTransition><Outlet /></ScreenTransition>}
           </StripHost>
