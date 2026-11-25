@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
+dist=${1:-$repo_root/web/dist}
+
+fail() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+[[ -d $dist ]] || fail "no existe el build: $dist"
+[[ -f $dist/index.html ]] || fail 'falta index.html'
+[[ -f $dist/manifest.webmanifest ]] || fail 'falta manifest.webmanifest'
+
+grep -q '<title>Koperca Agent Hub</title>' "$dist/index.html" ||
+  fail 'index.html no publica la identidad Koperca'
+grep -q '"name":"Koperca Agent Hub' "$dist/manifest.webmanifest" ||
+  fail 'el manifest no publica la identidad Koperca'
+
+if find "$dist" -type f \( -path '*/marks/collie-*-mark-*.js' -o -path '*/assets/collie-mark-*.js' \) -print -quit | grep -q .; then
+  fail 'el build todavía contiene un chunk del logo canino upstream'
+fi
+
+if grep -RIl --include='*.html' --include='*.webmanifest' 'ColliePWA' "$dist" | grep -q .; then
+  fail 'la identidad upstream aparece en metadata pública del build'
+fi
+
+for splash in collie-mark-header-light.svg collie-mark-header-dark.svg; do
+  [[ -f $dist/$splash ]] || fail "falta el splash compatible $splash"
+  grep -q 'aria-label="Koperca Agent Hub"' "$dist/$splash" ||
+    fail "$splash no contiene el monograma Koperca"
+done
+
+printf 'OK: build alojado identificado como Koperca Agent Hub y sin chunks del logo canino.\n'

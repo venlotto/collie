@@ -35,6 +35,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import type { BridgeStatus } from "@/lib/types";
 import type { Scope } from "@/lib/scope";
 import { Icon } from "@/components/icons/icon";
+import { APP_NAME } from "@/lib/koperca-brand";
 import { NAV_EDGE, RECESS_ACCENT } from "@/components/ui/nav-edge";
 
 /** What a route claims about the SHAPE of the shared row, as opposed to the content it portals into
@@ -527,7 +528,7 @@ export function AppHeaderHost({ bridge, error, lastSeenAt, children }: AppHeader
                   className={cn("shrink-0 whitespace-nowrap", spanned && "flex flex-col justify-center gap-0.5")}
                 >
                   <SectionLabel className={spanned ? "block leading-none" : "flex h-0 items-end leading-none"}>
-                    Collie
+                    {APP_NAME}
                   </SectionLabel>
                   {/* The line the freed width is FOR — "on <mux>", the sentence the brand line
                       above starts. `min-h-6` RESERVES it whether or not a name has arrived:

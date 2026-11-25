@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { RouteHeader } from "@/components/app-header";
 import { ActionRow } from "@/components/action-sheet-rows";
-import { BrandMark } from "@/components/brand-mark";
+import { HostedBrandMark } from "@/components/hub-mark";
 import { useCrew } from "@/components/crew-provider";
 import { DecisionCard, KeptWords } from "@/components/decision-card";
 import { Icon } from "@/components/icons/icon";
@@ -290,7 +290,7 @@ function HillRidge({ mark }: { mark: boolean }) {
       {/* On the top peak (138, 26): the mark's 52px box, its feet on the ridge line. */}
       {mark && (
         <span className="absolute left-[112px] top-[-22px]">
-          <BrandMark size={52} state="rest" />
+          <HostedBrandMark size={52} state="rest" />
         </span>
       )}
     </div>

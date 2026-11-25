@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { ListGroup } from "@/components/ui/list-group";
 import { SectionLabel } from "@/components/ui/section-label";
 import { BottomSheet } from "@/components/ui/sheet";
-import { CollieMark } from "@/components/collie-mark";
+import { HubMark } from "@/components/hub-mark";
+import { UPSTREAM_ATTRIBUTION } from "@/lib/koperca-brand";
 import { useLocale } from "@/hooks/use-locale";
 import { usePushControl } from "@/hooks/use-push";
 import { t, tn } from "@/lib/i18n";
@@ -255,9 +256,10 @@ export function TourSheet({
         {/* 1. MARK AND CLAIM. The same drawn mark the boot splash uses, so the first thing here is
             the thing the operator just watched bloom. No new asset. */}
         <div className="flex flex-col items-center gap-3 px-2 text-center">
-          <CollieMark size={64} weight="header" paper="var(--card)" />
+          <HubMark size={64} weight="header" paper="var(--card)" />
           <h2 className="text-xl font-semibold tracking-tight text-balance">{t("tour.title")}</h2>
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{lead}</p>
+          <p className="text-xs text-muted-foreground/80">{UPSTREAM_ATTRIBUTION}</p>
         </div>
 
         {/* 2. YOUR SETUP. Every row is a real fact or absent. Nothing here is static copy. */}

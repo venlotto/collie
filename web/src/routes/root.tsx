@@ -34,7 +34,7 @@ import { ScreenTransition } from "@/components/screen-transition";
 import { ReportDoor } from "@/components/report-door";
 import { NewOverHost } from "@/components/new-over";
 import { CrewProvider } from "@/components/crew-provider";
-import { CollieMark } from "@/components/collie-mark";
+import { HubMark } from "@/components/hub-mark";
 import { TourHost } from "@/components/tour-sheet";
 import { KeyboardHintCard } from "@/components/keyboard-hint-card";
 import { ShortcutBarHost } from "@/components/shortcut-bar-host";
@@ -326,7 +326,7 @@ export function BootSplash() {
             screen's ground, `bg-background`, the knockout that puts a near-side bead in front of
             the head. The "Connecting to the herd…" copy below carries the accessible meaning, so
             the mark is decorative. */}
-        <CollieMark size={64} weight="header" state="loading" paper="var(--background)" />
+        <HubMark size={64} weight="header" state="loading" paper="var(--background)" />
         <span className="text-sm">{t("error.boot.connecting")}</span>
       </div>
     );
@@ -339,7 +339,7 @@ export function BootSplash() {
           `paper` is this screen's ground, `bg-background`, which is the knockout colour that puts a
           near-side bead in front of the head. The "Not connected" copy below carries the accessible
           meaning, so the mark is decorative. */}
-      <CollieMark size={64} weight="header" state="idle" paper="var(--background)" />
+      <HubMark size={64} weight="header" state="idle" paper="var(--background)" />
       <p className="font-medium text-foreground">{t("error.boot.title")}</p>
       <p className="max-w-xs text-sm text-muted-foreground">{t("error.boot.body")}</p>
       <button

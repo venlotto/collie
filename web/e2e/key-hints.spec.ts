@@ -92,7 +92,7 @@ async function expectNoCapOverText(page: Page) {
     const hints = [...document.querySelectorAll(`${layerSelector} [data-slot="shortcut-hint"]`)].map((hint) => ({ text: hint.textContent ?? "", box: hint.getBoundingClientRect() }));
     const found: string[] = [];
     // The wordmark is a drawing of letters, so its box counts as text.
-    for (const word of document.querySelectorAll("svg.wordmark")) {
+    for (const word of document.querySelectorAll(".wordmark")) {
       const r = word.getBoundingClientRect();
       for (const cap of hints) {
         if (cap.box.left < r.right && cap.box.right > r.left && cap.box.top < r.bottom && cap.box.bottom > r.top) found.push(`cap ${cap.text} covers the wordmark`);
@@ -186,7 +186,7 @@ test("the mark's cap sits on its top left corner and covers no letter of the wor
   desktopOnly(testInfo);
   await openPane(page, "w1:p1");
   await arm(page);
-  const word = (await page.locator('[data-slot="sidebar-word"] svg.wordmark').boundingBox())!;
+  const word = (await page.locator('[data-slot="sidebar-word"] .wordmark').boundingBox())!;
   const all = await caps(page, "open_dashboard").evaluateAll((nodes) =>
     nodes.map((node) => {
       const r = node.getBoundingClientRect();

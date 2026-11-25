@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 
-import { BrandMark, preloadMark } from "@/components/brand-mark";
+import { HostedBrandMark, hostedMarkName, preloadHostedMark } from "@/components/hub-mark";
 import { Icon } from "@/components/icons/icon";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -124,7 +124,7 @@ export function CharacterPicker() {
 
   // The chunks of the nine other characters, fetched once so the rows are not empty boxes.
   useEffect(() => {
-    for (const id of MARK_IDS) void preloadMark(id);
+    for (const id of MARK_IDS) void preloadHostedMark(id);
   }, []);
 
   // ONE observer for the page. It keeps the set of rows on screen; no row has an observer of its own.
@@ -178,7 +178,7 @@ export function CharacterPicker() {
         className="flex items-end justify-center gap-6 border-t border-border px-4 py-4"
       >
         {PREVIEW.map(({ size, weight }) => (
-          <BrandMark
+          <HostedBrandMark
             key={size}
             mark={chosen === "theme" ? fromTheme : chosen}
             size={size}
@@ -230,17 +230,17 @@ export function CharacterPicker() {
             >
               <span className="min-w-0 flex-1">
                 <span id={nameId} className="block font-medium break-words">
-                  {isTheme ? t("settings.character.fromTheme") : markName(choice)}
+                  {isTheme ? t("settings.character.fromTheme") : hostedMarkName(choice, markName(choice))}
                 </span>
                 {isTheme && (
                   <span id={subId} className="block text-xs text-muted-foreground">
-                    {markName(fromTheme)}
+                    {hostedMarkName(fromTheme, markName(fromTheme))}
                   </span>
                 )}
               </span>
               {COLUMNS.map((column) => (
                 <span key={column.state} className={cn(COLUMN, "grid h-10 place-items-center")}>
-                  <BrandMark
+                  <HostedBrandMark
                     mark={mark}
                     size={MARK_SIZE}
                     weight="header"

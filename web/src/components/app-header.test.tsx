@@ -79,7 +79,7 @@ describe("the header — the one shared shell", () => {
     expect(screen.queryByRole("status")).toBeNull(); // no connection pill of any kind
     expect(screen.getByText("webapp › main")).toBeInTheDocument(); // the breadcrumb slot
     expect(screen.getByText("working")).toBeInTheDocument(); // the agent status badge
-    expect(screen.getByText("Collie")).not.toBeVisible(); // no brand line ON SCREEN in a pane
+    expect(screen.getByText("Koperca Agent Hub")).not.toBeVisible(); // no brand line ON SCREEN in a pane
     // The block stays MOUNTED and goes `hidden`, so the mux logo is not re-fetched on the way back.
     // Hidden is `display: none`, so it costs the row no width: the pane's width is the breadcrumb's.
     const identity = container.querySelector('[data-slot="header-identity"]');
@@ -91,7 +91,7 @@ describe("the header — the one shared shell", () => {
     renderHeader(
       <Header bridge="connected" error={false} wordmark rightTrail={<SettingsGear />} />,
     );
-    expect(screen.getByText("Collie")).toBeInTheDocument(); // the identity's brand line
+    expect(screen.getByText("Koperca Agent Hub")).toBeInTheDocument(); // the identity's brand line
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
   });
 
@@ -148,7 +148,7 @@ describe("the header — the one shared shell", () => {
     );
     const size = (el: Element | null | undefined) =>
       /(?:^|\s)size-(\d+)(?=\s|$)/.exec(el?.className ?? "")?.[1];
-    const markBox = container.querySelector('button[aria-label^="Collie"] > span');
+    const markBox = container.querySelector('button[aria-label^="Koperca Agent Hub"] > span');
     const gear = screen.getByRole("button", { name: "Settings" });
     expect(size(markBox)).toBe("11"); // 44px
     expect(size(markBox)).toBe(size(gear));
@@ -157,7 +157,7 @@ describe("the header — the one shared shell", () => {
   it("returns to the dashboard via onHome when the Collie mark is tapped", async () => {
     const onHome = vi.fn();
     renderHeader(<Header bridge="connected" error={false} onHome={onHome} wordmark />);
-    await userEvent.click(screen.getByRole("button", { name: "Collie home" }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub home" }));
     expect(onHome).toHaveBeenCalledOnce();
   });
 
@@ -201,7 +201,7 @@ describe("the header — the one shared shell", () => {
     // The override owns the row while searching — the normal content is replaced, not stacked.
     expect(screen.getByText("FINDBAR")).toBeInTheDocument();
     expect(screen.queryByText("webapp › main")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Collie home" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Koperca Agent Hub home" })).toBeNull();
   });
 });
 
@@ -297,14 +297,14 @@ describe("the header — the dog keys on trouble/lost, not the first not-live fr
       renderHeader(<Header bridge="connected" error lastSeenAt={at} onHome={() => {}} />);
       act(() => vi.advanceTimersByTime(CONNECTION_LOST_MS));
       expect(
-        screen.getByRole("button", { name: `Collie home, not connected. Showing what was saved at ${savedAtLabel(at)}.` }),
+        screen.getByRole("button", { name: `Koperca Agent Hub home, not connected. Showing what was saved at ${savedAtLabel(at)}.` }),
       ).toBeInTheDocument();
     });
 
     it("keeps the plain lost name when no stamp is known", () => {
       renderHeader(<Header bridge="connected" error onHome={() => {}} />);
       act(() => vi.advanceTimersByTime(CONNECTION_LOST_MS));
-      expect(screen.getByRole("button", { name: "Collie home, not connected" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Koperca Agent Hub home, not connected" })).toBeInTheDocument();
     });
   });
 });
@@ -361,14 +361,14 @@ describe("the header — the stacked identity", () => {
     );
     renderHeader(<Header bridge="connected" error={false} wordmark rightTrail={<SettingsGear />} />);
     await waitFor(() => expect(screen.getByText("on reference")).toBeInTheDocument());
-    expect(screen.getByText("Collie")).toBeInTheDocument(); // the brand line it completes, still there
+    expect(screen.getByText("Koperca Agent Hub")).toBeInTheDocument(); // the brand line it completes, still there
   });
 
   it("says nothing extra when the bridge published no mux block", async () => {
     // The default handler is that bridge — older than the field, or a cached page. The header is
     // exactly the one it has always been: no line, and no "on unknown" placeholder standing in.
     renderHeader(<Header bridge="connected" error={false} wordmark rightTrail={<SettingsGear />} />);
-    await waitFor(() => expect(screen.getByText("Collie")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Koperca Agent Hub")).toBeInTheDocument());
     expect(screen.queryByText(/^on /)).toBeNull();
   });
 
@@ -522,7 +522,7 @@ describe("the header — the stacked identity", () => {
     expect(block?.className).toMatch(/(^|\s)whitespace-nowrap(\s|$)/);
     expect(block?.className).not.toMatch(/(^|\s)min-w-0(\s|$)/);
     const [brand, muxLine] = Array.from(block?.children ?? []);
-    expect(brand?.textContent).toBe("Collie"); // the brand is the TOP line…
+    expect(brand?.textContent).toBe("Koperca Agent Hub"); // the brand is the TOP line…
     expect(brand?.className).toMatch(/(^|\s)h-0(\s|$)/); // …adding no height…
     expect(brand?.className).toContain("items-end"); // …and drawn above the block's top edge
     expect(muxLine?.textContent).toBe("on reference");
@@ -584,7 +584,7 @@ describe("the header — the stacked identity", () => {
       const block = container.querySelector<HTMLElement>('[data-slot="header-identity"]');
       expect(block).toBeVisible();
       const [brand, muxLine] = Array.from(block?.children ?? []);
-      expect(brand?.textContent).toBe("Collie");
+      expect(brand?.textContent).toBe("Koperca Agent Hub");
       expect(muxLine?.textContent).toBe("on herdr");
       expect(block?.className).toMatch(/(^|\s)shrink-0(\s|$)/);
       expect(block?.className).toMatch(/(^|\s)whitespace-nowrap(\s|$)/);
@@ -656,7 +656,7 @@ describe("the header — the stacked identity", () => {
     const { container } = renderHeader(
       <Header bridge="connected" error={false} wordmark rightTrail={<SettingsGear />} />,
     );
-    await waitFor(() => expect(screen.getByText("Collie")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Koperca Agent Hub")).toBeInTheDocument());
     const block = container.querySelector<HTMLElement>('[data-slot="header-identity"]');
     const [, muxLine] = Array.from(block?.children ?? []);
     expect(muxLine?.textContent).toBe(""); // no "on unknown" placeholder
@@ -841,30 +841,30 @@ describe("the ONE header — hoisted above the outlet", () => {
     // too. Either way the row must show the ARRIVING route and never a blank or a stale one.
     const { container, go } = renderHoisted();
     // Dashboard: wordmark + gear, no breadcrumb.
-    expect(screen.getByText("Collie")).toBeInTheDocument();
+    expect(screen.getByText("Koperca Agent Hub")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
     expect(screen.queryByText("webapp › main")).toBeNull();
 
     // Pane: the breadcrumb takes the middle, the dashboard's items are gone, the mark stays.
     await go("/pane");
     expect(screen.getByText("webapp › main")).toBeInTheDocument();
-    expect(screen.getByText("Collie")).not.toBeVisible(); // no wordmark inside a pane
+    expect(screen.getByText("Koperca Agent Hub")).not.toBeVisible(); // no wordmark inside a pane
     expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Collie home" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Koperca Agent Hub home" })).toBeInTheDocument();
 
     // Settings: `override` takes the WHOLE row — mark and breadcrumb both yield, exactly as they did
     // when the takeover was a prop on a per-route header.
     await go("/settings");
     const row = container.querySelector<HTMLElement>('[data-slot="header-row"]');
     expect(row?.contains(screen.getByRole("button", { name: "Back" }))).toBe(true);
-    expect(screen.queryByRole("button", { name: "Collie home" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Koperca Agent Hub home" })).toBeNull();
     expect(screen.queryByText("webapp › main")).toBeNull();
 
     // …and back. The row is handed over, not kept: nothing of Settings survives into the dashboard.
     await go("/");
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Collie home" })).toBeInTheDocument();
-    expect(screen.getByText("Collie")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Koperca Agent Hub home" })).toBeInTheDocument();
+    expect(screen.getByText("Koperca Agent Hub")).toBeInTheDocument();
   });
 
   it("carries the route's own width claim, so a hoisted header is not silently full-bleed", async () => {
@@ -1078,13 +1078,13 @@ describe("the header — the mark while the app updates", () => {
     applyBundle();
     expect(markIsLive(container)).toBe(true);
     expect(markState(container)).toBe("applying");
-    expect(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." })).toBeInTheDocument();
   });
 
   it("a tap opens the dashboard from another route, in the same scope, and asks for the update line", async () => {
     const { routeHome } = renderApp("/settings?s=collie-demo");
     applyBundle();
-    await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     expect(screen.getByTestId("loc").textContent).toBe("/?s=collie-demo");
     expect(routeHome).not.toHaveBeenCalled();
   });
@@ -1119,7 +1119,7 @@ describe("the header — the mark while the app updates", () => {
     );
     render(<RouterProvider router={router} />);
     applyBundle();
-    await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     expect(screen.getByTestId("loc").textContent).toBe("/");
   });
 
@@ -1129,7 +1129,7 @@ describe("the header — the mark while the app updates", () => {
     const asked = vi.fn();
     const off = subscribeBundleFocus(asked);
     try {
-      await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+      await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     } finally {
       off();
     }
@@ -1140,7 +1140,7 @@ describe("the header — the mark while the app updates", () => {
 
   it("with nothing updating, the tap is the route's own and asks for nothing", async () => {
     const { routeHome } = renderApp("/settings");
-    await userEvent.click(screen.getByRole("button", { name: "Collie home" }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub home" }));
     expect(routeHome).toHaveBeenCalledOnce();
     expect(screen.getByTestId("loc").textContent).toBe("/settings");
     expect(bundleFocusPending()).toBe(false);
@@ -1175,7 +1175,7 @@ describe("the header — the mark while the app updates", () => {
     );
     render(<RouterProvider router={router} />);
     applyBundle();
-    await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     expect(screen.getByTestId("loc").textContent).toBe("/?h=peer");
     expect(router.state.historyAction).toBe("POP");
   });
@@ -1206,7 +1206,7 @@ describe("the header — the mark while the app updates", () => {
     );
     render(<RouterProvider router={router} />);
     applyBundle();
-    await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     expect(screen.getByTestId("loc").textContent).toBe("/?h=peer&s=work");
     expect(router.state.historyAction).toBe("REPLACE");
   });
@@ -1237,7 +1237,7 @@ describe("the header — the mark while the app updates", () => {
     );
     render(<RouterProvider router={router} />);
     applyBundle();
-    await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     expect(screen.getByTestId("loc").textContent).toBe("/?h=peer");
     expect(router.state.historyAction).toBe("POP");
   });
@@ -1268,7 +1268,7 @@ describe("the header — the mark while the app updates", () => {
     );
     render(<RouterProvider router={router} />);
     applyBundle();
-    await userEvent.click(screen.getByRole("button", { name: "Collie is updating the app. Open the dashboard." }));
+    await userEvent.click(screen.getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." }));
     expect(screen.getByTestId("loc").textContent).toBe("/");
     expect(router.state.historyAction).toBe("REPLACE");
   });
@@ -1294,20 +1294,20 @@ describe("the header — the mark when the link comes back", () => {
     act(() => showReconnected(ORBIT_TURN_MS));
     expect(markIsLive(container)).toBe(true);
     expect(markState(container)).toBe("reconnected");
-    expect(screen.getByRole("button", { name: "Collie home, reconnected" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Koperca Agent Hub home, reconnected" })).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(ORBIT_TURN_MS - 1));
     expect(markState(container)).toBe("reconnected");
     act(() => vi.advanceTimersByTime(1));
     expect(markState(container)).toBe("rest");
     expect(markIsLive(container)).toBe(false);
-    expect(screen.getByRole("button", { name: "Collie home" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Koperca Agent Hub home" })).toBeInTheDocument();
   });
 
   it("keeps the route's own tap during the turn", () => {
     const onHome = vi.fn();
     renderHeader(<Header bridge="connected" error={false} onHome={onHome} />);
     act(() => showReconnected(ORBIT_TURN_MS));
-    act(() => screen.getByRole("button", { name: "Collie home, reconnected" }).click());
+    act(() => screen.getByRole("button", { name: "Koperca Agent Hub home, reconnected" }).click());
     expect(onHome).toHaveBeenCalledTimes(1);
   });
 });

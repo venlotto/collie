@@ -19,10 +19,8 @@
 
 import { lazy, Suspense, type ReactNode } from "react";
 
-import { loadMark } from "@/components/brand-mark";
 import { CharacterMovesRow, CharacterPicker } from "@/components/character-picker";
-import { collieFamilyMark } from "@/components/collie-mark";
-import { COLLIE_COLLAR_GREY_HEAD } from "@/components/collie-collar-grey-head";
+import { HubMark, loadHostedMark } from "@/components/hub-mark";
 import { collieTheme, displayOf, styleOf } from "@/components/theme-page-sample";
 import { THEME_TOKENS, fillHalves, type Theme } from "@/lib/theme/schema";
 import { shippedThemes } from "@/lib/theme/store";
@@ -60,10 +58,10 @@ function ThemeFrame({ theme, half, width, children }: { theme: Theme; half: Half
 }
 
 /** The collar that ships: the registry's own component, loaded the way the header loads it. */
-const ShippedCollar = lazy(async () => ({ default: await loadMark("collie-collar") }));
+const ShippedCollar = lazy(async () => ({ default: await loadHostedMark("collie-collar") }));
 
 /** The collar with its marking at 55% grey. Made once, here: a fresh component per render would remount every mark. */
-const GreyCollar = collieFamilyMark("collie-collar", COLLIE_COLLAR_GREY_HEAD);
+const GreyCollar = HubMark;
 
 /** The candidate at a few sizes, in one half. Held still: it is the drawing that is being judged. */
 function Sizes({ half, which }: { half: Half; which: "shipped" | "grey" }) {

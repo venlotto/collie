@@ -31,7 +31,8 @@
 // playground — every real component on the page inherits the face, which is the honest way to feel
 // a candidate's impact. This card keeps the side-by-side specimen and the commentary; the top bar's
 // Typeface control is the same store with the words left out.
-import { CollieMark } from "@/components/collie-mark";
+import { HubMark } from "@/components/hub-mark";
+import { APP_SHORT_NAME } from "@/lib/koperca-brand";
 import { cn } from "@/lib/utils";
 
 import { Card, Segmented } from "./layout";
@@ -109,9 +110,9 @@ function Specimen({ face }: { face: FaceId }) {
           for the same reason it is two there — a face has to be judged on the chrome the app
           actually draws, and the app stopped drawing an 18px wordmark in this row. */}
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <CollieMark size={28} weight="header" />
+        <HubMark size={28} weight="header" />
         <div className="flex min-w-0 flex-col">
-          <SectionLabel>Collie</SectionLabel>
+          <SectionLabel>{APP_SHORT_NAME}</SectionLabel>
           {/* The real header prints the multiplexer's own name from /api/config; the specimen
               stands in for it, because the frontend never spells one (check-mux-names.sh). */}
           <span className="truncate text-base">on the mux</span>

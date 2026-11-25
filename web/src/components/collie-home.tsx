@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { shortcutTarget } from "@/lib/shortcuts/target";
 import { cn } from "@/lib/utils";
 import { savedAtLabel } from "@/lib/format";
-import { BrandMark } from "@/components/brand-mark";
+import { HostedBrandMark } from "@/components/hub-mark";
 import { ORBIT_TURN_MS, type MarkHandle, type MarkState } from "@/components/mark-contract";
 import { t } from "@/lib/i18n";
 import { useStatus } from "@/lib/status";
@@ -416,7 +416,8 @@ export function CollieHome({
       {/* `data-slot` is a HANDLE FOR MEASUREMENT. The agent-start handoff flies a second mark out of
           this one, so it needs this box on screen; it reads the `<svg>` inside for the true size. */}
       <span data-slot="collie-mark" className="relative grid size-11 shrink-0 place-items-center">
-        <BrandMark
+        <HostedBrandMark
+          mark="collie"
           size={markSize}
           weight="header"
           ref={markHandle}

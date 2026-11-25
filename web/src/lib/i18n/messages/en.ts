@@ -1432,12 +1432,12 @@ export const en = {
   // --- nav (app header, Collie mark, settings gear) ---
   "nav.settings.aria": "Settings",
   "nav.settings.updateAvailable.aria": "Settings, update available",
-  "nav.home.aria.default": "Collie home",
-  "nav.home.aria.lost": "Collie home, not connected",
-  "nav.home.aria.lostAt": "Collie home, not connected. Showing what was saved at {time}.",
-  "nav.home.aria.reconnecting": "Collie home, reconnecting",
-  "nav.home.aria.updating": "Collie is updating the app. Open the dashboard.",
-  "nav.home.aria.reconnected": "Collie home, reconnected",
+  "nav.home.aria.default": "Koperca Agent Hub home",
+  "nav.home.aria.lost": "Koperca Agent Hub home, not connected",
+  "nav.home.aria.lostAt": "Koperca Agent Hub home, not connected. Showing what was saved at {time}.",
+  "nav.home.aria.reconnecting": "Koperca Agent Hub home, reconnecting",
+  "nav.home.aria.updating": "Koperca Agent Hub is updating the app. Open the dashboard.",
+  "nav.home.aria.reconnected": "Koperca Agent Hub home, reconnected",
   "nav.mux.onPrefix": "on",
   "nav.prereleaseTitle": "Pre-release build {version}",
 
@@ -1957,16 +1957,16 @@ export const en = {
   "crew.error.description": "The bridge did not answer. Collie tries again on the next poll.",
 
   // --- error (boot splash, route-level error recovery) ---
-  "error.boot.connecting": "Connecting to the herd…",
+  "error.boot.connecting": "Connecting to Agent Hub…",
   "error.boot.title": "Not connected",
-  "error.boot.body": "Can’t reach Collie. Check your connection to the host, then try again.",
+  "error.boot.body": "Can’t reach Koperca Agent Hub. Check your connection to the host, then try again.",
   "error.boot.retry": "Retry",
   "error.root.title": "Something went wrong",
   "error.root.unknown": "Unknown error",
   "error.root.reload": "Reload",
 
   // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie paused",
+  "idle.dialogAria": "Koperca Agent Hub paused",
   "idle.catchingUp.title": "Catching up",
   "idle.catchingUp.body": "Fetching the herd's current state.",
   "idle.paused.title": "Paused",
@@ -2519,7 +2519,7 @@ export const en = {
   // The English here is the source of truth; the six other catalogs carry it verbatim until it is
   // translated. Raise TOUR_VERSION (lib/tour.ts) when a CLAIM below changes, never for polish.
   "tour.skip": "Skip",
-  "tour.title": "Collie shows the agents in your terminal.",
+  "tour.title": "Koperca Agent Hub shows the agents in your terminal.",
   // The claim's second sentence, in the three forms the facts can support. {mux} is the
   // multiplexer's display name, {host} the lead machine's crew label; a clause whose fact is missing
   // is dropped rather than filled with a placeholder.
@@ -2552,8 +2552,8 @@ export const en = {
   "tour.space.body": "Start an agent in your terminal, or make a space here.",
   "tour.space.button": "New space",
   "tour.pushCard.title": "Be told when a pane needs you",
-  "tour.pushCard.body": "Collie notifies you when an agent is blocked, or done.",
-  "tour.install.title": "Keep Collie on your home screen",
+  "tour.pushCard.body": "Koperca Agent Hub notifies you when an agent is blocked, or done.",
+  "tour.install.title": "Keep Koperca Agent Hub on your home screen",
   "tour.install.body": "It opens full screen and remembers where you were.",
   "tour.install.button": "Add",
   "tour.push.enable": "Turn on",
@@ -2574,7 +2574,7 @@ export const en = {
 
   // --- settings.tour ---
   "settings.tour.title": "Show the first screen again",
-  "settings.tour.description": "What Collie does, and what this install looks like.",
+  "settings.tour.description": "What Koperca Agent Hub does, and what this install looks like.",
   "settings.tour.button": "Show",
 
   // --- updateScreen (M28/01) ---

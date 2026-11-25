@@ -6,7 +6,7 @@ import { AlphaBar } from "@/components/alpha-bar";
 import { AppHeaderHost, RouteHeader, SettingsGear } from "@/components/app-header";
 import { CollieHome } from "@/components/collie-home";
 import type { MarkState } from "@/components/mark-contract";
-import { CollieMark } from "@/components/collie-mark";
+import { HubMark } from "@/components/hub-mark";
 import { Icon } from "@/components/icons/icon";
 import { ICON_AREAS, ICON_KEYS, ICON_KEY_LIST } from "@/components/icons/keys";
 import { ICONOIR } from "@/components/icons/sets/iconoir";
@@ -201,7 +201,7 @@ export function BrandSection() {
 function MarkSample({ size, weight, state }: { size: number; weight: "full" | "header"; state: MarkState }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <CollieMark size={size} weight={weight} state={state} paper="var(--background)" />
+      <HubMark size={size} weight={weight} state={state} paper="var(--background)" />
       <span className="font-mono text-[10px] text-muted-foreground">
         {size} {weight} {state}
       </span>

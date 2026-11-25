@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { CollieMark } from "@/components/collie-mark";
+import { HubMark } from "@/components/hub-mark";
+import { APP_NAME } from "@/lib/koperca-brand";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 
@@ -63,9 +64,9 @@ export function IdleLock({ onUnlock, catchingUp = false }: IdleLockProps) {
               it would put a lighter, half-transparent layer between the mark and any colour we could
               name. */}
           <span className="grid size-20 shrink-0 place-items-center">
-            <CollieMark size={64} weight="header" state={catchingUp ? "loading" : "rest"} paper="var(--card)" />
+            <HubMark size={64} weight="header" state={catchingUp ? "loading" : "rest"} paper="var(--card)" />
           </span>
-          <span className="text-lg font-semibold tracking-tight">Collie</span>
+          <span className="text-lg font-semibold tracking-tight">{APP_NAME}</span>
         </div>
         {catchingUp ? (
           <div className="space-y-1">

@@ -7,6 +7,8 @@
 // The release shapes below are BYTE-IDENTICAL to what `index.html` and the manifest already
 // declared before channels existed — the release build must render no diff at all.
 
+import { APP_DEV_NAME, APP_DEV_SHORT_NAME, APP_NAME, APP_SHORT_NAME } from "./src/lib/koperca-brand";
+
 export type Channel = "release" | "dev";
 
 // The evidence vite.config.ts gathers about the checkout, each field independently nullable when
@@ -100,8 +102,8 @@ export interface ChannelManifest {
 }
 
 const RELEASE_MANIFEST: ChannelManifest = {
-  name: "Collie",
-  short_name: "Collie",
+  name: APP_NAME,
+  short_name: APP_SHORT_NAME,
   icons: [
     { src: "/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
     { src: "/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
@@ -113,8 +115,8 @@ const RELEASE_MANIFEST: ChannelManifest = {
 // stem are the release set's, so an operator who installs both a release and a dev build still
 // recognises the app family, and tells the two apart by the whole tile.
 const DEV_MANIFEST: ChannelManifest = {
-  name: "Collie (dev)",
-  short_name: "Collie dev",
+  name: APP_DEV_NAME,
+  short_name: APP_DEV_SHORT_NAME,
   icons: [
     { src: "/web-app-manifest-dev-192x192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
     { src: "/web-app-manifest-dev-512x512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },

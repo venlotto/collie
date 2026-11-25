@@ -3,6 +3,7 @@ import { DEFAULT_LOCALE, isLocale, type Locale } from "./locale";
 import { en, type Dictionary, type MessageKey } from "./messages/en";
 import { interpolate, type TemplateVars } from "./template";
 import { reloadOnChunkError } from "../chunk-reload";
+import { APP_NAME } from "../koperca-brand";
 
 // The translation runtime: one module-scoped store, one lookup function, one plural function.
 //
@@ -150,8 +151,27 @@ function activeLocale(): Locale {
 /** Translate one key into the active language, filling any `{slot}`s. */
 export function t(key: MessageKey, vars?: TemplateVars): string {
   // A key on the pending-translation list may be missing from a bundle; it reads English alone.
-  return interpolate(activeDictionary()[key] ?? en[key], vars);
+  const rendered = interpolate(activeDictionary()[key] ?? en[key], vars);
+  return BRAND_KEYS.has(key) ? rendered.replaceAll("ColliePWA", APP_NAME).replaceAll("Collie", APP_NAME) : rendered;
 }
+
+/** Identity-bearing copy only. Technical messages keep the upstream runtime name and commands. */
+const BRAND_KEYS = new Set<MessageKey>([
+  "nav.home.aria.default",
+  "nav.home.aria.lost",
+  "nav.home.aria.lostAt",
+  "nav.home.aria.reconnecting",
+  "nav.home.aria.updating",
+  "nav.home.aria.reconnected",
+  "error.boot.body",
+  "idle.dialogAria",
+  "settings.install.description",
+  "settings.character.note",
+  "tour.title",
+  "tour.pushCard.body",
+  "tour.install.title",
+  "settings.tour.description",
+]);
 
 const pluralRules = new Map<Locale, Intl.PluralRules>();
 

@@ -344,7 +344,7 @@ export default defineConfig({
       manifest: {
         name: channelManifest.name,
         short_name: channelManifest.short_name,
-        description: "Monitor and reply to your terminal AI agents from your phone",
+        description: "Navigate workspaces and chat with your terminal AI agents from your phone",
         // Relative, so the installed app's start page and scope are the mount the manifest was
         // served from (ADR 0052). No `id`: a manifest id is resolved against the ORIGIN, so a
         // relative one would name the root for every mount; left out it defaults to the processed

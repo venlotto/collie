@@ -3,7 +3,7 @@ import { useCallback, useContext, useMemo, useState, type ReactNode } from "reac
 import { ViewEarlier, ViewPendingBlock, ViewReceiptCard, ViewSentLine } from "@/components/agent-view-blocks";
 import { ViewChoiceBlock, ViewChoiceDone } from "@/components/agent-view-choice";
 import { useViewLinkText } from "@/components/agent-view-links";
-import { BrandMark } from "@/components/brand-mark";
+import { HostedBrandMark } from "@/components/hub-mark";
 import { UserTurn } from "@/components/chat-cards";
 import type { ViewSendResult, ViewTap } from "@/components/composer";
 import { HillImageStrip, viewPictures, type HillMediaSource } from "@/components/hill-media";
@@ -254,7 +254,7 @@ export function ViewBand({ name, line, age }: { name: string; line: BandLine | n
     <header data-slot="view-band" data-line={line ?? undefined} className="shrink-0 border-b border-rule bg-background px-4 py-2">
       <p className="flex min-w-0 items-center gap-2 text-sm">
         <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
-          <BrandMark size={16} weight="header" state="rest" />
+          <HostedBrandMark size={16} weight="header" state="rest" />
         </span>
         <span data-slot="view-band-name" className="min-w-0 shrink truncate font-semibold">
           {name}

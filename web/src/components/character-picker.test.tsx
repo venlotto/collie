@@ -65,17 +65,20 @@ describe("CharacterPicker", () => {
     const nameOf = (radio: HTMLElement) => document.getElementById(radio.getAttribute("aria-labelledby") ?? "")?.textContent;
     expect(radios().map(nameOf)).toEqual([
       "From the theme",
-      ...MARKS.map((mark) => mark.name),
+      "Agent Hub",
+      "Agent Hub Classic",
+      "Agent Hub Solid",
+      ...MARKS.slice(3).map((mark) => mark.name),
     ]);
     for (const head of ["Still", "Loading", "Idle"]) expect(screen.getByText(head)).toBeInTheDocument();
     expect(screen.getByText("The character in the header, on this device.")).toBeInTheDocument();
-    expect(screen.getByText("The app icon, the splash and the push badge stay the Collie mark.")).toBeInTheDocument();
+    expect(screen.getByText("The app icon, the splash and the push badge stay the Koperca Agent Hub mark.")).toBeInTheDocument();
   });
 
   it("checks From the theme on a device that never chose, and names the theme's character under it", () => {
     render(<CharacterPicker />);
     expect(radios().map((radio) => radio.getAttribute("aria-checked"))).toEqual(["true", ...MARKS.map(() => "false")]);
-    expect(row("From the theme")).toHaveAccessibleDescription("Collie");
+    expect(row("From the theme")).toHaveAccessibleDescription("Agent Hub");
   });
 
   it("names the worn theme's character under From the theme", () => {
@@ -94,10 +97,12 @@ describe("CharacterPicker", () => {
     render(<CharacterPicker />);
     await loaded();
     for (const { id, name } of MARKS) {
-      expect(marksOf(name).map((mark) => mark.getAttribute("data-mark"))).toEqual([id, id, id]);
-      expect(marksOf(name).map((mark) => mark.getAttribute("data-state"))).toEqual(["rest", "loading", "idle"]);
+      const hostedName = id === "collie" ? "Agent Hub" : id === "collie-collar" ? "Agent Hub Classic" : id === "collie-blaze" ? "Agent Hub Solid" : name;
+      const hostedId = id.startsWith("collie") ? "koperca-hub" : id;
+      expect(marksOf(hostedName).map((mark) => mark.getAttribute("data-mark"))).toEqual([hostedId, hostedId, hostedId]);
+      expect(marksOf(hostedName).map((mark) => mark.getAttribute("data-state"))).toEqual(["rest", "loading", "idle"]);
     }
-    expect(marksOf("From the theme").map((mark) => mark.getAttribute("data-mark"))).toEqual(["collie", "collie", "collie"]);
+    expect(marksOf("From the theme").map((mark) => mark.getAttribute("data-mark"))).toEqual(["koperca-hub", "koperca-hub", "koperca-hub"]);
   });
 
   it("sets the device choice on a tap, moves the check, and From the theme clears it", async () => {
@@ -108,7 +113,7 @@ describe("CharacterPicker", () => {
     expect(row("Pixel")).toHaveAttribute("aria-checked", "true");
     expect(row("From the theme")).toHaveAttribute("aria-checked", "false");
 
-    await userEvent.click(row("Collie with blaze"));
+    await userEvent.click(row("Agent Hub Solid"));
     expect(designPrefs().mark).toBe("collie-blaze");
     expect(row("Pixel")).toHaveAttribute("aria-checked", "false");
 
@@ -131,7 +136,7 @@ describe("CharacterPicker", () => {
       // Directly under the list of characters: the list comes first, then the row, then the note.
       const list = within(card).getByRole("radiogroup");
       expect(list.compareDocumentPosition(moves()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      const note = screen.getByText("The app icon, the splash and the push badge stay the Collie mark.");
+      const note = screen.getByText("The app icon, the splash and the push badge stay the Koperca Agent Hub mark.");
       expect(moves().compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
@@ -181,8 +186,8 @@ describe("CharacterPicker", () => {
     render(<CharacterPicker />);
     row("From the theme").focus();
     await userEvent.keyboard("{ArrowDown}");
-    expect(row("Collie")).toHaveFocus();
-    expect(row("Collie")).toHaveAttribute("aria-checked", "true");
+    expect(row("Agent Hub")).toHaveFocus();
+    expect(row("Agent Hub")).toHaveAttribute("aria-checked", "true");
     expect(designPrefs().mark).toBe("collie");
     await userEvent.keyboard("{ArrowUp}{ArrowUp}");
     expect(row("Owl")).toHaveFocus();
@@ -231,10 +236,10 @@ describe("CharacterPicker", () => {
     expect(preview().map((mark) => mark.getAttribute("width"))).toEqual(["28", "56", "112"]);
     expect(preview().map((mark) => mark.getAttribute("data-state"))).toEqual(["rest", "rest", "rest"]);
     // From the theme previews the theme's character, which is Collie by default.
-    expect(new Set(preview().map((mark) => mark.getAttribute("data-mark")))).toEqual(new Set(["collie"]));
-    await userEvent.click(row("Collie with blaze"));
+    expect(new Set(preview().map((mark) => mark.getAttribute("data-mark")))).toEqual(new Set(["koperca-hub"]));
+    await userEvent.click(row("Agent Hub Solid"));
     await loaded();
-    expect(new Set(preview().map((mark) => mark.getAttribute("data-mark")))).toEqual(new Set(["collie-blaze"]));
+    expect(new Set(preview().map((mark) => mark.getAttribute("data-mark")))).toEqual(new Set(["koperca-hub"]));
   });
 
   it("stops its observer when it unmounts", () => {

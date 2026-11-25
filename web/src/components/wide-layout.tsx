@@ -15,7 +15,7 @@ import { NAV_EDGE, RECESS_ACCENT } from "@/components/ui/nav-edge";
 import { Button, FOCUS_RING, HOVER_FILL } from "@/components/ui/button";
 import { PaneGlyph } from "@/components/ui/pane-glyph";
 import { BottomSheet } from "@/components/ui/sheet";
-import { CollieWordmark } from "@/components/collie-wordmark";
+import { HubWordmark } from "@/components/hub-mark";
 import { openForCount, useDashPrefs } from "@/hooks/use-dash-prefs";
 import { useElementWidth } from "@/hooks/use-element-width";
 import { useLocale } from "@/hooks/use-locale";
@@ -959,7 +959,7 @@ function SidebarTop({ open, setMark, toggle: hasToggle }: { open: boolean; setMa
         onClick={(e) => e.currentTarget.parentElement?.querySelector<HTMLButtonElement>('[data-slot="sidebar-mark"] button')?.click()}
         className={cn("flex h-11 min-w-0 flex-1 items-center truncate text-left text-lg text-foreground", FOCUS_RING)}
       >
-        <CollieWordmark />
+        <HubWordmark />
       </button>
       {toggle}
     </div>

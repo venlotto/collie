@@ -25,6 +25,8 @@ const OWN_DOORS = {
   "lib/math/engine.ts: (url)": "a math engine is out of the precache and a device's opt-in; it loads by URL",
   "lib/math/engine.ts: ./math-markup": "the formula renderer loads with the first math engine, beside it",
   "components/brand-mark.tsx: ./*-mark": "a theme mark is out of the precache; the Collie mark draws until the chosen one is in",
+  "components/hub-mark.tsx: ./*-mark":
+    "the hosted registry keeps non-dog theme marks lazy; the Koperca hub draws until the chosen one is in",
   "components/icons/glyphs.ts: virtual:collie-glyphs/*": "a glyph set is out of the precache; lucide draws until the set is in (ADR 0137)",
   "components/report-door.tsx: @/components/report-sheet":
     "the report sheet loads on the first report tap; a failure there leaves the app as it was",

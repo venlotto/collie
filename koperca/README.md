@@ -31,7 +31,7 @@ cuya base registrada no sea ancestro de la punta.
 La ejecución normal es un dry-run:
 
 ```bash
-koperca/bin/update-collie --target v1.30.1
+koperca/bin/update-collie --target main
 ```
 
 `--target` sin prefijo se resuelve **solo en el remote upstream**. Un tag o rama
@@ -55,7 +55,7 @@ Solo `--apply` crea la rama y el worktree y ejecuta un `git cherry-pick` ordenad
 de **todos** los commits `UPSTREAM_BASE..<overlay-ref>`:
 
 ```bash
-koperca/bin/update-collie --apply --target v1.30.1
+koperca/bin/update-collie --apply --target main
 ```
 
 Ante un conflicto aborta el cherry-pick y deja la candidata en el commit
@@ -90,6 +90,8 @@ git diff --stat <commit-upstream>...HEAD
 bun run gate
 bun run typecheck
 (cd web && bun run typecheck)
+bun run build
+koperca/bin/check-hosted-build
 ```
 
 Los cambios visuales se revisan en teléfono y tablet. Los cambios de harness o
@@ -135,6 +137,10 @@ Los datos, el servicio de usuario y la configuración operativa quedan fuera.
 ## Marca
 
 `TRADEMARKS.md` exige nombre y logo propios para un fork modificado distribuido
-o un servicio hospedado. Antes de compartir esta variante se reemplaza la
-identidad visible y se conserva la atribución “Based on ColliePWA”. Los
-identificadores internos pueden mantenerse para reducir la divergencia técnica.
+o un servicio hospedado. Esta variante publica la identidad Koperca Agent Hub,
+excluye los componentes del logo canino de su grafo de producción y conserva la
+atribución “Based on ColliePWA”. Los identificadores internos se mantienen para
+reducir la divergencia técnica.
+
+El inventario de call sites, assets e identificadores preservados está en
+[`BRANDING.md`](BRANDING.md).

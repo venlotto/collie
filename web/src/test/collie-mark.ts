@@ -34,7 +34,7 @@ export function markPaper(root: ParentNode): string {
   const style = collieMark(root)?.style;
   if (style === undefined) return "";
   for (const name of Array.from({ length: style.length }, (_, i) => style.item(i))) {
-    if (/^--c[a-z]-paper$/.test(name)) return style.getPropertyValue(name);
+    if (/^--[a-z]+-paper$/.test(name)) return style.getPropertyValue(name);
   }
   return "";
 }

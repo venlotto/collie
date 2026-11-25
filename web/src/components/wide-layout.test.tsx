@@ -260,14 +260,13 @@ describe("the sidebar", () => {
     expect(aside.className).toContain(NAV_EDGE);
     expect(aside.className).not.toContain("border-rule");
     expect(aside.style.width).toBe("320px");
-    // One image: Collie in the text colour, then three inked letters (components/collie-wordmark.tsx).
-    expect(q(aside, '[data-slot="sidebar-word"] svg')?.getAttribute("aria-label")).toBe("ColliePWA");
-    expect([...aside.querySelectorAll(".wordmark-ink")].map((el) => el.classList[1])).toEqual(["wordmark-ink-p", "wordmark-ink-w", "wordmark-ink-a"]);
-    expect(q(aside, '[data-slot="sidebar-mark"] [data-slot="collie-mark"]')).not.toBeNull();
+    // The hosted shell owns the sidebar lockup while preserving the upstream mark contract.
+    expect(q(aside, '[data-slot="sidebar-word"] [aria-label="Koperca Agent Hub"]')).toHaveTextContent("KopercaAgent Hub");
+    expect(q(aside, '[data-slot="sidebar-mark"] [data-mark="koperca-hub"]')).not.toBeNull();
     expect(q(container, '[data-testid="chat"]')?.dataset.inStrip).toBe("true");
     // The header moved into the focused column, and the mark is not drawn twice.
     expect(q(container, "header")?.closest('[data-slot="column-head"]')).not.toBeNull();
-    expect(container.querySelectorAll('[data-slot="collie-mark"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-mark="koperca-hub"]')).toHaveLength(1);
     // A space heading speaks in the quiet voice: the muted ink, the name's own case.
     const heading = within(aside).getByRole("heading", { name: "alpha" }).firstElementChild!;
     expect(heading.className).toContain("text-muted-foreground");
@@ -420,7 +419,7 @@ describe("the strip", () => {
     fireEvent.click(sidebarRow(container, A1)!);
     await waitFor(() => expect(router.state.location.pathname).toBe(panePath("w1:p1")));
     expect(columns(container).map((c) => c.dataset.colKey)).toEqual([key(A1), key(A2)]);
-    expect(columns(container)[0]?.hasAttribute("data-focused")).toBe(true);
+    await waitFor(() => expect(columns(container)[0]?.hasAttribute("data-focused")).toBe(true));
   });
 
   it("Open here replaces the focused column", async () => {

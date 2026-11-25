@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 import { startRoutePreload } from "./router";
-import { preloadMark } from "./components/brand-mark";
+import { preloadHostedMark } from "./components/hub-mark";
 import { glyphSetSettled, preloadGlyphSet } from "./components/icons/glyphs";
 import { onPreloadError } from "./lib/chunk-reload";
 import { designPrefs, initDesign, mathEngineOf } from "./lib/design";
@@ -55,7 +55,7 @@ resumeTrial();
 // The header logo, the same way: a theme that names a character other than Collie starts
 // fetching its chunk now, after the theme and the trial are settled (the resolver reads both), so the
 // header rarely draws its empty box. The Collie mark is in this bundle and loads nothing.
-void preloadMark(currentMarkId());
+void preloadHostedMark(currentMarkId());
 // The glyph set too (ADR 0137): a theme that names one starts its chunk now, and the first paint waits
 // for it below. The stored theme's set as well, when a trial wears another, so Back finds it ready.
 const firstGlyphs = glyphSetSettled(currentGlyphSetId(), FIRST_PAINT_GLYPH_WAIT_MS);

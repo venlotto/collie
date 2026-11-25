@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-import { BrandMark } from "@/components/brand-mark";
+import { HostedBrandMark, hostedMarkName } from "@/components/hub-mark";
 import { Icon } from "@/components/icons/icon";
 import type { IconKey } from "@/components/icons/keys";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -91,9 +91,9 @@ export function ThemeMarkLine({ theme }: { theme: Theme }) {
       <span className="grid size-7 shrink-0 place-items-center">
         {/* A thumbnail in a list of cards: it keeps the contract's own rule (drifts while the page is in use),
             so a list of many does not run a mark each at all times. */}
-        <BrandMark mark={character} size={28} weight="header" paper="var(--card)" drift="in-use" />
+        <HostedBrandMark mark={character} size={28} weight="header" paper="var(--card)" drift="in-use" />
       </span>
-      <span className="min-w-0 truncate">{t("theme.preview.mark", { name: markName(character) })}</span>
+      <span className="min-w-0 truncate">{t("theme.preview.mark", { name: hostedMarkName(character, markName(character)) })}</span>
     </div>
   );
 }

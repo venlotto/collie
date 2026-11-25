@@ -6,6 +6,7 @@
 // in, plain data out.
 
 import { interpolate } from "./i18n/template";
+import { APP_NAME } from "./koperca-brand";
 import { asJsonString, type JsonValue } from "./json";
 import { machinePath, machinesPath } from "./machine-paths";
 import { isPushTitleCode, type PushTitleDetail } from "./push-title-codes";
@@ -213,7 +214,7 @@ export function decidePush(
   if (hasVisibleClient && payload.type !== "machine") return { kind: "suppress" };
   return {
     kind: "show",
-    title: localisedTitle(payload, templates) ?? payload.title ?? "Collie",
+    title: localisedTitle(payload, templates) ?? payload.title ?? APP_NAME,
     body: payload.body ?? "",
     tag,
     paneId,

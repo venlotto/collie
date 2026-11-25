@@ -72,7 +72,7 @@ describe("decidePush", () => {
   test("falls back to a per-pane tag, default title, empty body, and renotify off", () => {
     expect(decidePush({ data: { paneId: "test" } }, false)).toEqual({
       kind: "show",
-      title: "Collie",
+      title: "Koperca Agent Hub",
       body: "",
       tag: "collie:test",
       paneId: "test",

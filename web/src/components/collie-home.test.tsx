@@ -254,7 +254,7 @@ describe("CollieHome — the lost badge", () => {
   it("is decorative: hidden from assistive tech, the button's label names the state", () => {
     const { container, getByRole } = render(<CollieHome trouble lost online={false} />);
     expect(badge(container)?.getAttribute("aria-hidden")).toBe("true");
-    expect(getByRole("button", { name: "Collie home, not connected" })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub home, not connected" })).toBeInTheDocument();
   });
 
   // What remains of the strip's "Showing what was saved at <time>" once it is dismissed: the badge
@@ -264,13 +264,13 @@ describe("CollieHome — the lost badge", () => {
     const at = new Date(2026, 9, 7, 12, 21).getTime();
     const { getByRole } = render(<CollieHome trouble lost lastSeenAt={at} />);
     expect(
-      getByRole("button", { name: `Collie home, not connected. Showing what was saved at ${savedAtLabel(at)}.` }),
+      getByRole("button", { name: `Koperca Agent Hub home, not connected. Showing what was saved at ${savedAtLabel(at)}.` }),
     ).toBeInTheDocument();
   });
 
   it("keeps the reconnecting name while merely troubled, stamp or not", () => {
     const { getByRole } = render(<CollieHome trouble lastSeenAt={1_000} />);
-    expect(getByRole("button", { name: "Collie home, reconnecting" })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub home, reconnecting" })).toBeInTheDocument();
   });
 
   it("sits on the header's band colour (the page colour in Collie) with the ring cut, in the danger token", () => {
@@ -295,14 +295,14 @@ describe("CollieHome — the app updating", () => {
     const { container, getByRole } = render(<CollieHome trouble={false} applying />);
     expect(markIsLive(container)).toBe(true);
     expect(applyingClass(container)).toBe(true);
-    expect(getByRole("button", { name: "Collie is updating the app. Open the dashboard." })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." })).toBeInTheDocument();
   });
 
   it("outranks the bloom: the update colour and the update name while the link is troubled", () => {
     const { container, getByRole } = render(<CollieHome trouble applying />);
     expect(markIsLive(container)).toBe(true);
     expect(applyingClass(container)).toBe(true);
-    expect(getByRole("button", { name: "Collie is updating the app. Open the dashboard." })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." })).toBeInTheDocument();
   });
 
   it("outranks busy work and a round: still the update paint while both are on", () => {
@@ -328,7 +328,7 @@ describe("CollieHome — the app updating", () => {
     const { container, getByRole } = render(<CollieHome trouble lost applying />);
     expect(markIsLive(container)).toBe(false);
     expect(applyingClass(container)).toBe(false);
-    expect(getByRole("button", { name: "Collie home, not connected" })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub home, not connected" })).toBeInTheDocument();
   });
 
   it("changes the state of the SAME mark: no remount when the update starts or ends", () => {
@@ -356,14 +356,14 @@ describe("CollieHome — the link coming back", () => {
     const { container, getByRole } = render(<CollieHome trouble={false} reconnected />);
     expect(markIsLive(container)).toBe(true);
     expect(greenClass(container)).toBe(true);
-    expect(getByRole("button", { name: "Collie home, reconnected" })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub home, reconnected" })).toBeInTheDocument();
   });
 
   it("gives way to the app updating: the update state and name, never both colours", () => {
     const { container, getByRole } = render(<CollieHome trouble={false} applying reconnected />);
     expect(greenClass(container)).toBe(false);
     expect(markState(container)).toBe("applying");
-    expect(getByRole("button", { name: "Collie is updating the app. Open the dashboard." })).toBeInTheDocument();
+    expect(getByRole("button", { name: "Koperca Agent Hub is updating the app. Open the dashboard." })).toBeInTheDocument();
   });
 
   it("gives way to lost", () => {
@@ -419,7 +419,7 @@ describe("CollieHome — an agent starting", () => {
     const dead = render(<CollieHome trouble lost starting />);
     expect(markState(dead.container)).toBe("idle");
     expect(bead(dead.container, 1)).toBe("");
-    expect(dead.getByRole("button", { name: "Collie home, not connected" })).toBeInTheDocument();
+    expect(dead.getByRole("button", { name: "Koperca Agent Hub home, not connected" })).toBeInTheDocument();
   });
 
   it("outranks the link coming back", () => {
@@ -453,14 +453,14 @@ describe("CollieHome — the mark", () => {
     __resetThemeStore();
   });
 
-  it("draws the Collie mark in its box by default", () => {
+  it("draws the Koperca Hub mark in its box by default", () => {
     const { container } = render(<CollieHome trouble={false} />);
     const box = container.querySelector('[data-slot="collie-mark"]');
     expect(box).not.toBeNull();
-    expect(box?.querySelector('svg[data-mark="collie"]')).not.toBeNull();
+    expect(box?.querySelector('svg[data-mark="koperca-hub"]')).not.toBeNull();
   });
 
-  it("draws the worn theme's character, in the same box, and Collie again under a theme with none", async () => {
+  it("keeps the hosted brand mark even when an upstream theme names another character", async () => {
     const themes = [
       { version: 4, id: "sunroom", name: "Sunroom", character: "kawaii", light: { background: "#fdfaf3" } },
       { version: 1, id: "plain", name: "Plain", light: { background: "#fdfaf3" } },
@@ -470,10 +470,10 @@ describe("CollieHome — the mark", () => {
     const { container } = render(<CollieHome trouble={false} />);
     const box = () => container.querySelector('[data-slot="collie-mark"]');
     act(() => setActiveTheme("sunroom"));
-    await waitFor(() => expect(box()?.querySelector('[data-mark="kawaii"]')).not.toBeNull());
-    expect(collieMark(container)).toBeNull();
+    await waitFor(() => expect(box()?.querySelector('[data-mark="koperca-hub"]')).not.toBeNull());
+    expect(box()?.querySelector('[data-mark="kawaii"]')).toBeNull();
     act(() => setActiveTheme("plain"));
-    expect(box()?.querySelector('svg[data-mark="collie"]')).not.toBeNull();
+    expect(box()?.querySelector('svg[data-mark="koperca-hub"]')).not.toBeNull();
   });
 });
 

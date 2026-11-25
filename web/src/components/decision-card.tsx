@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { AgentIcon } from "@/components/agent-icon";
-import { BrandMark } from "@/components/brand-mark";
+import { HostedBrandMark } from "@/components/hub-mark";
 import { DecisionGroupPager, DecisionWholeView, GroupCount } from "@/components/decision-group";
 import { DecisionView } from "@/components/decision-view";
 import { HillImageStrip, hillMediaSource, type HillMediaSource } from "@/components/hill-media";
@@ -150,7 +150,7 @@ function SenderMark({ decision, trickIcon }: { decision: HillDecision; trickIcon
   if (decision.from.kind === "collie") {
     return (
       <span aria-hidden data-slot="decision-collie-mark" className="flex shrink-0">
-        <BrandMark size={16} weight="header" state="rest" />
+        <HostedBrandMark size={16} weight="header" state="rest" />
       </span>
     );
   }
