@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type RefObject } from "react";
+import { botTime } from "./bot-identity";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type RefObject } from "react";
 import { Icon } from "@/components/icons/icon";
 
 import { AgentIcon } from "@/components/agent-icon";
@@ -590,6 +591,8 @@ function textTokens(size: number): CSSProperties {
 }
 
 export function SessionStream({
+  botStyle = false,
+  unreadSince,
   feed,
   address,
   working,
@@ -612,6 +615,8 @@ export function SessionStream({
   hasNew = false,
 }: {
   /** The held window plus its one control, from `useChatWindow`. */
+  botStyle?: boolean;
+  unreadSince?: number;
   feed: ChatFeed;
   /** This pane's full address (host + session + id) — the key its scroll position is kept under. */
   address: string;
@@ -1076,6 +1081,7 @@ export function SessionStream({
     };
   }, [lingering, listRef]);
 
+  const firstUnread = unreadSince === undefined ? -1 : blocks.findIndex(group => group.some(item => item.ts && Date.parse(item.ts) > unreadSince));
   return (
     <ChatMessageList
       ref={listRef}
@@ -1101,14 +1107,14 @@ export function SessionStream({
       // hugging look does: the look before it keeps the overlay as it was.
       overlayClassName={look.userTurn === "hug" && look.gutter === "16" ? "px-4" : undefined}
       overlayStyle={look.userTurn === "hug" ? textTokens(fontSize) : undefined}
-      overlay={pin !== null ? <PromptPin pin={pin} busy={seeking !== null || (pin.kind === "earlier" && loadingOlder)} onTap={onPinTap} /> : null}
+      overlay={!botStyle && pin !== null ? <PromptPin pin={pin} busy={seeking !== null || (pin.kind === "earlier" && loadingOlder)} onTap={onPinTap} /> : null}
     >
       {/* Top of the window. Older turns come off `hasOlder` and nothing else: what the live window
           has trimmed is the History read's job, reached through `?before=`, and the bridge holds
           none of it in memory. Where there is nothing older, the thread says where it starts — the
           History page's own line, because it is the same fact about the same session. A saved copy takes
           the slot instead of both: there is no bridge to load from (SavedCopyRow). */}
-      {pinOnTop && <div aria-hidden data-slot="pin-room" className={PIN_ROOM} />}
+      {!botStyle && pinOnTop && <div aria-hidden data-slot="pin-room" className={PIN_ROOM} />}
       {savedCopy !== null ? (
         <SavedCopyRow text={savedCopy} />
       ) : window.hasOlder ? (
@@ -1117,7 +1123,7 @@ export function SessionStream({
           {loadingOlder ? t("chat.scrollback.loading") : t("chat.scrollback.loadOlder")}
         </button>
       ) : (
-        !empty &&
+        !botStyle && !empty &&
         (look.quiet === "divided" ? (
           <div className="mb-3">
             <DividedLine>{t("history.startOfConversation")}</DividedLine>
@@ -1144,18 +1150,20 @@ export function SessionStream({
           (first.kind === "reply" || first.kind === "thinking" || first.kind === "tool") &&
           (index === 0 || isUserGroup(blocks[index - 1]));
         return (
+          <Fragment key={first.id}>
+            {botStyle && first.ts && (index === 0 || first.ts.slice(0,16) !== blocks[index-1]?.[0]?.ts?.slice(0,16)) && <p className="bot-date">{botTime(Date.parse(first.ts), true)}</p>}
+            {botStyle && index === firstUnread && <div className="bot-new-line"><span>Nuevos</span></div>}
           <StreamBlock
-            key={group[0]!.id}
             n={group.length}
             item={pinnable ? item : null}
             pinned={item !== null && pins?.pinned.has(item.id) === true}
             onActions={pinnable ? pins?.onActions : undefined}
-            className={rhythm === "" ? blockBox(index, blocks.length) : `${blockBox(index, blocks.length)} ${rhythm}`}
+            className={botStyle ? `bot-turn bot-turn-${first.kind}` : rhythm === "" ? blockBox(index, blocks.length) : `${blockBox(index, blocks.length)} ${rhythm}`}
           >
             {opensRun && <AgentHead agent={agent} ts={first.ts} />}
-            {drawn ? <ItemView item={group[0]!} /> : <ToolGroup items={group} liveOpens={showToolCalls} />}
+            {drawn ? <ItemView item={group[0]!} simpleUser={botStyle} /> : <ToolGroup items={group} liveOpens={showToolCalls} />}
             {asks === undefined || askList === undefined ? null : asksAt(blocks, askList.shown, index).map((ask) => <AskCard key={ask.id} ask={ask} {...asks.card} />)}
-          </StreamBlock>
+          </StreamBlock></Fragment>
         );
       })}
 

@@ -423,7 +423,7 @@ export function stepLine(call: ChatToolCall): StepLine {
   }
 }
 
-export const ItemView = memo(function ItemView({ item }: { item: ChatItem }) {
+export const ItemView = memo(function ItemView({ item, simpleUser }: { item: ChatItem; simpleUser?: boolean }) {
   useLocale();
   const waiting = useContext(CardWaitingCtx)[item.id];
   switch (item.kind) {
@@ -432,7 +432,7 @@ export const ItemView = memo(function ItemView({ item }: { item: ChatItem }) {
       // can make it one. The other user turns never subscribe to the log, so a poll redraws none of them.
       // A turn the bridge typed for an agent view carries Collie's head and tail around the person's words:
       // drawn without them, and only on a turn the bridge marks as sent through the view (display only).
-      return item.walky === undefined ? <ViewUserTurn text={item.text} ts={item.ts} /> : <EnvelopeTurn text={item.text} ts={item.ts} header={item.walky} />;
+      return item.walky === undefined ? <ViewUserTurn text={item.text} ts={item.ts} simple={simpleUser} /> : <EnvelopeTurn text={item.text} ts={item.ts} header={item.walky} />;
     case "reply":
       // Agent prose: MarkdownText wears `font-content`, never the app face (DESIGN.md §5).
       return <Growing partial={item.partial === true}><MarkdownText text={item.text} stretches /></Growing>;
@@ -550,8 +550,9 @@ function Compacted({ item }: { item: Extract<ChatItem, { kind: "compacted" }> })
  * tail come off for display only, and only when the line is one the bridge lists as sent through a view
  * (lib/agent-view/store.ts `useViewTurnText`). Any other turn draws as it was typed.
  */
-function ViewUserTurn({ text, ts }: { text: string; ts?: string }) {
+function ViewUserTurn({ text, ts, simple }: { text: string; ts?: string; simple?: boolean }) {
   const shown = useViewTurnText(text);
+  if (simple) return <p className="whitespace-pre-wrap">{shown}</p>;
   return ts === undefined ? <UserTurn text={shown} /> : <UserTurn text={shown} ts={ts} />;
 }
 

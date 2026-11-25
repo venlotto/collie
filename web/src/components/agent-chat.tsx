@@ -1,3 +1,5 @@
+import { BotChatBar } from "./bot-chat-bar";
+import { botTime, identityOf } from "./bot-identity";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { MouseEvent as ReactMouseEvent } from "react";
@@ -10,7 +12,7 @@ import { usePaneNavigation } from "@/components/pane-nav";
 import { besideOf, useNewTabOrSheet } from "@/hooks/use-new-tab-or-sheet";
 import { useShortcutHandler } from "@/hooks/use-shortcut-handler";
 import { tabCreateKey, useSpaceActions } from "@/hooks/use-spaces";
-import { isQuestion, shownStatus } from "@/lib/triage";
+import { isQuestion, isUnseen, shownStatus } from "@/lib/triage";
 import { useNav } from "@/hooks/use-nav";
 import { useNewEntry } from "@/hooks/use-new-entry";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
@@ -168,7 +170,7 @@ import { openReport, signalTrouble, unreadDialogReport } from "@/lib/report/stor
 import { unreadDialogScreen } from "@/lib/report/screen";
 import { answerRouteFor, cardsOnOlderMember, holdAnswerRouteFor, textRouteFor } from "@/lib/send-path";
 import { useSessionCard, wearsExperimental } from "@/lib/session-cards";
-import { pinMatcher, usePins } from "@/lib/pins";
+import { pinMatcher, setPinned, usePins } from "@/lib/pins";
 import { paneFilesDir } from "@/lib/file-paths";
 import { changeLoginPath, changesPath, filesPath, historyPath, trickSessionPath, newPath, panePath, spacePath } from "@/lib/nav";
 import { beltMarksOf, beltTapHandlers } from "@/components/belt-trick-mark";
@@ -269,6 +271,7 @@ interface AgentChatProps {
   tabletop?: boolean;
   /** The touch-phone presentation: chat first, with terminal navigation moved out of the resting view. */
   mobileShell?: boolean;
+  unreadSince?: number;
 }
 
 /** How many rows at the raw screen's tail count as its footer when the model label asks if it is named. */
@@ -334,6 +337,7 @@ export function AgentChat({
   inStrip = false,
   tabletop = false,
   mobileShell = false,
+  unreadSince,
 }: AgentChatProps) {
   const revalidator = useRevalidator();
   // A refused dialog tap (the guard found another dialog on the screen, or none): the notice stays
@@ -439,6 +443,7 @@ export function AgentChat({
   // title at all, so a pane the dashboard called "Collie playground sync check" was called
   // "collie-workspace › UI work" here: one pane, two names, and the reader had to work out they
   // were the same pane. The address did not vanish, it moved down one line, where an address belongs.
+  const bot = agent && identityOf(agent, scope ?? {});
   const name = agent === undefined ? "" : paneName(agent);
   // A pane in a linked worktree names its REPOSITORY here: Herdr's worktree slug is a random word that
   // tells nobody which project it is (issue #666). A root checkout, or an older bridge that sends no
@@ -2633,7 +2638,9 @@ export function AgentChat({
             DESIGN.md §4 forbids — every top-level block "begins and ends on the same x". 768px and
             not the 640px every other route uses: a 640px column minus its 16px gutters clips an
             80-column mirror, so the pane pair get their own claim. */}
-        <RouteHeader
+        {mobileShell && bot && agent ? <BotChatBar bot={bot} unread={herd.filter(isUnseen).length}
+          pinned={pinMatcher(pins)(agent)} pin={() => setPinned(agent, !pinMatcher(pins)(agent), herd)} back={onBackArrow ?? onBack}
+          terminal={!chatShown} toggleView={transcriptReadable && !gridless ? () => paneViewChange(chatShown ? "terminal" : "chat") : undefined} /> : <RouteHeader
           onHome={onBackArrow ?? onBack}
           width="wide"
           // The mark says an agent is starting, and the title says so too (`condition` below).
@@ -3012,7 +3019,7 @@ export function AgentChat({
             </div>
           )}
           </HeaderStatus>
-        </RouteHeader>
+        </RouteHeader>}
 
         {/* Content region below the header — the mirror inside is the scroller. `relative` is for the
             zen exit button below (`absolute right-3 top-3`), the one thing in this region still
@@ -3122,7 +3129,7 @@ export function AgentChat({
             {/* The one-time line that explains the dots (lib/masked-hint.ts). In the same chrome band
                 as the banners, so it leaves with them in zen, and in a Collapse of its own so it
                 slides in and out rather than pushing the mirror by a jump. */}
-            <MaskedHint open={maskedHintOpen} className="mx-3 mt-1.5" />
+            <MaskedHint open={!mobileShell && maskedHintOpen} className="mx-3 mt-1.5" />
 
             {/* THE TWO STRIPS, AND THE THIN BAR THAT STANDS IN FOR THEM — one band that morphs, not
                 two rows taking turns. `CollapseSwap` is nested inside zen's `Collapse`, so zen still
@@ -3395,6 +3402,8 @@ export function AgentChat({
               <WalkyOpenProvider open={messagesSheet ? openWalkyMessage : null} self={walkySelf}>
               <CardWaitingCtx.Provider value={questionNotes}>
                 <SessionStream
+                  botStyle={mobileShell}
+                  unreadSince={unreadSince}
                   feed={chatFeed}
                   clearBottom={floatingClear}
                   address={paneScopeKey(scope, paneId)}
@@ -3545,7 +3554,7 @@ export function AgentChat({
                       an agent's transcript are different capabilities, and a multiplexer can perfectly
                       well have the first while lacking the second. Nothing renders on Herdr, which
                       declares the capability — this whole branch is dead code there. */}
-                  {!sessionLog.capable && sessionLog.note !== "" && (
+                  {!mobileShell && !sessionLog.capable && sessionLog.note !== "" && (
                     <p className="mb-2 px-2 py-1 text-center text-xs leading-snug text-muted-foreground">
                       {sessionLog.note}
                     </p>
@@ -3555,7 +3564,7 @@ export function AgentChat({
                       a control — there is nothing here to open, and a button that fetched nothing
                       would be the worse answer. The remedy is the operator's own, on the machine the
                       agent runs on, so the sentence names it and stops. */}
-                  {noSessionReported && (
+                  {!mobileShell && noSessionReported && (
                     <p className="mb-2 px-2 py-1 text-center text-xs leading-snug text-muted-foreground">
                       {t(noSessionKey, { agent: agent?.agent ?? "" })}
                     </p>
@@ -3563,7 +3572,7 @@ export function AgentChat({
                   {/* The other half of the Chat fallback: the pane named a session, and its log was
                       still not there when its first turn ended (lib/chat-gate.ts). The stream's own sentence
                       for that reading, on the body the operator now has. */}
-                  {noLogFallback && (
+                  {!mobileShell && noLogFallback && (
                     <p className="mb-2 px-2 py-1 text-center text-xs leading-snug text-muted-foreground">
                       {sharedFolder ?? t("history.unavailable.noLog")}
                     </p>
@@ -3581,7 +3590,9 @@ export function AgentChat({
                       scope={scope}
                     />
                   )}
-                  <AnsiOutput
+                  {mobileShell && !!agent?.lastActiveAt && <p className="bot-date">{botTime(agent.lastActiveAt, true)}</p>}
+                  {mobileShell && unreadSince !== undefined && <div className="bot-new-line"><span>Nuevos</span></div>}
+                  <div className={mobileShell ? "bot-terminal" : undefined}><AnsiOutput
                     text={display}
                     logicalText={shown.logicalText}
                     wrap={prefs.wrap}
@@ -3599,7 +3610,7 @@ export function AgentChat({
                     hideLeadingLines={hiddenMirrorLines}
                     images={mirrorImages.images}
                     onImageClusterCount={setImageClusterCount}
-                  />
+                  /></div>
                   {/* THE NEWEST TURN'S PICTURE, RIGHT AFTER THE MIRROR (M39, #292). pi draws a
                       picture by direct placement, which leaves only blank rows on the grid, so
                       there is no row to put it at; it comes from the journal instead. Placement
@@ -4004,6 +4015,7 @@ export function AgentChat({
                   // The reply box's shape: the active theme's `composer` word (`field`, today's box, or `box`, the chat-box shape).
                   layout={mobileShell ? "box" : composerLayout(activeTheme.theme.surface?.composer)}
                   minimal={mobileShell}
+                  botName={mobileShell ? bot?.name : undefined}
                   // Settings → Pane navigation → Joystick: the handle band, just above the belt (ADR 0121).
                   aboveBelt={paneNav.handle}
                   beltMarks={beltMarks}
@@ -4037,7 +4049,7 @@ export function AgentChat({
                   screen={gridless ? undefined : { on: screenForced, onToggle: () => setScreenForced((on) => !on) }}
                   // The switcher mark, for the actions belt's top rule — see the condition at
                   // `pullHandle` above, and actions-row.tsx for what it draws.
-                  pullHandle={pullHandle}
+                  pullHandle={mobileShell ? undefined : pullHandle}
                   // EXPERIMENT (operator, 2026-09-23): the Changes entry rides the belt's pinned
                   // block beside the switcher mark instead of the ⋮ sheet. Hidden when the pane
                   // reports no folder: zellij before 0.44 gives an empty cwd, and the view would

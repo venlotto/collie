@@ -144,11 +144,12 @@ describe("AgentChat — touch-phone shell", () => {
     const tab = { tabId: "w1:t1", workspaceId: "w1", number: 1, label: "review", focused: true, paneCount: 1 };
     const { container } = renderChat({ mobileShell: true, agent, agents: [agent], tabs: [tab] });
 
-    expect(screen.getByPlaceholderText(/type a reply/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/^Preguntar a /)).toBeInTheDocument();
     expect(container.querySelector('[data-slot="composer-actions"]')).toBeNull();
     expect(container.querySelector('[data-slot="model-tag"]')).toBeNull();
     expect(container.querySelector('[data-slot="pane-meta"]')).toBeNull();
-    expect(container.querySelector('[data-slot="pane-place"]')).toHaveTextContent("webapp");
+    expect(screen.getByRole("button", { name: "Volver a los chats" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Opciones del chat" })).toBeInTheDocument();
   });
 });
 

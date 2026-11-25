@@ -475,6 +475,7 @@ interface ComposerProps {
    * complete belt, so compact presentation never means reduced capability.
    */
   minimal?: boolean;
+  botName?: string;
 
   /**
    * Drawn directly above the actions belt, under any open dock: the pane's joystick handle band when
@@ -755,7 +756,7 @@ function lockWordsFor(slot: SendSlot, unreachableWords: string): string | null {
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, instance, surface, starting = false, unreachableNote, scope, stopOffered = false, agent, canSteer, returnedDraft = false, isShell, cwd, gone, readOnly, composing, onAnswerDialog, dialogCard = false, text, terminalDraft, rawTerminalDraft, prefs, display, onSent, onOpenMessages, walkyLinked = false, onDeliverNow, held: heldRows, chatEntries, pullHandle, draftNoticeSlot, expandArea, changesPill, zoomPill, stale, hand = "right", layout = "field", minimal = false, aboveBelt, beltMarks, floatingHint, screen, todos, subagents, jobs, pins, agentView, onViewRequest, unreadState = null, onScreenUnread, onAnswerUnseen, onCannotTell, onCannotTellRing, cannotTellInView, heldScreen, olderMember },
+  { paneId, instance, surface, starting = false, unreachableNote, scope, stopOffered = false, agent, canSteer, returnedDraft = false, isShell, cwd, gone, readOnly, composing, onAnswerDialog, dialogCard = false, text, terminalDraft, rawTerminalDraft, prefs, display, onSent, onOpenMessages, walkyLinked = false, onDeliverNow, held: heldRows, chatEntries, pullHandle, draftNoticeSlot, expandArea, changesPill, zoomPill, stale, hand = "right", layout = "field", minimal = false, botName, aboveBelt, beltMarks, floatingHint, screen, todos, subagents, jobs, pins, agentView, onViewRequest, unreadState = null, onScreenUnread, onAnswerUnseen, onCannotTell, onCannotTellRing, cannotTellInView, heldScreen, olderMember },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -3027,6 +3028,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         ? translate("newPage.starting")
         : direct.active
         ? translate("composer.placeholder.direct")
+        : botName && !secretField && !overrideHash && !staleWords
+          ? `Preguntar a ${botName}…`
         : isShell
           ? translate("composer.placeholder.shell")
           : secretField
@@ -3755,7 +3758,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const boxOpenNow = input !== "" || attachments.length > 0 || direct.active;
   const boxWasOpen = useRef(boxOpenNow);
   if (!takeoverOpen) boxWasOpen.current = boxOpenNow;
-  const boxOpen = box && boxWasOpen.current;
+  const boxOpen = box && boxWasOpen.current && (!botName || attachments.length > 0);
   const mirrored = hand === "left";
   // Box layout only: a tap on the box's own padding, or on a gap between its controls, lands in the
   // field. Plain listeners on the element rather than JSX handlers: the box is a layout surface, not a
@@ -4101,7 +4104,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             which were two rows of a phone's glass answering one question. The row itself is
             actions-row.tsx; everything below is only what each action DOES.
   */}
-        {minimal && (
+        {minimal && !botName && (
           <div className="flex justify-end px-3 pt-1">
             <button
               type="button"

@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLoaderData, useLocation, useMatch, useParams } from "react-router";
 
+import { isUnseen } from "@/lib/triage";
 import { AgentChat } from "@/components/agent-chat";
 import { WalkyLogProvider } from "@/components/walky-log";
 import { FileLinksProvider, usePaneFileLinks } from "@/components/file-links";
 import { SubagentSheet } from "@/components/subagent-sheet";
-import { WideLayout } from "@/components/wide-layout";
-import { useDashPrefs } from "@/hooks/use-dash-prefs";
 import { useLoadingStalled } from "@/hooks/use-loading-stalled";
 import { useNav } from "@/hooks/use-nav";
 import { usePaneFold } from "@/hooks/use-fold-posture";
 import { useWidthClass } from "@/hooks/use-width-class";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { type PaneData } from "@/lib/loaders";
-import { GLIDE_PAIRS, glideBack } from "@/lib/glide";
-import { canStepBack, homePath, panePath, readFrom, upTarget, zoomPath } from "@/lib/nav";
+import { homePath, panePath, zoomPath } from "@/lib/nav";
 import { readAgentLaunch } from "@/lib/agent-startup";
 import { paneScopeKey } from "@/lib/scope";
 import { findPane, paneRowKey, paneScope } from "@/lib/hosts";
@@ -44,12 +41,9 @@ export function DetailRoute() {
   const nav = useNav();
   const location = useLocation();
   const stalled = useLoadingStalled();
-  const dashView = useDashPrefs().prefs.dashView;
   // From 600px wide the pane screen is a sidebar beside a strip of panes (ADR 0120). Below, nothing
   // here changes.
   const widthClass = useWidthClass();
-  const coarsePointer = useMediaQuery("(any-pointer: coarse)");
-  const mobileShell = widthClass === "compact" && Math.min(window.innerWidth, window.innerHeight) < 600 && coarsePointer && navigator.maxTouchPoints > 0;
   // A half-open foldable splits the screen at the fold (ADR 0120, "Folded postures"); flat elsewhere.
   const fold = usePaneFold(widthClass);
 
@@ -161,17 +155,14 @@ export function DetailRoute() {
     if (gridless) nav.upTo(homePath(scope));
     else nav.up(homePath(scope));
   };
-  // The back arrow glides the header's dot, tile and name back down into the row this pane was
-  // opened from (lib/glide.ts, the `pane` pair, rule 1), when the arrow lands where such a row can
-  // be: the dashboard's Panes or Focus list, or a space. Not the dashboard's Changes tab, which lists
-  // workspaces, so the arrow slides there as it always did. Where the row is gone or off screen, the
-  // engine crossfades. The landing is the same resolution `nav.up` runs (`upTarget`).
+  const closing = useRef(false);
   const backArrow = () => {
-    if (dismissSubagent.current?.() === true) return;
-    const lands = gridless ? "/" : upTarget(location.pathname, readFrom(location.state), homePath(scope), canStepBack());
-    const rowsThere = GLIDE_PAIRS.pane.origin(lands) && (lands !== "/" || dashView !== "changes");
-    if (rowsThere) glideBack("pane", panePath(paneId, scope), up);
-    else up();
+    const panel = document.querySelector<HTMLElement>(".bot-detail");
+    if (!panel || !window.matchMedia("(max-width: 759px) and (prefers-reduced-motion: no-preference)").matches) return up();
+    if (closing.current) return;
+    closing.current = true;
+    const animation = panel.animate([{ transform: "translateX(0)" }, { transform: "translateX(100%)" }], { duration: 260, easing: "ease-out", fill: "forwards" });
+    animation.onfinish = () => { animation.cancel(); closing.current = false; up(); };
   };
 
   // Paths the agent prints open in Files (ADR 0088): the chat, its tool cards and the mirror below
@@ -221,10 +212,11 @@ export function DetailRoute() {
           onClose: () => nav.up(panePath(paneId, scope)),
         }}
         onBackArrow={backArrow}
-        inStrip={widthClass !== "compact"}
+        inStrip={false}
         // Tabletop: the belt and the reply box stand in the bottom segment, under the fold.
         tabletop={fold === "tabletop"}
-        mobileShell={mobileShell}
+        mobileShell
+        unreadSince={fresh && fresh.paneId === paneId && isUnseen(fresh) ? fresh.lastSeenAt ?? 0 : undefined}
         // Pane to pane is a sideways move: it replaces, and the pane's way up comes along.
         onSelect={(id) =>
           nav.side(
@@ -251,11 +243,7 @@ export function DetailRoute() {
           fold, a hinge that moves) changes an attribute and never remounts the pane view under the
           finger. Tabletop ends this box at the top segment's bottom edge (index.css). */}
       <div data-slot="fold-frame" data-fold={fold} className="flex min-h-0 flex-1 flex-col">
-        {widthClass === "compact" ? (
-          view
-        ) : (
-          <WideLayout widthClass={widthClass} fold={fold} paneId={paneId} scope={scope} agent={agent} focused={view} />
-        )}
+        {view}
       </div>
     </WalkyLogProvider>
   );

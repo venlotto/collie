@@ -26,6 +26,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.
+- **Chats open beside the list on a large screen.** On a phone the conversation slides over the list, with the terminal and its reply box in the same pane.
 
 ### Fixed
 
