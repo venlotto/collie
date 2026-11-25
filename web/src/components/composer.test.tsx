@@ -302,6 +302,20 @@ function renderComposerWithEntries(overrides: Partial<ComponentProps<typeof Comp
   return { land: (entry: TranscriptEntry) => act(() => landEntry(entry)) };
 }
 
+describe("Composer — minimal mobile shell", () => {
+  it("keeps the reply box and puts the complete terminal actions behind one control", async () => {
+    const user = userEvent.setup();
+    renderComposer({ minimal: true, layout: "box" });
+
+    expect(screen.getByPlaceholderText(/type a reply/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /attach/i })).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="composer-actions"]')).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Actions" }));
+    expect(document.querySelector('[data-slot="composer-actions"]')).toBeInTheDocument();
+  });
+});
+
 function userTurn(text: string, uuid: string): TranscriptEntry {
   return { uuid, ts: new Date().toISOString(), role: "user", parts: [{ kind: "text", text }] };
 }

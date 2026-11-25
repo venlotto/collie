@@ -134,6 +134,57 @@ const packed = () =>
     servers: fixtureServers,
   });
 
+describe("the touch-phone chat shell", () => {
+  const width = Object.getOwnPropertyDescriptor(window, "innerWidth");
+  const height = Object.getOwnPropertyDescriptor(window, "innerHeight");
+  const touch = Object.getOwnPropertyDescriptor(navigator, "maxTouchPoints");
+  const media = window.matchMedia;
+
+  beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+    Object.defineProperty(navigator, "maxTouchPoints", { configurable: true, value: 5 });
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      // SAFETY: this test double implements every MediaQueryList member read by useMediaQuery.
+      value: (query: string) =>
+        ({
+          matches: query.includes("any-pointer: coarse"),
+          media: query,
+          onchange: null,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          addListener: () => {},
+          removeListener: () => {},
+          dispatchEvent: () => false,
+        }) as MediaQueryList,
+    });
+  });
+
+  afterEach(() => {
+    if (width) Object.defineProperty(window, "innerWidth", width);
+    if (height) Object.defineProperty(window, "innerHeight", height);
+    if (touch) Object.defineProperty(navigator, "maxTouchPoints", touch);
+    else Reflect.deleteProperty(navigator, "maxTouchPoints");
+    Object.defineProperty(window, "matchMedia", { configurable: true, writable: true, value: media });
+  });
+
+  it("shows workspaces and conversations, with one route to the full action palette", async () => {
+    renderHome(solo());
+
+    expect(await screen.findByRole("heading", { name: "Conversations" })).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="mobile-agent-hub"]')).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Actions" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox")).toBeInTheDocument();
+  });
+
+  it("leaves outage and authentication states to Collie's operational home", async () => {
+    renderHome({ ...solo(), error: true });
+
+    await waitFor(() => expect(document.querySelector('[data-slot="mobile-agent-hub"]')).not.toBeInTheDocument());
+  });
+});
+
 describe("the dashboard on ONE machine is untouched", () => {
   it("renders no host switcher and no host chip anywhere", async () => {
     renderHome(solo());

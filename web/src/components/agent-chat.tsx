@@ -267,6 +267,8 @@ interface AgentChatProps {
   inStrip?: boolean;
   /** A half-open foldable in tabletop (ADR 0120): the chrome block stands in the bottom segment. */
   tabletop?: boolean;
+  /** The touch-phone presentation: chat first, with terminal navigation moved out of the resting view. */
+  mobileShell?: boolean;
 }
 
 /** How many rows at the raw screen's tail count as its footer when the model label asks if it is named. */
@@ -331,6 +333,7 @@ export function AgentChat({
   onSelect,
   inStrip = false,
   tabletop = false,
+  mobileShell = false,
 }: AgentChatProps) {
   const revalidator = useRevalidator();
   // A refused dialog tap (the guard found another dialog on the screen, or none): the notice stays
@@ -2806,10 +2809,10 @@ export function AgentChat({
                   onClick={() => setDrawer("paneSettings")}
                   aria-label={t("chat.header.openPaneSettingsAria", { name })}
                   data-slot="pane-identity-name"
-                  className={cn("min-h-0 flex-1 rounded-t-lg transition-colors active:bg-muted/60", doorInRow && "rounded-b-lg", FOCUS_RING_INSET, HOVER_FILL)}
+                  className={cn("min-h-0 flex-1 rounded-t-lg transition-colors active:bg-muted/60", doorInRow && !mobileShell && "rounded-b-lg", FOCUS_RING_INSET, HOVER_FILL)}
                 />
                 {/* On the phone with the tab row shown the door to the space is that row's first cell, not this line. */}
-                {!doorInRow && (
+                {(!doorInRow || mobileShell) && (
                 <button
                   type="button"
                   onClick={() => openSpace(agent.workspaceId)}
@@ -2977,27 +2980,29 @@ export function AgentChat({
                     className={cn(inStrip ? "text-xs" : "text-[11px]", "min-w-0 shrink-[3] truncate leading-3 text-muted-foreground")}
                   >
                     {/* In a strip the space header names the space, so the line keeps only the pane's own. */}
-                    {headerLine ?? (inStrip || doorInRow ? null : <CrossfadeText text={workspace} identity={paneSpaceKey(agent)} />)}
+                    {headerLine ?? (inStrip || (doorInRow && !mobileShell) ? null : <CrossfadeText text={workspace} identity={paneSpaceKey(agent)} />)}
                   </span>
                   {/* The branch the pane's folder is on, after the workspace and in the same 12px
                       line box, so the 36px block above holds with or without it. The workspace gives
                       way first, then the branch, keeping its tail; the meta never does. */}
-                  {gitHead !== null && <BranchLabel head={gitHead} className={cn(inStrip && "text-xs", "shrink leading-3 text-muted-foreground")} />}
+                  {gitHead !== null && !mobileShell && <BranchLabel head={gitHead} className={cn(inStrip && "text-xs", "shrink leading-3 text-muted-foreground")} />}
                   {/* The added account the session runs under (M101), a word after the branch. It stays whole
                       before the place and the branch give way. Nothing for a pane with none. */}
-                  {agent.account !== undefined && (
+                  {agent.account !== undefined && !mobileShell && (
                     <span data-slot="pane-account" className={cn(inStrip ? "text-xs" : "text-[11px]", "max-w-[35%] shrink-0 truncate leading-3 text-muted-foreground")}>
                       {agent.account.label}
                     </span>
                   )}
-                  <PaneMeta
-                    host={agent.host}
-                    cache={agent.cache}
-                    onOpenCache={() => setCacheSheetOpen(true)}
-                    full={inStrip}
-                    // The one descendant that takes its taps back from the surface under these lines.
-                    className="pointer-events-auto ml-auto"
-                  />
+                  {!mobileShell && (
+                    <PaneMeta
+                      host={agent.host}
+                      cache={agent.cache}
+                      onOpenCache={() => setCacheSheetOpen(true)}
+                      full={inStrip}
+                      // The one descendant that takes its taps back from the surface under these lines.
+                      className="pointer-events-auto ml-auto"
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -3132,7 +3137,7 @@ export function AgentChat({
 
                 Rendered at all only when a row would have drawn: `stripsExist`. Nothing to fold is
                 not a folded thing. */}
-            {stripsExist && (
+            {stripsExist && !mobileShell && (
               <CollapseSwap
                 open={!folded}
                 // The BAND, not two rows that happen to take turns in it — see CollapseSwap for what
@@ -3645,7 +3650,7 @@ export function AgentChat({
                 gauge or a cost to draw, the tag is the whole row Claude Code has, model first, whatever the
                 screen prints (Altan, 2026-10-25); a model ALONE stands down while the screen names
                 it, the duplicate `modelOnScreen` exists to avoid. */}
-            <ModelTag {...tagProps} effort={agent?.effort} />
+            {!mobileShell && <ModelTag {...tagProps} effort={agent?.effort} />}
           </div>
 
           {/* THE CARD DOCK (.adr/0059). The lifted card used to render inside the scroller above,
@@ -3801,7 +3806,7 @@ export function AgentChat({
                   arrives or leaves — a bare conditional here is the §2 fault at its full height, the
                   mirror teleporting 50px twice per message. `Collapse` also UNMOUNTS at the end of the
                   exit, so nothing is left focusable behind a row that is not on screen. */}
-              <Collapse open={!composing && statusLineShown && statusLines.length > 0}>
+              <Collapse open={!mobileShell && !composing && statusLineShown && statusLines.length > 0}>
                 {statusLineShown && statusLines.length > 0 && (
                 <div
                   className={cn(
@@ -3842,7 +3847,7 @@ export function AgentChat({
               {/* Background agents, under the statusline as the TUI drew them. Its own element and its
                   own budget, one row until tapped (agents-footer.tsx). Stands down with the strip
                   while the keyboard is up, through `Collapse` for the same DESIGN.md reason. */}
-              <Collapse open={!composing && statusLineShown && agentsFooter.length > 0}>
+              <Collapse open={!mobileShell && !composing && statusLineShown && agentsFooter.length > 0}>
                 {statusLineShown && agentsFooter.length > 0 && <AgentsFooter rows={agentsFooter} face={mirrorFace} />}
               </Collapse>
 
@@ -3997,7 +4002,8 @@ export function AgentChat({
                   // Settings → Hand: which thumb the belt and the reply box are laid out for.
                   hand={handOf(prefs)}
                   // The reply box's shape: the active theme's `composer` word (`field`, today's box, or `box`, the chat-box shape).
-                  layout={composerLayout(activeTheme.theme.surface?.composer)}
+                  layout={mobileShell ? "box" : composerLayout(activeTheme.theme.surface?.composer)}
+                  minimal={mobileShell}
                   // Settings → Pane navigation → Joystick: the handle band, just above the belt (ADR 0121).
                   aboveBelt={paneNav.handle}
                   beltMarks={beltMarks}

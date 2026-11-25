@@ -11,6 +11,7 @@ import { useLoadingStalled } from "@/hooks/use-loading-stalled";
 import { useNav } from "@/hooks/use-nav";
 import { usePaneFold } from "@/hooks/use-fold-posture";
 import { useWidthClass } from "@/hooks/use-width-class";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { type PaneData } from "@/lib/loaders";
 import { GLIDE_PAIRS, glideBack } from "@/lib/glide";
 import { canStepBack, homePath, panePath, readFrom, upTarget, zoomPath } from "@/lib/nav";
@@ -47,6 +48,8 @@ export function DetailRoute() {
   // From 600px wide the pane screen is a sidebar beside a strip of panes (ADR 0120). Below, nothing
   // here changes.
   const widthClass = useWidthClass();
+  const coarsePointer = useMediaQuery("(any-pointer: coarse)");
+  const mobileShell = widthClass === "compact" && Math.min(window.innerWidth, window.innerHeight) < 600 && coarsePointer && navigator.maxTouchPoints > 0;
   // A half-open foldable splits the screen at the fold (ADR 0120, "Folded postures"); flat elsewhere.
   const fold = usePaneFold(widthClass);
 
@@ -221,6 +224,7 @@ export function DetailRoute() {
         inStrip={widthClass !== "compact"}
         // Tabletop: the belt and the reply box stand in the bottom segment, under the fold.
         tabletop={fold === "tabletop"}
+        mobileShell={mobileShell}
         // Pane to pane is a sideways move: it replaces, and the pane's way up comes along.
         onSelect={(id) =>
           nav.side(

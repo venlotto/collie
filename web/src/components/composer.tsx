@@ -470,6 +470,13 @@ interface ComposerProps {
   layout?: "field" | "box";
 
   /**
+   * Compact chat shell: keep the complete send/draft/attachment machinery but leave the permanent
+   * terminal controls out of the resting composer. One progressive Actions control opens the same
+   * complete belt, so compact presentation never means reduced capability.
+   */
+  minimal?: boolean;
+
+  /**
    * Drawn directly above the actions belt, under any open dock: the pane's joystick handle band when
    * Settings → Pane navigation is Joystick (ADR 0121). The pane decides; absent, nothing is drawn.
    */
@@ -748,7 +755,7 @@ function lockWordsFor(slot: SendSlot, unreachableWords: string): string | null {
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, instance, surface, starting = false, unreachableNote, scope, stopOffered = false, agent, canSteer, returnedDraft = false, isShell, cwd, gone, readOnly, composing, onAnswerDialog, dialogCard = false, text, terminalDraft, rawTerminalDraft, prefs, display, onSent, onOpenMessages, walkyLinked = false, onDeliverNow, held: heldRows, chatEntries, pullHandle, draftNoticeSlot, expandArea, changesPill, zoomPill, stale, hand = "right", layout = "field", aboveBelt, beltMarks, floatingHint, screen, todos, subagents, jobs, pins, agentView, onViewRequest, unreadState = null, onScreenUnread, onAnswerUnseen, onCannotTell, onCannotTellRing, cannotTellInView, heldScreen, olderMember },
+  { paneId, instance, surface, starting = false, unreachableNote, scope, stopOffered = false, agent, canSteer, returnedDraft = false, isShell, cwd, gone, readOnly, composing, onAnswerDialog, dialogCard = false, text, terminalDraft, rawTerminalDraft, prefs, display, onSent, onOpenMessages, walkyLinked = false, onDeliverNow, held: heldRows, chatEntries, pullHandle, draftNoticeSlot, expandArea, changesPill, zoomPill, stale, hand = "right", layout = "field", minimal = false, aboveBelt, beltMarks, floatingHint, screen, todos, subagents, jobs, pins, agentView, onViewRequest, unreadState = null, onScreenUnread, onAnswerUnseen, onCannotTell, onCannotTellRing, cannotTellInView, heldScreen, olderMember },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -1998,6 +2005,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const pinCount = pins?.count ?? 0;
   const pinsLabel = pinCount > 0 ? translate("pins.belt.label", { count: pinCount }) : "";
   const [pinsOpen, setPinsOpen] = useState(false);
+  const [minimalToolsOpen, setMinimalToolsOpen] = useState(false);
   // The last Unpin shuts the sheet for good: a pin made later must not find it still "open" and pop it up.
   // The sheet and the mark it was opened from both leave then, so focus goes to the belt instead of nowhere.
   useEffect(() => {
@@ -4093,8 +4101,24 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             which were two rows of a phone's glass answering one question. The row itself is
             actions-row.tsx; everything below is only what each action DOES.
   */}
-        {aboveBelt}
-        <ActionsRow
+        {minimal && (
+          <div className="flex justify-end px-3 pt-1">
+            <button
+              type="button"
+              data-slot="mobile-composer-tools"
+              aria-expanded={minimalToolsOpen}
+              onClick={() => setMinimalToolsOpen((open) => !open)}
+              className="flex min-h-11 items-center gap-2 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors active:bg-muted"
+            >
+              <Icon name="all-options" className="size-4" />
+              {translate("actions.title")}
+            </button>
+          </div>
+        )}
+        {(!minimal || minimalToolsOpen) && (
+          <>
+            {aboveBelt}
+            <ActionsRow
           general={keepBelt([
               // Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to
               // open, tap again to close. `expanded` ties each to the dock; the "on" tint marks
@@ -4282,7 +4306,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           // the next act (M40 spec 04). See `clearSlot` for when it shows.
           clear={clearSlot()}
           marks={beltMarks}
-        />
+            />
+          </>
+        )}
         {/* ── THE FOOTER'S NOTICE STRIPS, SORTED BY KIND (DESIGN.md §1, §2) ─────────────────────
             Every strip below arrives and leaves through `Collapse`, which is the only sanctioned way
             an in-flow surface appears at all. Before this they were bare conditionals, so each one

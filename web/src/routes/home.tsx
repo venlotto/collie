@@ -42,6 +42,7 @@ import { usePaneOpen } from "@/hooks/use-pane-open";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import { useElementWidth } from "@/hooks/use-element-width";
 import { useWidthClass } from "@/hooks/use-width-class";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { peekSpaceLanding } from "@/lib/space-landing";
 import { showBadge } from "@/lib/app-badge";
 import { takeBundleFocus, useBundleFocusPending } from "@/lib/bundle-apply";
@@ -71,6 +72,7 @@ import { Button } from "@/components/ui/button";
 import { FabButton } from "@/components/ui/fab";
 import { Icon } from "@/components/icons/icon";
 import { DashboardViews } from "@/components/dashboard-views";
+import { MobileAgentHub } from "@/components/mobile-agent-hub";
 
 const NO_TRICK_SESSIONS: readonly AgentView[] = [];
 
@@ -341,7 +343,10 @@ export function HomeRoute() {
   // 640px column: the header, the grid of Spaces and the tab bar are as wide as the grid. The number of
   // columns is read from the width of the scroller itself, the room inside it without its scrollbar, and never
   // from the window. Compact and medium, and Off at any width, draw the phone's column exactly as before.
-  const wide = useWidthClass() === "expanded";
+  const widthClass = useWidthClass();
+  const wide = widthClass === "expanded";
+  const coarsePointer = useMediaQuery("(any-pointer: coarse)");
+  const phoneShell = widthClass === "compact" && Math.min(window.innerWidth, window.innerHeight) < 600 && coarsePointer && navigator.maxTouchPoints > 0;
   // A pane's `open_space` (lib/space-landing.ts) lands on a space's column, and only the Dashboard view draws
   // columns: Crew and Files stand in the way, so the view goes back to the Dashboard. Taken on arrival only.
   useEffect(() => {
@@ -498,6 +503,30 @@ export function HomeRoute() {
       )}
     </Button>
   );
+
+  // On a phone the product is a chat client. Keep Collie's operational dashboard intact for every
+  // wider layout, but do not make a thumb pass through its filters, strips, launchers and footer to
+  // reach the same panes. This branch is intentionally after every hook above.
+  if (phoneShell && !data.error && !data.authError && !notPaired) {
+    return (
+      <div className="mx-auto flex min-h-0 w-full max-w-screen-sm flex-1 flex-col">
+        <RouteHeader width="column" rightLead={<ActionsButton />} rightTrail={<SettingsGear scope={data.scope} />} />
+        <ReadOnlyBanner device={data.device} />
+        <MobileAgentHub
+          panes={herd}
+          workspaces={herdWorkspaces}
+          stale={data.stale === true}
+          onOpen={paneOpen.open}
+          onPress={paneOpen.press}
+          onNew={fabOffered ? openNew : undefined}
+        />
+        <ToastViewport>
+          <StatusArea />
+        </ToastViewport>
+      </div>
+    );
+  }
+
   return (
     <div className={wide ? "mx-auto flex min-h-0 w-full flex-1 flex-col" : "mx-auto flex min-h-0 w-full max-w-screen-sm flex-1 flex-col"}>
       {/* The dashboard header: wordmark + the session switcher (dashboard-only), then the shared pill

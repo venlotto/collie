@@ -138,6 +138,20 @@ function renderChat(
   return { props, container };
 }
 
+describe("AgentChat — touch-phone shell", () => {
+  it("keeps the conversation and reply box while removing permanent terminal chrome", () => {
+    const agent = fixtureAgents[0]!;
+    const tab = { tabId: "w1:t1", workspaceId: "w1", number: 1, label: "review", focused: true, paneCount: 1 };
+    const { container } = renderChat({ mobileShell: true, agent, agents: [agent], tabs: [tab] });
+
+    expect(screen.getByPlaceholderText(/type a reply/i)).toBeInTheDocument();
+    expect(container.querySelector('[data-slot="composer-actions"]')).toBeNull();
+    expect(container.querySelector('[data-slot="model-tag"]')).toBeNull();
+    expect(container.querySelector('[data-slot="pane-meta"]')).toBeNull();
+    expect(container.querySelector('[data-slot="pane-place"]')).toHaveTextContent("webapp");
+  });
+});
+
 // Find and History are ROWS in the pane's actions sheet now — the header spends ONE ⋮ on the whole
 // menu instead of two icons on two actions. Every test that used to click a header icon goes through
 // this door, which is also the point: there is exactly one door.
