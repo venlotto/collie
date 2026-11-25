@@ -11,6 +11,8 @@ import type { HoldNote } from "@/lib/surface/hold";
 export type AgentStatus = "idle" | "working" | "blocked" | "done" | "unknown";
 
 export interface AgentView {
+  /** Herdr's terminal identity survives a move even when the pane address changes. */
+  terminalId?: string;
   paneId: string;
   /**
    * The pane's current session instance: four characters of [a-z0-9] that change when another session

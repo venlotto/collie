@@ -77,6 +77,7 @@ class StubAdapter implements MuxAdapter {
   paneActions?: MuxAdapter["paneActions"];
   controlTurn?: MuxAdapter["controlTurn"];
   renameSpace?: MuxAdapter["renameSpace"];
+  movePane?: MuxAdapter["movePane"];
   listConversations?: MuxAdapter["listConversations"];
   conversationItems?: MuxAdapter["conversationItems"];
   reopenConversation?: MuxAdapter["reopenConversation"];
@@ -363,6 +364,7 @@ describe("a decorator preserves the adapter's whole surface", () => {
     writeKeys: true,
     renamePane: true,
     closePane: true,
+    movePane: true,
     setFocus: true,
     createTab: true,
     renameTab: true,
@@ -403,6 +405,7 @@ describe("a decorator preserves the adapter's whole surface", () => {
     stub.pasteText = () => Promise.resolve(muxAck());
     stub.pasteBlock = () => Promise.resolve(muxAck());
     stub.renameSpace = () => Promise.resolve(muxAck());
+    stub.movePane = paneId => Promise.resolve(paneId);
     stub.listConversations = () => Promise.resolve(muxOk({ items: [] }));
     stub.conversationItems = () => Promise.resolve(muxOk({ items: [], more: false }));
     stub.reopenConversation = () => Promise.resolve(muxOk({}));
@@ -438,7 +441,7 @@ describe("a decorator preserves the adapter's whole surface", () => {
     expect("readLogicalText" in withAgentHints(new StubAdapter(), { hooksInstalled: () => false })).toBe(false);
     // The ask methods too (ADR 0100): a screen adapter must never come out looking like it answers by id.
     // And the control methods (ADR 0101): a screen adapter must never come out refusing `/reply`.
-    for (const field of ["openAsks", "answerAsk", "paneTurn", "paneActions", "controlTurn", "renameSpace", "listConversations", "conversationItems", "reopenConversation"]) {
+    for (const field of ["openAsks", "answerAsk", "paneTurn", "paneActions", "controlTurn", "movePane", "renameSpace", "listConversations", "conversationItems", "reopenConversation"]) {
       expect(field in decorate(new StubAdapter(), [])).toBe(false);
       expect(field in withAgentHints(new StubAdapter(), { hooksInstalled: () => false })).toBe(false);
     }

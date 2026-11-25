@@ -226,6 +226,7 @@ export type HerdrRpc = Pick<
   | "sendPaneText"
   | "sendPaneKeys"
   | "renamePane"
+  | "movePane"
   | "closePane"
   | "focusPane"
   | "createTab"
@@ -641,6 +642,13 @@ export class HerdrClient {
   /** Send key names (e.g. ["Enter"]) to a pane — used to submit a reply. */
   sendPaneKeys(paneId: string, keys: string[]): Promise<void> {
     return this.request<void>("pane.send_keys", { pane_id: paneId, keys });
+  }
+
+  async movePane(paneId: string, workspaceId: string): Promise<string> {
+    const result = await this.request<{ move_result: { pane: WirePane } }>("pane.move", {
+      pane_id: paneId, destination: { type: "new_tab", workspace_id: workspaceId }, focus: false,
+    });
+    return result.move_result.pane.pane_id;
   }
 
   /** Close a pane, terminating its agent ("kill"). Resolves on Herdr's `{type:"ok"}` reply. */

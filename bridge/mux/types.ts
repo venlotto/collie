@@ -184,6 +184,7 @@ export function isUnsupported<T>(outcome: MuxOutcome<T>): boolean {
  * being asked to invent a field only Collie's ledger could ever fill.
  */
 export interface MuxPane extends MuxIdentity {
+  readonly terminalId?: string;
   readonly paneId: string;
   readonly spaceId: string;
   readonly spaceLabel: string;
@@ -886,6 +887,8 @@ export interface MuxAdapter {
 
   /** Close a pane, ending what runs in it. Needs `closePane`. */
   closePane(paneId: string): Promise<MuxAck>;
+  /** Reparent the live terminal and return its new mux address. */
+  movePane?(paneId: string, workspaceId: string): Promise<string>;
 
   /**
    * Show this pane in the OPERATOR's terminal — after it resolves, {@link MuxPane.focused} is this
@@ -989,6 +992,7 @@ export type MuxOptionalMethod =
   | "renameSpace"
   | "listConversations"
   | "conversationItems"
+  | "movePane"
   | "reopenConversation";
 
 /**
@@ -1001,6 +1005,7 @@ export function muxOptionalMethods(
   adapter: MuxAdapter,
 ): Pick<MuxAdapter, MuxOptionalMethod> {
   const methods: Pick<MuxAdapter, MuxOptionalMethod> = {};
+  if (adapter.movePane) methods.movePane = adapter.movePane.bind(adapter);
   const readLogicalText = adapter.readLogicalText?.bind(adapter);
   if (readLogicalText !== undefined) methods.readLogicalText = readLogicalText;
   const listStarters = adapter.listStarters?.bind(adapter);

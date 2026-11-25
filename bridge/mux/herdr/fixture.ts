@@ -315,6 +315,18 @@ export class FakeHerdr implements HerdrRpc {
     else pane.label = label;
   }
 
+  async movePane(paneId: string, workspaceId: string): Promise<string> {
+    const pane = this.pane("pane.move", paneId);
+    const workspace = this.workspace("pane.move", workspaceId);
+    const tab = this.newTab(workspace, "1");
+    const oldScreen = this.screens.get(paneId);
+    const newId = workspaceId + ":p" + String(++this.minted);
+    this.screens.delete(paneId);
+    if (oldScreen) this.screens.set(newId, oldScreen);
+    Object.assign(pane, { pane_id: newId, workspace_id: workspaceId, tab_id: tab.tab_id });
+    return newId;
+  }
+
   async closePane(paneId: string): Promise<void> {
     this.pane("pane.close", paneId);
     await this.endPane(paneId);

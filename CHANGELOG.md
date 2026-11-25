@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Added
+
+- **A chat can move without restarting its terminal.** Herdr gives the running pane a tab in the destination workspace and keeps its shell and scrollback.
+
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.

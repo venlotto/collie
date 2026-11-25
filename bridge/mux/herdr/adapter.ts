@@ -428,6 +428,10 @@ export class HerdrMux implements MuxAdapter {
     return this.attempt(() => this.client.renamePane(paneId, label));
   }
 
+  movePane(paneId: string, workspaceId: string): Promise<string> {
+    return this.client.movePane(paneId, workspaceId);
+  }
+
   async closePane(paneId: string): Promise<MuxAck> {
     return this.attempt(() => this.client.closePane(paneId));
   }
@@ -615,6 +619,7 @@ function toMuxPane(
   // conditionally spread, so absent stays absent and each condition reads as the one rule it is.
   const pane: MutableMuxPane = {
     paneId: raw.pane_id,
+    terminalId: raw.terminal_id,
     spaceId: raw.workspace_id,
     spaceLabel,
     // A workspace Herdr lists with a label of its own is named; the id a missing record falls back to is not.

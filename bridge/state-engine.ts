@@ -276,6 +276,7 @@ function toView(pane: MuxPane, kind: "agent" | "shell"): AgentView {
   };
   // Optional fields are ASSIGNED, never conditionally spread: absent stays absent, and each
   // condition below stays readable as the one rule it encodes.
+  if (pane.terminalId) view.terminalId = pane.terminalId;
   if (pane.paneLabel) view.paneLabel = pane.paneLabel;
   // Why a blocked pane needs you when it is not a question (AgentView.blockedBy). Only with `blocked`.
   if (pane.status === "blocked" && pane.blockedBy !== undefined) view.blockedBy = pane.blockedBy;
