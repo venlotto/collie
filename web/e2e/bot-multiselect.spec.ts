@@ -109,7 +109,7 @@ test("mantener pulsado, alternar, seleccionar todo y mover dos chats", async ({ 
   await toolbar.getByRole("button", { name: "Mover" }).click();
   const sheet = page.getByRole("dialog", { name: "Mover a" });
   await expect(sheet).toBeVisible();
-  await page.waitForTimeout(300);
+  await expect(sheet.locator(".bot-sheet")).toHaveCSS("transform", "none");
   await capture(page, "sheet-mover");
   await sheet.getByRole("button", { name: "Duck duck race" }).click();
   const target = page.locator("section").filter({ has: page.getByRole("button", { name: "Duck duck race", exact: true }) });
@@ -144,7 +144,7 @@ test("un solo chat va a papelera, se restaura y sólo se cierra al confirmar", a
   await remove.click();
   const confirm = page.getByRole("dialog", { name: "Eliminar definitivamente" });
   await expect(confirm).toBeVisible();
-  await page.waitForTimeout(300);
+  await expect(confirm.locator(".bot-sheet")).toHaveCSS("transform", "none");
   await capture(page, "confirmacion");
   await confirm.getByRole("button", { name: "Cancelar" }).click();
   await expect(confirm).toHaveCount(0);
