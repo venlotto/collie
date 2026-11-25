@@ -25,8 +25,8 @@ async function screenshot(page: Page, label: string) {
 async function settledSheet(page: Page) {
   const dialog = page.getByRole("dialog", { name: "Crear nuevo Bot" });
   await expect(dialog).toBeVisible();
-  // The reference is the resting form. Also wait past the 270ms entrance on reduced-motion browsers.
-  await page.waitForTimeout(380);
+  // WebKit can defer the first animation frame. Wait for the resting form itself.
+  await expect(dialog.locator("form")).toHaveCSS("transform", "none");
   const geometry = await dialog.evaluate(el => {
     const face = el.querySelector(".bot-preview .bot-avatar")!.getBoundingClientRect();
     const field = el.querySelector("input")!.getBoundingClientRect();
