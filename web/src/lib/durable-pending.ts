@@ -49,6 +49,8 @@ export interface PendingLine {
    * the same text the first user turn that is NEW since the tap is this line's. Never two rows for one message.
    */
   seen?: ReadonlySet<string>;
+  /** Matches in the terminal before the tap, so an older copy cannot stand in for this bot reply. */
+  mirrorCopies?: number;
   /**
    * The bridge held or queued the send (M104): the line waits for the row that shows it there, the queue card in the
    * thread or the held row above the box, and goes in the frame that row arrives. At most {@link HANDOVER_KEEP_MS}.
@@ -192,7 +194,7 @@ export function unmatched(
     const byText =
       byId ??
       users.find((entry) => {
-        if (taken.has(entry) || entry.requestId !== undefined || wordsOf(entry).trim() !== line.text.trim()) return false;
+        if (taken.has(entry) || line.seen?.has(entry.uuid) || entry.requestId !== undefined || wordsOf(entry).trim() !== line.text.trim()) return false;
         const sent = Date.parse(entry.ts);
         return Number.isNaN(sent) || Math.abs(sent - line.at) <= PENDING_MATCH_MS;
       });

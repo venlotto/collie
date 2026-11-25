@@ -1049,7 +1049,7 @@ export function SessionStream({
   // journal cannot be read has no thread to put it in. Under it, from the same frame, the working row's room: empty
   // until the pane works, then "Still working" in the same box, so neither the line's arrival from the log nor the
   // turn's start moves the tail. The room stays until the answer has landed and the turn has ended.
-  const drawnLines = lines.filter((line) => line.seen === undefined || reading);
+  const drawnLines = lines.filter((line) => botStyle || line.seen === undefined || reading);
   const composerLines = drawnLines.filter((line) => line.seen !== undefined && line.handover !== true).length;
   const [roomHeld, setRoomHeld] = useState(false);
   if (composerLines > 0 && !roomHeld) setRoomHeld(true);
@@ -1249,8 +1249,8 @@ export function SessionStream({
       {/* THE LINES THE PERSON SENT THAT THE PROGRAM HAS NOT WRITTEN BACK (durable panes only), after the program's own
           items and before the working row. Each is replaced in place by the program's item (lib/durable-pending.ts). */}
       {drawnLines.map((line, i) => (
-        <div key={line.requestId} data-slot="stream-pending" className={cn(NEAR_BLOCK, userRhythm(look.rhythm, blocks.length + i))}>
-          <PendingTurn text={line.text} state={line.state} at={line.at} />
+        <div key={line.requestId} data-slot="stream-pending" className={botStyle && line.seen ? "bot-turn bot-turn-user" : cn(NEAR_BLOCK, userRhythm(look.rhythm, blocks.length + i))}>
+          {botStyle && line.seen ? <p className="whitespace-pre-wrap">{line.text}</p> : <PendingTurn text={line.text} state={line.state} at={line.at} />}
         </div>
       ))}
 

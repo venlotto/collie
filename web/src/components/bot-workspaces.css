@@ -100,6 +100,8 @@
 .bot-detail [data-slot="composer-box"][data-box="rest"] > button { width: 32px; height: 32px; }
 .bot-detail [data-slot="composer-box"] textarea { font: 16px/22px -apple-system,BlinkMacSystemFont,"Inter",sans-serif; background: transparent; }
 .bot-detail [data-slot="composer-primary"] { background: #138c4a; color: #fff; opacity: 1; }
+.bot-detail [data-slot="notice"]:has([data-slot="composer-refusal"]) { background: #272729; border: 0; border-radius: 16px; color: #fff; }
+.bot-detail [role="alert"] [data-slot="composer-refusal"] { color: #ffb4ae; }
 .bot-detail [data-slot="chrome-block"] { margin: 0 auto; width: 100%; max-width: 820px; }
 .bot-detail [data-slot="chrome-block"] > div:first-child { padding: 8px 26px 0; }
 .bot-dialog { position: fixed; inset: 0; margin: 0; padding: 0 7px max(6px,env(safe-area-inset-bottom)); background: transparent; width: 100%; max-width: none; height: 100%; max-height: none; border: 0; overflow: hidden; }
