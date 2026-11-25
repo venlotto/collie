@@ -71,6 +71,7 @@ export type PaneProgress =
 export interface AgentView {
   /** Herdr's terminal identity survives a move even when the pane address changes. */
   terminalId?: string;
+  trash?: { trashedAt: number; originalWorkspaceId: string };
   paneId: string;
   workspaceId: string;
   workspaceLabel: string;

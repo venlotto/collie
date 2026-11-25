@@ -1,3 +1,4 @@
+import type { BotTrash } from "./bot-trash.ts";
 import { mkdir, realpath } from "node:fs/promises";
 import { isIP } from "node:net";
 import { homedir, hostname, networkInterfaces } from "node:os";
@@ -1301,6 +1302,7 @@ export interface UpdateLineDeps {
 export type TelemetryDeps = Pick<Telemetry, "view" | "choose" | "trouble">;
 
 export function startServer(opts: {
+  botTrash?: BotTrash;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -1984,6 +1986,8 @@ export function startServer(opts: {
     // SESSION id rather than the pane id, because pane ids churn and a renumbered pane must inherit
     // nothing. No entry means no key at all, which renders as nothing.
     const withActivity = (from: SessionRuntime, p: AgentView): AgentView => {
+      const trash = p.terminalId && opts.botTrash?.lookup(from.name, p.terminalId);
+      if (trash) p = { ...p, trash };
       const a = activity.get(from.name, p.paneId);
       // The title is the one string here a program in the pane writes, so it is masked like the
       // mirror (bridge/redact.ts) before it reaches the phone and the phone's cache.
@@ -2805,7 +2809,11 @@ export function startServer(opts: {
         return afterPaneInput(rt.engine, await replyPane(herdr, cfg, paneId, req, audit_, device, session, { ...replySendOf(rt), readHint: paneReadHint(rt.engine, paneId) }));
       if (action === "keys" && req.method === "POST")
         return afterPaneInput(rt.engine, await keysPane(herdr, cfg, paneId, req, audit_, device, session, paneReadHint(rt.engine, paneId)));
-      if (action === "upload" && req.method === "POST") return uploadPane(cfg, paneId, req, audit_, device, session);
+      if (action === "upload" && req.method === "POST") {
+        const state = rt.engine.current();
+        const owner = [...state.agents, ...state.shellPanes].find(p => p.paneId === paneId)?.terminalId;
+        return uploadPane(cfg, paneId, req, audit_, device, session, herdr.movePane ? opts.botTrash : undefined, owner);
+      }
       if (action === "close" && req.method === "POST") {
         const closed = await closePane(herdr, rt.engine, paneId, req, audit_, device, session);
         // A closed sign-in session's account (M101, Change login) is read again at the next list read,
@@ -3347,6 +3355,29 @@ export function startServer(opts: {
         }
         return localRuntime(sessionName, req.headers.get("accept-encoding"));
       };
+
+      if (pathname === "/api/bot-action") {
+        if (req.method !== "POST") return text("method not allowed", 405);
+        const denied = guard(req, cfg, "write", pairingGate);
+        if (denied) return denied;
+        if (host.kind !== "local" || url.searchParams.has("host")) return text("local session required", 400);
+        const rt = registry.get(sessionName);
+        if (!rt) return unknownSession();
+        if (!opts.botTrash) return text("unavailable", 503);
+        const input = parseJsonObject(await req.text());
+        const action = input?.action;
+        const terminalId = asJsonString(input?.terminalId);
+        if (!terminalId || (action !== "move" && action !== "trash" && action !== "restore" && action !== "purge")) {
+          return text("invalid chat action", 400);
+        }
+        try {
+          await opts.botTrash.act(rt.name, action, terminalId, asJsonString(input?.workspaceId), asJsonNumber(input?.trashedAt));
+          audit.record({ action: "bot." + action, session: rt.name, device: whois(req).device, detail: { terminalId } });
+          return json({ ok: true }, null);
+        } catch (error) {
+          return json({ ok: false, message: errorText(error) }, null, 409);
+        }
+      }
 
       // ── Live state (polled by the client) ────────────────────────────────
       if (pathname === "/api/snapshot") {
@@ -9477,6 +9508,8 @@ async function uploadPane(
   audit: AuditLog,
   device: string | null,
   session: string,
+  trash?: BotTrash,
+  terminalId?: string,
 ): Promise<Response> {
   const ae = req.headers.get("accept-encoding");
   // Reject an oversize upload by its declared Content-Length BEFORE buffering — req.formData()
@@ -9524,10 +9557,14 @@ async function uploadPane(
     // 0700 — uploads (and the state dir they live under) may hold sensitive images; keep them
     // owner-only. recursive:true applies the mode to any intermediate dirs it creates too.
     await mkdir(dir, { recursive: true, mode: 0o700 });
-    const safePane = paneId.replace(/[^A-Za-z0-9_-]/g, "_");
-    const filename = `${safePane}-${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    const write = async (prefix: string) => {
+      const name = `${prefix}${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      await Bun.write(join(dir, name), file);
+      return name;
+    };
+    const filename = trash ? await trash.writeAttachment(session, paneId, terminalId, write)
+      : await write(paneId.replace(/[^A-Za-z0-9_-]/g, "_") + "-");
     const fullPath = join(dir, filename);
-    await Bun.write(fullPath, file);
     audit.record({
       action: "upload",
       paneId,
