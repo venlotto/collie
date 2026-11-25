@@ -101,7 +101,7 @@ export const MUX_CAPABILITY_ROUTES = {
   renameTab:
     "POST /api/tab/:id/rename. A durable agent declares it from its own `caps.rename` (WIRE.md section 7.8); every other adapter declares it from its multiplexer's tab rename.",
   renameSpace:
-    "POST /api/space/:id/rename: set a space's name. Only a durable agent declares it today, from its own `caps.rename` (WIRE.md section 7.8); the phone draws the Rename row of the space sheet when it is declared. Absent ⇒ no Rename row, and the space chip opens no sheet.",
+    "POST /api/space/:id/rename: set a space's name. Herdr declares it, as does a durable agent from its own `caps.rename` (WIRE.md section 7.8); the phone draws the Rename row of the space sheet when it is declared. Absent ⇒ no Rename row, and the space chip opens no sheet.",
   closeTab: "POST /api/tab/:id/close — a bulk pane-close.",
   createSpace: "POST /api/workspace — a new space, opening a fresh shell.",
   createWorktree:

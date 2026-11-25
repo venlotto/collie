@@ -1,3 +1,5 @@
+import { chatOrderId } from "../web/src/lib/chat-order.ts";
+import { ChatOrderStore } from "./chat-order.ts";
 import { mkdir, realpath } from "node:fs/promises";
 import { isIP } from "node:net";
 import { homedir, hostname, networkInterfaces } from "node:os";
@@ -1774,6 +1776,7 @@ export function startServer(opts: {
   /** Who the requester is, across both device gates — see {@link requestDevice}. */
   const whois = (req: Request): DeviceAuth => requestDevice(req, cfg, pairingGate);
   // The composer diagnostic's file (bridge/diag-composer.ts): nothing touches the disk until a phone reports one.
+  const chatOrder = new ChatOrderStore(cfg.stateDir);
   const composerDiag = new ComposerDiagStore(diagFileIo(cfg.stateDir), { version: opts.version });
   const pushPictureDiag = new PushPictureDiagLimit();
   const crewLead = opts.crewLead;
@@ -2650,6 +2653,54 @@ export function startServer(opts: {
     }
 
     // ── Space rename: set its name, where the multiplexer (a durable program) declares `renameSpace` ──
+    if (pathname === "/api/chat-order" && (req.method === "GET" || req.method === "POST")) {
+      const read = req.method === "GET";
+      const denied = caller.gate(read ? "read" : "write");
+      if (denied) return denied;
+      const rt = await caller.resolve();
+      if (rt instanceof Response) return rt;
+      if (read) {
+        const snap = rt.engine.current();
+        const visible = new Map([...snap.agents, ...snap.shellPanes].map(p => [chatOrderId(p), p.workspaceId]));
+        return Response.json(chatOrder.read(rt.name).map(group => ({
+          ...group, paneIds: group.paneIds.filter(id => visible.get(id) === group.workspaceId),
+        })).filter(group => group.paneIds.length > 0));
+      }
+      const body = asJsonRecord(await req.json().catch(() => null));
+      if (!body || typeof body.workspaceId !== "string" || typeof body.paneId !== "string" ||
+          (body.before !== null && typeof body.before !== "string")) return text("bad order", 400);
+      // A cross-workspace move can finish before the next engine poll. Address the live mux.
+      const snapshot = await rt.herdr.snapshot();
+      const current = rt.engine.current();
+      const inSpace = snapshot.panes.filter(p => p.spaceId === body.workspaceId);
+      const ids = new Set(inSpace.map(chatOrderId));
+      const live = [...new Set([...current.agents, ...current.shellPanes].map(chatOrderId).filter(id => ids.has(id)).concat([...ids]))];
+      try {
+        const saved = chatOrder.place(rt.name, body.workspaceId, live, body.paneId, body.before);
+        caller.audit.record({ action: "chat.order", session: rt.name, device: caller.device(), paneId: body.paneId });
+        return Response.json(saved);
+      } catch (error) {
+        if (error instanceof RangeError) return text(error.message, 409);
+        throw error;
+      }
+    }
+    const moveMatch = pathname.match(/^\/api\/space\/([^/]+)\/move$/);
+    if (moveMatch && req.method === "POST") {
+      const denied = caller.gate("write");
+      if (denied) return denied;
+      const rt = await caller.resolve();
+      if (rt instanceof Response) return rt;
+      if (!rt.herdr.moveSpace) return text("Este multiplexor no admite mover workspaces.", 405);
+      const body = asJsonRecord(await req.json().catch(() => null));
+      if (!body || (body.before !== null && typeof body.before !== "string")) return text("bad position", 400);
+      const spaceId = decodeURIComponent(moveMatch[1]!);
+      const moved = await rt.herdr.moveSpace(spaceId, body.before);
+      if (!moved.ok) return text(moved.detail, 409);
+      caller.audit.record({ action: "space.move", session: rt.name, device: caller.device(), detail: { spaceId } });
+      await settleTopology(rt.herdr, rt.engine);
+      return Response.json({ ok: true });
+    }
+
     const spaceMatch = pathname.match(SPACE_ACTION_ROUTE);
     if (spaceMatch && req.method === "POST") {
       const denied = caller.gate("write");

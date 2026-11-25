@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Added
+
+- **The hosted chat list remembers conversation order across devices.** Herdr also accepts workspace renames and position changes from the list.
+
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.

@@ -114,6 +114,7 @@ const HERDR_CAPABILITIES = declareCapabilities({
     "typeText",
     "sendKeys",
     "renamePane",
+    "renameSpace",
     "closePane",
     "setFocus",
     "createTab",
@@ -422,6 +423,19 @@ export class HerdrMux implements MuxAdapter {
       if (err instanceof HerdrNoReply) return muxUnconfirmed(`Herdr closed the connection before it confirmed the keys on ${paneId} (${err.message}). They may have arrived, so they were not sent again.`);
       return transportRefusal(err);
     }
+  }
+
+  renameSpace(id: string, label: string): Promise<MuxAck> {
+    return this.attempt(() => this.client.renameWorkspace(id, label));
+  }
+
+  moveSpace(id: string, before: string | null): Promise<MuxAck> {
+    return this.attempt(async () => {
+      const spaces = await this.client.listWorkspaces();
+      const index = before === null ? spaces.length : spaces.findIndex(w => w.workspace_id === before);
+      if (index < 0) throw new Error("El workspace de destino ya no existe.");
+      await this.client.moveWorkspace(id, index);
+    });
   }
 
   async renamePane(paneId: string, label: string | null): Promise<MuxAck> {

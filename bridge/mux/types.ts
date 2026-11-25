@@ -915,6 +915,7 @@ export interface MuxAdapter {
    * can name a space declares the capability and has the method (`durable`, from its program's `caps.rename`).
    * An adapter without it is never asked, and `bridge/server.ts` answers `unsupported` for it.
    */
+  moveSpace?(spaceId: string, before: string | null): Promise<MuxAck>;
   renameSpace?(spaceId: string, label: string): Promise<MuxAck>;
 
   /** Close a tab and every pane in it. Needs `closeTab`. */
@@ -986,6 +987,7 @@ export type MuxOptionalMethod =
   | "paneLabels"
   | "pasteText"
   | "pasteBlock"
+  | "moveSpace"
   | "renameSpace"
   | "listConversations"
   | "conversationItems"
@@ -1027,6 +1029,7 @@ export function muxOptionalMethods(
   if (pasteText !== undefined) methods.pasteText = pasteText;
   const pasteBlock = adapter.pasteBlock?.bind(adapter);
   if (pasteBlock !== undefined) methods.pasteBlock = pasteBlock;
+  if (adapter.moveSpace) methods.moveSpace = adapter.moveSpace.bind(adapter);
   const renameSpace = adapter.renameSpace?.bind(adapter);
   if (renameSpace !== undefined) methods.renameSpace = renameSpace;
   // The program's history (M53 spec 11): the list, the items of one, and a reopen.

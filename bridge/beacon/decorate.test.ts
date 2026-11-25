@@ -76,6 +76,7 @@ class StubAdapter implements MuxAdapter {
   paneTurn?: MuxAdapter["paneTurn"];
   paneActions?: MuxAdapter["paneActions"];
   controlTurn?: MuxAdapter["controlTurn"];
+  moveSpace?: MuxAdapter["moveSpace"];
   renameSpace?: MuxAdapter["renameSpace"];
   listConversations?: MuxAdapter["listConversations"];
   conversationItems?: MuxAdapter["conversationItems"];
@@ -355,6 +356,7 @@ describe("a decorator preserves the adapter's whole surface", () => {
     paneLabels: true,
     pasteText: true,
     pasteBlock: true,
+    moveSpace: true,
     renameSpace: true,
     listConversations: true,
     conversationItems: true,
@@ -402,6 +404,7 @@ describe("a decorator preserves the adapter's whole surface", () => {
     stub.paneLabels = () => undefined;
     stub.pasteText = () => Promise.resolve(muxAck());
     stub.pasteBlock = () => Promise.resolve(muxAck());
+    stub.moveSpace = () => Promise.resolve(muxAck());
     stub.renameSpace = () => Promise.resolve(muxAck());
     stub.listConversations = () => Promise.resolve(muxOk({ items: [] }));
     stub.conversationItems = () => Promise.resolve(muxOk({ items: [], more: false }));
@@ -438,7 +441,7 @@ describe("a decorator preserves the adapter's whole surface", () => {
     expect("readLogicalText" in withAgentHints(new StubAdapter(), { hooksInstalled: () => false })).toBe(false);
     // The ask methods too (ADR 0100): a screen adapter must never come out looking like it answers by id.
     // And the control methods (ADR 0101): a screen adapter must never come out refusing `/reply`.
-    for (const field of ["openAsks", "answerAsk", "paneTurn", "paneActions", "controlTurn", "renameSpace", "listConversations", "conversationItems", "reopenConversation"]) {
+    for (const field of ["openAsks", "answerAsk", "paneTurn", "paneActions", "controlTurn", "moveSpace", "renameSpace", "listConversations", "conversationItems", "reopenConversation"]) {
       expect(field in decorate(new StubAdapter(), [])).toBe(false);
       expect(field in withAgentHints(new StubAdapter(), { hooksInstalled: () => false })).toBe(false);
     }

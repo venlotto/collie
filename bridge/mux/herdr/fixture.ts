@@ -241,6 +241,18 @@ export class FakeHerdr implements HerdrRpc {
     };
   }
 
+  async renameWorkspace(id: string, label: string): Promise<void> {
+    this.workspace("workspace.rename", id).label = label;
+  }
+
+  async moveWorkspace(id: string, insertIndex: number): Promise<void> {
+    const workspace = this.workspace("workspace.move", id);
+    const current = this.workspaces.indexOf(workspace);
+    this.workspaces.splice(current, 1);
+    this.workspaces.splice(insertIndex > current ? insertIndex - 1 : insertIndex, 0, workspace);
+    this.workspaces.forEach((space, i) => { space.number = i + 1; });
+  }
+
   async listWorkspaces(): Promise<WireWorkspace[]> {
     this.assertConnected();
     return this.workspaces;

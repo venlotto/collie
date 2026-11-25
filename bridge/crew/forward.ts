@@ -135,7 +135,8 @@ const FORWARDABLE: readonly RegExp[] = [
   /^tab\/[^/]+\/(?:rename|close)$/,
   // A space's rename (M53 spec 05): a WRITE to the member that owns the space. Mirrors `SPACE_ACTION_ROUTE` in
   // bridge/server.ts. Additive-optional (§7.1): a member that predates it answers 404.
-  /^space\/[^/]+\/rename$/,
+  /^space\/[^/]+\/(?:rename|move)$/,
+  /^chat-order$/,
   /^workspace$/,
   // A worktree (ADR 0126 point 6): git runs where the checkout lives, so the plan and the create go to
   // the addressed member like `workspace`, which runs its own `planWorktree` and `createWorktreeAt`. The
@@ -325,6 +326,7 @@ function isWalkyList(route: string, method: string | undefined): boolean {
 export function forwardKind(route: string, method?: string): ForwardKind {
   // A pane's walky list changes nothing on the member (§21): a read like `chat`, on the poll path, so
   // it is attempted against a stale member too and never refused before it is tried (§10.3).
+  if (route === "chat-order" && method === "GET") return "read";
   if (isWalkyList(route, method)) return "read";
   // A pane's pins list changes nothing on the member (M90): a read, tried against a stale member too.
   // Pinning and unpinning write that member's pins file, so they stay writes.
@@ -459,7 +461,8 @@ export function forwardAuditAction(route: string, method?: string): string | nul
   if (isWorkspaceRead(route)) return null; // a read
   if (route.startsWith("durable/")) return route.endsWith("/reopen") ? "durable.reopen" : null; // the list and the items are reads
   if (route.startsWith("tab/")) return route.endsWith("/close") ? "tab.close" : "tab.rename";
-  if (route.startsWith("space/")) return "space.rename";
+  if (route === "chat-order") return method === "GET" ? null : "chat.order";
+  if (route.startsWith("space/")) return route.endsWith("/move") ? "space.move" : "space.rename";
   // The member writes the same name for the switch (bridge/server.ts `walkyOffRoute`).
   if (route === "walky/off") return "walky.off";
   // The member writes `ask` for the answer (bridge/server.ts `askRoute`), so the lead's line names the same act.

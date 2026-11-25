@@ -225,6 +225,8 @@ export type HerdrRpc = Pick<
   | "processInfo"
   | "sendPaneText"
   | "sendPaneKeys"
+  | "renameWorkspace"
+  | "moveWorkspace"
   | "renamePane"
   | "closePane"
   | "focusPane"
@@ -382,6 +384,14 @@ export class HerdrClient {
         }
       })();
     });
+  }
+
+  renameWorkspace(workspaceId: string, label: string): Promise<void> {
+    return this.request<void>("workspace.rename", { workspace_id: workspaceId, label });
+  }
+
+  moveWorkspace(workspaceId: string, insertIndex: number): Promise<void> {
+    return this.request<void>("workspace.move", { workspace_id: workspaceId, insert_index: insertIndex });
   }
 
   async listWorkspaces(): Promise<WireWorkspace[]> {
