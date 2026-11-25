@@ -50,6 +50,13 @@ describe("sendText", () => {
     ]);
   });
 
+  it("reports a pairing refusal before any text reaches the pane", async () => {
+    server.use(http.post("/api/send", () => HttpResponse.text("device not paired", { status: 403 })));
+    const out = await sendText({ paneId: "w1:p1", text: "hello", held: null, mint });
+    expect(out).toMatchObject({ status: "refused", reason: "access", error: expect.stringContaining("Pair") });
+    expect(recordedSends()).toEqual([]);
+  });
+
   it("the commit's override rides the body only when true and with a rows hash, never on a sign-in field, and is its own intent (M102 spec 01)", async () => {
     await sendText({ paneId: "w1:p1", text: "check this", mode: "send", rowsHash: "0abc12", held: null, mint });
     await sendText({ paneId: "w1:p1", text: "check this", mode: "send", rowsHash: "0abc12", override: true, held: null, mint });

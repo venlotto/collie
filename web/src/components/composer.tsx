@@ -1,5 +1,5 @@
 import { forwardRef, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AudioLines } from "lucide-react";
+import { ArrowUp, AudioLines } from "lucide-react";
 import { createPortal, flushSync } from "react-dom";
 import type { ChangeEvent, ClipboardEvent, CSSProperties, MouseEvent, ReactNode } from "react";
 import { useRevalidator } from "react-router";
@@ -57,6 +57,7 @@ import { AnchoredMenu } from "@/components/ui/anchored-menu";
 import { WalkyAimStrip, WalkyHeldStrip, WalkyNoteStrip } from "@/components/walky-composer-strip";
 import { WalkyIcon } from "@/components/walky-icon";
 import { slideOut, useFlip } from "@/hooks/use-flip";
+import { mirrorEchoCount } from "@/lib/mirror-echo";
 import { addPending, dropPending, handOverPending, setPendingState } from "@/lib/durable-pending";
 import { ExpandedEditor } from "@/components/composer-expanded";
 import { useVisibleHeight } from "@/hooks/use-visible-height";
@@ -2159,8 +2160,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     // A steer (M69) has two more words: `steered`, and `queuedInstead` when the harness queued the text
     // the person asked to steer with. A steer never leaves a plain "Sent" behind that says neither.
     // Beside the session's name and time in the header, never in their place (M104).
-    setStatus(translate(STATUS_KEY[note]), "success", undefined, true);
-    if (note !== "held") {
+    const echoedInBotChat = botName && calmRef.current?.row;
+    if (!echoedInBotChat || note !== "sent") setStatus(translate(STATUS_KEY[note]), "success", undefined, true);
+    if (note !== "held" && !echoedInBotChat) {
       const preview = secret ? "••••••" : t.length > 60 ? `${t.slice(0, 57)}…` : t;
       // Only a send still not echoed `SEND_SLOW_MS` after the tap says so, and the clock counts from the tap, not from
       // the answer: the wait the person sees began when they pressed Send.
@@ -2434,8 +2436,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   }
   /** The tap of a box send that may go (M104): the box lets go, and the line stands in Chat. */
   function startCalm(sent: ComposerDraftNow, t: string, mode: SendMode, seen: ReadonlySet<string>, at: number): CalmSend {
-    const row = !isShell && mode === "send" ? { key: paneScopeKey(scope, paneId), id: `calm-${mintRequestId()}` } : null;
-    if (row !== null) addPending(row.key, { requestId: row.id, text: t, at, state: "sending", seen });
+    const botEcho = !!botName && (mode === "send" || mode === "command");
+    // A private shell line or a visible password prompt must not gain a second on-screen copy.
+    const showLine = botName
+      ? botEcho && !(isShell && /^\s/u.test(t)) && detectNoEchoPrompt(splitLines(parseAnsi(text))) === null
+      : !isShell && mode === "send";
+    const row = showLine ? { key: paneScopeKey(scope, paneId), id: `calm-${mintRequestId()}` } : null;
+    if (row !== null) addPending(row.key, {
+      requestId: row.id, text: t, at, state: "sending", seen,
+      ...(botEcho && { mirrorCopies: mirrorEchoCount(text, t) }),
+    });
     const calm: CalmSend = { draft: sent.text, chips: sent.chips, pane: paneId, scope, line: t, row };
     calmRef.current = calm;
     setCalmHeld(true);
@@ -2446,7 +2456,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     setAttachments([]);
     // Only the reply field: another field that has focus (the code field, a rename) keeps its keyboard.
     const field = inputRef.current;
-    if (softKeyboard && field !== null && document.activeElement === field) {
+    if (!botName && softKeyboard && field !== null && document.activeElement === field) {
       field.blur();
       keyboardReleased.current = calm;
     }
@@ -2590,8 +2600,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         setSendRefusal(phoneRefusal(secret ? translate("composer.protocol.retrySecret") : translate("composer.protocol.retry", { error: res.error })));
         return false;
       }
-      // Any answer ends the intent. A refusal from the phone itself (offline) asked nothing, so an earlier id stays.
-      if (res.status !== "refused" || res.reason !== "offline") {
+      // A protocol answer ends the intent. An offline or access refusal never reached the protocol, so an earlier id stays.
+      if (res.status !== "refused" || res.reason === "view") {
         if (secret) secretIntentRef.current = null;
         else clearIntent(scope, paneId);
       }
@@ -3852,7 +3862,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // and the small microphone beside it.
   const flipKey = `${boxOpen ? "open" : "rest"}:${micIsPrimary ? "mic" : "send"}:${draftMicShown ? "draft-mic" : ""}:${expandShown ? "expand" : ""}`;
   // A box that let go of a sent text at the tap takes its closed shape at once (M104): `instant` plays nothing for it.
-  useFlip(boxRef, flipKey, { enabled: true, grows: box, instant: flipInstantRef });
+  useFlip(boxRef, flipKey, { enabled: !botName, grows: box, instant: flipInstantRef });
 
   // Attach's tap and its picker's two rows, drawn by the box and by the fullscreen editor's row alike:
   // one behaviour in two places, never two.
@@ -4770,13 +4780,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                         repeat: e.repeat,
                       },
                       softKeyboard,
-                      botName ? enterChoice ?? "on" : enterChoice,
+                      botName ? "on" : enterChoice,
                     );
                     // "hint": the Enter still adds its new line; the offer appears above the box.
                     if (answer === "hint") setEnterOffer(true);
                     if (answer === "default" || answer === "hint") return;
                     e.preventDefault();
-                    if (answer === "send") onSendClick();
+                    if (answer === "send" && hasDraft) {
+                      if (sendInert) onInertSendTap();
+                      else onSendClick();
+                    }
                     // "swallow": a held Enter. The first press sent; a repeat adds no new line.
                   }
             }
@@ -5198,10 +5211,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 <Icon name="direct-typing" className="size-4" />
               ) : sending ? (
                 <Icon name="busy" className="size-4 animate-spin" />
-              ) : justSent ? (
+              ) : justSent && !botName ? (
                 <Icon name="sent-ok" className="size-4" />
               ) : botName ? (
-                <AudioLines size={19} aria-hidden />
+                <ArrowUp size={19} strokeWidth={2.5} aria-hidden />
               ) : box ? (
                 <Icon name="send-ready" className="size-4" />
               ) : (

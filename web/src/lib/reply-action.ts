@@ -12,7 +12,7 @@
 // The per-harness draft and status readers stay, for display only: the stranded-draft preview, the
 // echo suppression (lib/draft-match.ts) and the status line.
 
-import { apiErrorFields, isApiErrorStatus, postSend } from "./api";
+import { apiErrorFields, isApiErrorStatus, isPairingRefusal, postSend } from "./api";
 import { describeThrownError } from "./api-error-message";
 import { requestIdFor, type IntentId } from "./durable-control";
 import { t } from "./i18n";
@@ -73,7 +73,7 @@ export type ReplyOutcome =
    * screen the person acted on may be old. No queue and no retry: a person sends again once the pane
    * reads live.
    */
-  | { readonly status: "refused"; readonly reason: "offline"; readonly error: string }
+  | { readonly status: "refused"; readonly reason: "offline" | "access"; readonly error: string }
   /**
    * A send from an agent view that the bridge refused before the Send Protocol (409 `{ error, code, view }`):
    * an answer, never retried. `code` is the bridge's (`stale_view`, `busy`, `question`, `view_off`...), or
@@ -110,6 +110,10 @@ export async function sendText(args: ReplyArgs): Promise<ReplyOutcome> {
     const reply = await postSend({ ...body, rowsHash: rowsHash ?? undefined, capAck: capAck ? true : undefined, resendOf, when: args.when, secret: args.secret === true ? true : undefined, override: override ? true : undefined }, args.scope);
     return { status: "answered", reply, reading: readSend(reply, mode), requestId: intent.requestId };
   } catch (e) {
+    if (isPairingRefusal(e)) return { status: "refused", reason: "access", error: t("space.readOnly.notPaired") };
+    if (isApiErrorStatus(e, 401) || isApiErrorStatus(e, 403)) {
+      return { status: "refused", reason: "access", error: t("connection.auth.message") };
+    }
     // A view send the bridge refused before the Send Protocol answers 409 with `{ error, code, view: true }`.
     // It is an answer, not a lost one: never retried under the same id.
     if (args.view !== undefined && isApiErrorStatus(e, 409)) return { status: "refused", reason: "view", error: describeThrownError(e), code: apiErrorFields(e)?.code ?? null };

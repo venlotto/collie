@@ -49,6 +49,13 @@ describe("unmatched", () => {
     expect(unmatched([line("r1", "go left")], [far], NOW).open).toHaveLength(1);
   });
 
+  it("a repeated message stays until a user turn newer than its tap arrives", () => {
+    const pending = [line("r1", "ok", { seen: new Set(["u1"]) })];
+    const before = said("u1", "ok");
+    expect(unmatched(pending, [before], NOW).open).toEqual(pending);
+    expect(unmatched(pending, [before, said("u2", "ok")], NOW).done).toEqual(["r1"]);
+  });
+
   it("another send's request id never matches by text, and other words never match", () => {
     expect(unmatched([line("r1", "go left")], [said("u1", "go left", { requestId: "r2" })], NOW).open).toHaveLength(1);
     expect(unmatched([line("r1", "go left")], [said("u1", "go right")], NOW).open).toHaveLength(1);
