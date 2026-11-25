@@ -25,7 +25,7 @@ export function HomeRoute() {
   const panes = [...data.agents, ...data.shellPanes];
   const scopeOf = (pane: AgentView) => paneScope(data.scope, pane, data.servers, data.sessions);
   const active = paneId ? findPane(panes, paneId, data.scope, data.servers, data.sessions) : undefined;
-  const featured = active ?? panes.find(pinMatcher(pins)) ?? panes.find(p => p.focused) ?? panes[0];
+  const featured = panes.find(pinMatcher(pins)) ?? panes.find(p => p.focused) ?? panes[0];
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (
     <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>

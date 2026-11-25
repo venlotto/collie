@@ -33,13 +33,19 @@ export function DetailRoute() {
   // element does not mount until that loader has resolved. React Router types a data-mode
   // `useLoaderData()` as `unknown`.
   const pane = useLoaderData() as PaneData;
-  const root = useRootData();
   const { paneId = "" } = useParams();
+  const location = useLocation();
+  return <PaneScreen pane={pane} paneId={paneId} location={location} active />;
+}
+
+export function PaneScreen({ pane, paneId, location, active }: {
+  pane: PaneData; paneId: string; location: ReturnType<typeof useLocation>; active: boolean;
+}) {
+  const root = useRootData();
   // The session this pane belongs to (undefined = primary), read from the pane loader so every
   // navigation and write below stays scoped to it.
   const scope = pane.scope;
   const nav = useNav();
-  const location = useLocation();
   const stalled = useLoadingStalled();
   // From 600px wide the pane screen is a sidebar beside a strip of panes (ADR 0120). Below, nothing
   // here changes.
@@ -130,7 +136,7 @@ export function DetailRoute() {
   const zoomed = useMatch("/pane/:paneId/zoom") !== null;
   const exited = useRef<string | null>(null);
   useEffect(() => {
-    if (gone && root.bridge === "connected" && !root.error && exited.current !== paneId) {
+    if (active && gone && root.bridge === "connected" && !root.error && exited.current !== paneId) {
       if (zoomed) {
         nav.up(panePath(paneId, scope));
         return;
@@ -143,7 +149,7 @@ export function DetailRoute() {
       setStatus("Pane closed", "info");
       nav.up(homePath(scope));
     }
-  }, [gone, root.bridge, root.error, nav, scope, paneId, zoomed]);
+  }, [active, gone, root.bridge, root.error, nav, scope, paneId, zoomed]);
 
   // Up one level: to the space or the dashboard the pane was opened from (ADR 0067). A pane with no screen
   // is a durable program's conversation, and its way up is the machine's home, which is the conversation
@@ -155,16 +161,6 @@ export function DetailRoute() {
     if (gridless) nav.upTo(homePath(scope));
     else nav.up(homePath(scope));
   };
-  const closing = useRef(false);
-  const backArrow = () => {
-    const panel = document.querySelector<HTMLElement>(".bot-detail");
-    if (!panel || !window.matchMedia("(max-width: 759px) and (prefers-reduced-motion: no-preference)").matches) return up();
-    if (closing.current) return;
-    closing.current = true;
-    const animation = panel.animate([{ transform: "translateX(0)" }, { transform: "translateX(100%)" }], { duration: 260, easing: "ease-out", fill: "forwards" });
-    animation.onfinish = () => { animation.cancel(); closing.current = false; up(); };
-  };
-
   // Paths the agent prints open in Files (ADR 0088): the chat, its tool cards and the mirror below
   // all ask this one opener, which knows the pane's Changes root, its cwd and its machine's home.
   const herd = useMemo(() => [...root.agents, ...root.shellPanes], [root.agents, root.shellPanes]);
@@ -211,7 +207,7 @@ export function DetailRoute() {
           onOpen: () => nav.down(zoomPath(paneId, scope)),
           onClose: () => nav.up(panePath(paneId, scope)),
         }}
-        onBackArrow={backArrow}
+        onBackArrow={up}
         inStrip={false}
         // Tabletop: the belt and the reply box stand in the bottom segment, under the fold.
         tabletop={fold === "tabletop"}

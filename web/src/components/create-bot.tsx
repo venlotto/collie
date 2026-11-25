@@ -64,7 +64,7 @@ export function CreateBot({ scope, beside, writable, accessNotice, close }: { sc
       if (rename.capable) {
         void renamePane(outcome.paneId, name.trim(), scope).then(res => res.ok ? undefined : localName(), localName);
       }
-      close();
+      setLeaving(true);
     } else {
       setError(outcome.kind === "refused" ? outcome.message : "No se pudo confirmar la creación. Vuelve a intentar.");
     }

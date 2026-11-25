@@ -2,11 +2,7 @@
 
 This file tracks all notable changes to Collie, ordered newest version first. The project follows
 [Semantic Versioning](https://semver.org/). From 1.6.0 on, a version's changes are grouped under
-`### Added`, `### Changed`, `
-- **Unread chats have a blue dot beside the preview.** Tap the count above or below the list to jump to unread chats. The profile, search and plus button stay within reach when the list scrolls or the device needs to sign in.
-- **Chat messages name the bot that sent or received them.** The thread counts messages and participating bots. A microphone adds dictation, and the green waveform sends a typed reply or opens voice input when the field is empty.
-
-### Fixed`, `### Packaging` and `### Docs`, in that order and only
+`### Added`, `### Changed`, `### Fixed`, `### Packaging` and `### Docs`, in that order and only
 where there is content, and every bullet opens with a short bold lead sentence, which is the line
 the GitHub Release page prints. Older versions carry a single flat list. Every entry links to its commit and credits the contributor where there is one. The
 `## [Unreleased]` section contains merged work waiting for release. The release
@@ -30,11 +26,14 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.
-- **Chats open beside the list on a large screen.** On a phone the conversation slides over the list, with the terminal and its reply box in the same pane.
+- **Unread chats have a blue dot beside the preview.** Tap the count above or below the list to jump to unread chats. The profile, search and plus button stay within reach when the list scrolls or the device needs to sign in.
+- **Chat messages name the bot that sent or received them.** The thread counts messages and participating bots. A microphone adds dictation, and the green waveform sends a typed reply or opens voice input when the field is empty.
 
 ### Fixed
 
 - **On macOS, a linked Claude Code session takes your phone messages by data.** After `collie harness link claude`, the Collie plugin inside Claude Code could not read its process id on a Mac, so it never bound and every message was typed into the terminal. The plugin now names its Claude Code session instead, and Collie takes the process id from the hook events of that session (`collie hooks install claude` sends them). The first answer often says that it does not know the session yet, because the hook event comes a moment later, so the plugin asks again after 1, 3, 10 and 30 seconds. Linux is unchanged. `collie harness unlink claude` turns the link off. Thanks @wraithyy (#864).
+
+- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the list in place, including on a desktop where the same phone-width column is centered.
 
 ## [1.31.0] - 2026-11-24
 

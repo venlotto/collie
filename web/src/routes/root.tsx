@@ -1,6 +1,4 @@
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { StatusArea } from "@/components/status-area";
-import { HomeRoute } from "@/routes/home";
+import { BotStack } from "@/components/bot-stack";
 import "@/components/bot-workspaces.css";
 import { useEffect, useState } from "react";
 import { rememberPanePictures } from "@/lib/project-picture";
@@ -111,11 +109,9 @@ export function RootLayout() {
   // The scope rides along so a "look now" on foreground lands on the machine and session the page is
   // actually showing — a refresh aimed at the lead would leave a peer's herd exactly as stale.
   const location = useLocation();
-  const singleColumn = useMediaQuery("(max-width: 759px)");
   const chatScreen = location.pathname === "/" || /^\/pane\/[^/]+(?:\/zoom)?\/?$/u.test(location.pathname);
   const { refused } = usePairing();
   const chatAccessDenied = chatScreen && (data.authError || refused);
-  const showDetail = !!paneId && !chatAccessDenied;
   const launch = paneId === undefined ? undefined : readAgentLaunch(location.state, paneId, data.scope);
   const pollMs = usePolling(data, paneId, data.scope, undefined, launch?.id);
   // Surface the busy bar when a navigation or a poll runs slow, each against its own threshold —
@@ -286,11 +282,8 @@ export function RootLayout() {
                 and everything that must survive a navigation (the header shell, the band, the mark's
                 37 animations) is already outside it. It is not the View Transitions API and may not
                 become one; see the file's header. */}
-            {chatScreen ? <div className="bot-layout" data-detail={showDetail}>
-              <aside inert={singleColumn && showDetail} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
-              <main className="bot-detail">{showDetail ? <Outlet /> : !chatAccessDenied && <p className="bot-placeholder">Selecciona un chat</p>}</main>
-              <div className="bot-notice"><StatusArea /></div>
-            </div> : <ScreenTransition><Outlet /></ScreenTransition>}
+            {chatScreen ? <BotStack key={chatAccessDenied ? "access" : "chats"} paneId={chatAccessDenied ? undefined : paneId} pane={pane} />
+              : <ScreenTransition><Outlet /></ScreenTransition>}
           </StripHost>
         </AppHeaderHost>
       </div>
