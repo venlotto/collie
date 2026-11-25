@@ -192,3 +192,27 @@
 .bot-turn-user button[data-slot="walky-card"] [data-slot="walky-body"] { display: block; font: inherit; }
 
 .bot-turn:not([data-revealed]) [data-slot="block-more"]:not(:focus-visible) { opacity: 0; pointer-events: none; }
+
+.bot-index [data-drag-space] :is(.bot-row,.bot-group) { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.bot-index [data-drag-space] .bot-row {
+  transform: translateY(var(--drag-shift, 0px));
+  transition: transform 170ms ease-out, opacity 140ms ease-out, background .15s;
+}
+.bot-index [data-lifted] { opacity: .2; }
+.bot-drag-ghost { position: fixed; top: 0; left: 0; margin: 0; z-index: 20; pointer-events: none; background: #28282b; border-radius: 14px; box-shadow: 0 8px 26px #000a; will-change: transform; }
+.bot-index section[data-over] > .bot-group { color: #b9dbff; background: #151b24; border-radius: 12px; }
+.bot-drop-trash { position: absolute; z-index: 4; bottom: 0; left: 18px; right: 18px; height: 44px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 999px; background: #302123; color: #ff8883; font-weight: 600; transition: transform 140ms ease-out; }
+.bot-drop-trash[data-trash-over] { background: #8f2828; color: white; transform: scale(1.02); }
+.bot-sheet.bot-workspace-menu { height: auto; max-height: 82dvh; overflow-y: auto; padding-bottom: 18px; }
+.bot-workspace-menu header h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.bot-workspace-menu fieldset { display: grid; gap: 6px; width: 100%; min-width: 0; }
+.bot-workspace-menu fieldset :is(button,label) { display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 46px; background: #2a2a2d; border-radius: 15px; width: 100%; }
+.bot-workspace-menu fieldset :is(select,input) { background: #28282a; border-radius: 999px; }
+.bot-workspace-menu select { margin-left: auto; padding: 4px 8px; }
+.bot-workspace-menu fieldset svg { width: 18px; }
+.bot-workspace-menu fieldset button:disabled { opacity: .4; }
+.bot-workspace-menu fieldset p { color: #bfbfc3; margin: 4px 12px 12px; }
+.bot-workspace-menu form { display: grid; gap: 8px; }
+.bot-workspace-menu form button { justify-content: center; }
+.bot-workspace-menu .danger { color: #ff716b; }
+@media (prefers-reduced-motion: reduce) { .bot-index [data-drag-space] .bot-row,.bot-drop-trash { transition: none; } }

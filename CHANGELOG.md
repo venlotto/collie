@@ -27,6 +27,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **The hosted chat list remembers conversation order across devices.** Herdr also accepts workspace renames and position changes from the list.
 
+- **Drag a chat to arrange it within its workspace.** Drop it on another workspace or the trash. Hold a workspace heading to rename, move or trash the group.
+
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.

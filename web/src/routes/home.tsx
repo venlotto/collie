@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useRevalidator } from "react-router";
 import { CreateBot } from "@/components/create-bot";
 import { MobileAgentHub } from "@/components/mobile-agent-hub";
 import { mounted } from "@/lib/base-path";
@@ -17,6 +17,7 @@ import { isReadOnly, type AgentView } from "@/lib/types";
 
 export function HomeRoute() {
   const data = useRootData();
+  const revalidator = useRevalidator();
   const nav = useNav();
   const { paneId } = useParams();
   const { refused } = usePairing();
@@ -33,7 +34,7 @@ export function HomeRoute() {
     <p className="bot-access" role="status">Acceso restringido <a href={mounted(PROXY_AUTH_PATH)}>{t("connection.auth.signIn")}</a></p>
   ) : isReadOnly(data.device) ? <p className="bot-access" role="status">{t("space.readOnly.deviceUnauthorised")}</p> : null;
   return <>
-    <MobileAgentHub panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured}
+    <MobileAgentHub writable={writable} listScope={data.scope} refresh={() => { void revalidator.revalidate(); }} panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured}
       deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
       onPress={p => { void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}

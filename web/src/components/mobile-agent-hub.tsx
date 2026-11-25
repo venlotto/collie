@@ -1,5 +1,9 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { chatOrderId } from "@/lib/chat-order";
+import { WorkspaceMenu } from "./bot-workspace-menu";
+import { dragScope, sectionKey, useBotOrganization } from "./bot-organization";
 import { graphemeSegmenter } from "@/lib/env";
 import { fetchChat } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
@@ -11,6 +15,9 @@ import type { AgentView, TranscriptEntry, WorkspaceView } from "@/lib/types";
 import { BlobAvatar, botTime, identityOf } from "./bot-identity";
 
 interface Props {
+  writable?: boolean;
+  listScope?: Scope;
+  refresh?: () => void;
   panes: readonly AgentView[];
   workspaces: readonly WorkspaceView[];
   featured?: AgentView;
@@ -60,9 +67,11 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
   return <span ref={ref} className="bot-line">{Icon && <Icon size={13} aria-hidden />}<span>{text}</span></span>;
 }
 
+const localScope: Scope = {};
+const noRefresh = () => {};
 const segmenter = graphemeSegmenter();
 
-export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
+export function MobileAgentHub({ writable = false, listScope = localScope, refresh = noRefresh, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
   const [query, setQuery] = useState("");
   const [folded, setFolded] = useState<Set<string>>(new Set());
   const scroll = useRef<HTMLDivElement>(null);
@@ -95,17 +104,18 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
     return () => observer.disconnect();
   }, []);
   const needle = query.trim().toLocaleLowerCase();
-  const groups = new Map<string, { title: string; rows: AgentView[] }>();
+  const groups = new Map<string, { title: string; id: string; scope: Scope; rows: AgentView[] }>();
   function sectionFor(host: string | undefined, session: string | undefined, id: string, label: string) {
-    const key = JSON.stringify([host, session, id]);
-    if (!groups.has(key)) groups.set(key, { title: label || id, rows: [] });
+    const key = sectionKey({ host, session }, id);
+    if (!groups.has(key)) groups.set(key, { title: label || id, id, scope: { host, session }, rows: [] });
     return groups.get(key)!;
   }
-  for (const w of workspaces) sectionFor(w.host, undefined, w.workspaceId, w.label);
+  for (const w of workspaces) sectionFor(w.host ?? listScope.host, listScope.session, w.workspaceId, w.label);
   for (const p of panes) {
-    const section = sectionFor(p.host, scopeOf(p).session, p.workspaceId, p.workspaceLabel);
+    const section = sectionFor(scopeOf(p).host, scopeOf(p).session, p.workspaceId, p.workspaceLabel);
     if (!needle || [identityOf(p, scopeOf(p)).name, section.title, p.agent, p.subtitle].join(" ").toLocaleLowerCase().includes(needle)) section.rows.push(p);
   }
+  const organize = useBotOrganization(groups, scroll, writable && !needle, refresh);
   function toggle(key: string) {
     setFolded((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   }
@@ -119,17 +129,18 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
       </header>
       <div className="bot-scroll" ref={scroll} onScroll={measure}>
         {accessNotice}
+        {organize.error && <p role="alert" className="bot-access">{organize.error}</p>}
         {featured && featuredBot && !needle && <button className="bot-featured" onClick={() => onOpen(featured)}>
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
-        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key}>
+        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={!group.scope.host || undefined} data-drag-scope={dragScope(group.scope)}>
           <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(p => {
             const scope = scopeOf(p);
             const bot = identityOf(p, scope);
             const selected = !!active && paneRowKey(active) === paneRowKey(p);
-            return <li key={paneRowKey(p)}><button className="bot-row" aria-current={selected || undefined}
+            return <li key={paneRowKey(p)} data-drag-pane={chatOrderId(p)}><button className="bot-row" aria-current={selected || undefined}
               onPointerDown={() => onPress(p)} onClick={() => onOpen(p)}>
               <BlobAvatar {...bot} />
               <span className="bot-copy">
@@ -144,6 +155,8 @@ export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, o
       {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
       {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
     </div>
+    {organize.menu && <WorkspaceMenu {...organize.menu} />}
+    {organize.dragging && <div className="bot-drop-trash"><Trash2 size={19} />Papelera</div>}
     <div className="bot-search-foot" ref={footer}>
       {groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
         <div className="bot-picker" id={picker} popover="auto">{Array.from(groups, ([key, section]) =>

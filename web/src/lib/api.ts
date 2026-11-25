@@ -1,3 +1,4 @@
+import type { ChatOrder } from "./chat-order";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
 
@@ -2188,6 +2189,35 @@ export function renamePane(
   return req<ActionResponse>(withScope(`/api/pane/${encodeURIComponent(paneId)}/rename`, scope), {
     method: "POST",
     body: JSON.stringify({ label }),
+  });
+}
+
+export function fetchChatOrder(scope: Scope, signal: AbortSignal) {
+  return req<ChatOrder[]>(withScope("/api/chat-order", scope), { signal });
+}
+
+export function placeChat(scope: Scope, workspaceId: string, paneId: string, before: string | null) {
+  return req<ChatOrder>(withScope("/api/chat-order", scope), {
+    method: "POST", body: JSON.stringify({ workspaceId, paneId, before }),
+  });
+}
+
+export function placeWorkspace(scope: Scope, workspaceId: string, before: string | null) {
+  return req<ActionResponse>(withScope(`/api/space/${encodeURIComponent(workspaceId)}/move`, scope), {
+    method: "POST", body: JSON.stringify({ before }),
+  });
+}
+
+// Shared bot-action endpoint provided by the selection and trash service.
+export function dragBotAction(scope: Scope, terminalId: string, action: "trash" | "move", workspaceId?: string) {
+  return req<ActionResponse>(withScope("/api/bot-action", scope), {
+    method: "POST", body: JSON.stringify({ action, terminalId, workspaceId }),
+  });
+}
+
+export function trashWorkspace(scope: Scope, workspaceId: string) {
+  return req<ActionResponse>(withScope("/api/bot-action", scope), {
+    method: "POST", body: JSON.stringify({ action: "trashWorkspace", workspaceId }),
   });
 }
 
