@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fixtureAgents, fixtureSnapshot } from "@/test/handlers";
 import { installApiStub, pinLocale } from "./fixtures/api";
@@ -105,6 +105,33 @@ async function capture(page: Page, name: string) {
   await page.screenshot({ path: join(dir, test.info().project.name + "-" + name + ".png") });
 }
 
+async function sampleFooter(page: Page) {
+  const sample = await page.evaluateHandle(() => {
+    const footer = document.querySelector(".bot-search-foot")!;
+    const samples: number[] = [];
+    const result = { samples, active: true };
+    function frame() {
+      if (!result.active) return;
+      result.samples.push(footer.getBoundingClientRect().bottom);
+      requestAnimationFrame(frame);
+    }
+    frame();
+    return result;
+  });
+  return async () => {
+    const samples = await sample.evaluate(state => { state.active = false; return state.samples; });
+    expect(samples.length).toBeGreaterThan(10);
+    const delta = Math.max(...samples) - Math.min(...samples);
+    expect(delta).toBeLessThan(0.1);
+    if (process.env.BOT_SCREENSHOTS) {
+      await mkdir(process.env.BOT_SCREENSHOTS, { recursive: true });
+      await writeFile(join(process.env.BOT_SCREENSHOTS, test.info().project.name + "-pie.json"),
+        JSON.stringify({ samples, delta }, null, 2));
+    }
+    await sample.dispose();
+  };
+}
+
 test("arrastrar filas, cambiar de workspace y soltar en Papelera", async ({ page }) => {
   const { writes, trash } = await world(page);
   const rows = page.locator(".bot-scroll .bot-row");
@@ -139,6 +166,7 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
   const drag = await gesture(page, headers.first()); await drag.lift(); await drag.drop(headers.nth(1));
   await expect(headers.nth(1)).toHaveText("Ideas");
   await page.reload(); await expect(headers.nth(1)).toHaveText("Ideas");
+  const finishSampling = await sampleFooter(page);
   async function menu() {
     await (await gesture(page, headers.filter({ hasText: "Ideas" }))).hold();
     return page.getByRole("dialog");
@@ -167,6 +195,7 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
   await page.getByRole("button", { name: "Enviar a Papelera" }).click();
   await expect(headers).toHaveCount(2);
   expect(writes.at(-1)).toBe("trashWorkspace");
+  await finishSampling();
   expect((await footer.boundingBox())!.y).toBe(bottom);
 });
 
