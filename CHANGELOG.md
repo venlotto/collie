@@ -4,6 +4,7 @@ This file tracks all notable changes to Collie, ordered newest version first. Th
 [Semantic Versioning](https://semver.org/). From 1.6.0 on, a version's changes are grouped under
 `### Added`, `### Changed`, `
 - **Unread chats have a blue dot beside the preview.** Tap the count above or below the list to jump to unread chats. The profile, search and plus button stay within reach when the list scrolls or the device needs to sign in.
+- **Chat messages name the bot that sent or received them.** The thread counts messages and participating bots. A microphone adds dictation, and the green waveform sends a typed reply or opens voice input when the field is empty.
 
 ### Fixed`, `### Packaging` and `### Docs`, in that order and only
 where there is content, and every bullet opens with a short bold lead sentence, which is the line

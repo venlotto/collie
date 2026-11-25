@@ -1,4 +1,5 @@
 import { forwardRef, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AudioLines } from "lucide-react";
 import { createPortal, flushSync } from "react-dom";
 import type { ChangeEvent, ClipboardEvent, CSSProperties, MouseEvent, ReactNode } from "react";
 import { useRevalidator } from "react-router";
@@ -1507,7 +1508,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   );
 
   const hasDraft = input.trim() !== "" || attachments.length > 0;
-  const micIsPrimary = micShown && !direct.active && !hasDraft;
+  const micIsPrimary = (botName || micShown) && !direct.active && !hasDraft;
   // The Send button's hold (M62). Offered only where a message could leave: not on a locked field, not
   // offline, not while Type mode owns the button as its Stop control, and not mid-send.
   const canMessage = hasDraft && !starting && !locked && !offline && !direct.active && !sending && !walky.sending;
@@ -1596,7 +1597,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   function acceptTranscript(transcript: string) {
     const draftEmpty = inputValueRef.current.trim() === "" && attachmentsRef.current.length === 0;
     const mayHandsFree =
-      handsFree && draftEmpty && noEchoRef.current === null && !starting && !locked && !offline && slot !== "answer";
+      handsFree && (!botName || micOpener.current === "primary") && draftEmpty && noEchoRef.current === null && !starting && !locked && !offline && slot !== "answer";
     if (mayHandsFree) {
       void send(transcript, false);
       return;
@@ -2861,7 +2862,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // once. It stays away while the round slot holds a word ("Answer the dialog" / "Really send?"), where
   // the row is already tight.
   const confirmWord = translate(confirmingAgain ? "composer.send.sendAgain" : "composer.send.reallySend");
-  const draftMicShown = micShown && !direct.active && hasDraft && !askOwnsKeys && !confirmingSend;
+  const draftMicShown = (botName || (micShown && hasDraft)) && !direct.active && !askOwnsKeys && !confirmingSend;
   const micAriaLabel = !micAvailable
     ? (stt?.reason ?? translate("composer.mic.unavailable"))
     : recorder.phase === "recording"
@@ -3759,7 +3760,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const boxWasOpen = useRef(boxOpenNow);
   if (!takeoverOpen) boxWasOpen.current = boxOpenNow;
   const boxOpen = box && boxWasOpen.current && (!botName || attachments.length > 0);
-  const mirrored = hand === "left";
+  const mirrored = !botName && hand === "left";
   // Box layout only: a tap on the box's own padding, or on a gap between its controls, lands in the
   // field. Plain listeners on the element rather than JSX handlers: the box is a layout surface, not a
   // control, and the field is the control. The press is held back from the browser's focus move so a
@@ -4644,6 +4645,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         ) : (
         <div
           data-slot="composer-box"
+          data-bot-controls={botName && draftMicShown ? true : undefined}
           data-layout={box ? "box" : undefined}
           data-box={box ? (boxOpen ? "open" : "rest") : undefined}
           ref={boxRef}
@@ -4768,7 +4770,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                         repeat: e.repeat,
                       },
                       softKeyboard,
-                      enterChoice,
+                      botName ? enterChoice ?? "on" : enterChoice,
                     );
                     // "hint": the Enter still adds its new line; the offer appears above the box.
                     if (answer === "hint") setEnterOffer(true);
@@ -5152,7 +5154,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               onPointerDown={(e) => e.preventDefault()}
               onClick={(e) => onMicClick(e, "primary")}
             >
-              {micIcon}
+              {botName ? <AudioLines size={19} aria-hidden /> : micIcon}
             </Button>
           ) : (
             <Button
@@ -5198,6 +5200,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 <Icon name="busy" className="size-4 animate-spin" />
               ) : justSent ? (
                 <Icon name="sent-ok" className="size-4" />
+              ) : botName ? (
+                <AudioLines size={19} aria-hidden />
               ) : box ? (
                 <Icon name="send-ready" className="size-4" />
               ) : (

@@ -1,9 +1,13 @@
-import { botTime } from "./bot-identity";
+import { BlobAvatar, type BotIdentity, botTime } from "./bot-identity";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type RefObject } from "react";
 import { Icon } from "@/components/icons/icon";
 
 import { AgentIcon } from "@/components/agent-icon";
 import { ItemView, PendingTurn, ToolGroup, groupRuns, standsAlone } from "@/components/chat-cards";
+import { useWalkyLive, useWalkyLog, useWalkySelf } from "@/components/walky-log";
+import { bareAddress, directionOf, parseWalkyCommand, resultId, selfOf, shellLineOf } from "@/lib/walky";
+import { sentTargetWords } from "@/components/walky-name-chip";
+import { senderNameOf, sentTargetAddress } from "@/lib/walky-names";
 import { StreamBlock } from "@/components/stream-block";
 import { PromptPin } from "@/components/prompt-pin";
 import { StatusDot } from "@/components/status-badge";
@@ -591,7 +595,7 @@ function textTokens(size: number): CSSProperties {
 }
 
 export function SessionStream({
-  botStyle = false,
+  bot,
   unreadSince,
   feed,
   address,
@@ -615,7 +619,7 @@ export function SessionStream({
   hasNew = false,
 }: {
   /** The held window plus its one control, from `useChatWindow`. */
-  botStyle?: boolean;
+  bot?: BotIdentity;
   unreadSince?: number;
   feed: ChatFeed;
   /** This pane's full address (host + session + id) — the key its scroll position is kept under. */
@@ -711,6 +715,7 @@ export function SessionStream({
 }) {
   // The subscription every `t()` caller owes, plus the counter the memo below needs.
   const { revision } = useLocale();
+  const botStyle = bot !== undefined;
   const look = useChatLook();
   const { window, loadOlder, loadingOlder } = feed;
   // The asks past the first five stay folded until the person opens them (lib/ask.ts `shownAsks`).
@@ -1081,6 +1086,39 @@ export function SessionStream({
     };
   }, [lingering, listRef]);
 
+  const log = useWalkyLog();
+  const self = useWalkySelf();
+  const live = useWalkyLive();
+  const thread = useMemo(() => {
+    if (!botStyle) return null;
+    let messages = window.entries.filter(e => !e.abandoned && (e.role === "user" || e.role === "assistant") &&
+      e.parts.some(p => p.kind === "text" && p.text.trim())).length;
+    const peers = new Set<string>();
+    const captions = new Map<string, string>();
+    for (const [item] of blocks) {
+      if (!item || !log) continue;
+      if (item.kind === "user" && item.walky) {
+        const row = log.byId.get(item.walky.id);
+        if (!row || directionOf(row, self) !== "received") continue;
+        captions.set(item.id, `Mensaje de ${senderNameOf(row, live, self).name}`);
+        if (row.kind === "agent" && row.from.address && bareAddress(row.from.address) !== bareAddress(selfOf(row, self ?? ""))) {
+          peers.add(bareAddress(row.from.address));
+        }
+      } else if (item.kind === "tool" && "output" in item.tool) {
+        const line = shellLineOf(item.tool);
+        const cmd = line && parseWalkyCommand(line);
+        if (!cmd || (cmd.verb !== "send" && cmd.verb !== "reply")) continue;
+        const id = resultId(item.tool.output);
+        const row = id && log.byId.get(id);
+        if (!row || directionOf(row, self) !== "sent") continue;
+        captions.set(item.id, `Escribió a ${sentTargetWords(row, live, self)}`);
+        if (row.receipt.target !== "all") peers.add(bareAddress(sentTargetAddress(row)));
+        messages++;
+      }
+    }
+    const count = peers.size + 1;
+    return { captions, summary: messages > 1 ? `${messages} mensajes con ${count} ${count === 1 ? "Bot" : "Bots"}` : null };
+  }, [botStyle, blocks, log, self, live, window.entries]);
   const firstUnread = unreadSince === undefined ? -1 : blocks.findIndex(group => group.some(item => item.ts && Date.parse(item.ts) > unreadSince));
   return (
     <ChatMessageList
@@ -1135,6 +1173,7 @@ export function SessionStream({
         ))
       )}
 
+      {thread?.summary && <p className="bot-attribution">{thread.summary}</p>}
       {blocks.map((group, index) => {
         // A group of one is an ordinary block, EXCEPT a lone tool call while tool calls are off:
         // that one folds too, or "off" would leave every single-step turn drawn in full. An agent
@@ -1145,6 +1184,7 @@ export function SessionStream({
         const pinnable = item !== null && isPinnable(item) && item.id !== writing;
         const rhythm = rhythmClass(look.rhythm, blocks, index);
         const first = group[0]!;
+        const caption = thread?.captions.get(first.id);
         const opensRun =
           look.agentHead === "icon-time" &&
           (first.kind === "reply" || first.kind === "thinking" || first.kind === "tool") &&
@@ -1153,6 +1193,9 @@ export function SessionStream({
           <Fragment key={first.id}>
             {botStyle && first.ts && (index === 0 || first.ts.slice(0,16) !== blocks[index-1]?.[0]?.ts?.slice(0,16)) && <p className="bot-date">{botTime(Date.parse(first.ts), true)}</p>}
             {botStyle && index === firstUnread && <div className="bot-new-line"><span>Nuevos</span></div>}
+            {bot && first.kind === "reply" && <p className="bot-attribution">Mensaje de <BlobAvatar {...bot} /> {bot.name}</p>}
+            {caption && <p className="bot-attribution">{caption}</p>}
+            {bot && first.kind === "user" && !first.walky && <p className="bot-attribution">Escribió a <BlobAvatar {...bot} /> {bot.name}</p>}
           <StreamBlock
             n={group.length}
             item={pinnable ? item : null}
@@ -1160,7 +1203,7 @@ export function SessionStream({
             onActions={pinnable ? pins?.onActions : undefined}
             className={botStyle ? `bot-turn bot-turn-${first.kind}` : rhythm === "" ? blockBox(index, blocks.length) : `${blockBox(index, blocks.length)} ${rhythm}`}
           >
-            {opensRun && <AgentHead agent={agent} ts={first.ts} />}
+            {!botStyle && opensRun && <AgentHead agent={agent} ts={first.ts} />}
             {drawn ? <ItemView item={group[0]!} simpleUser={botStyle} /> : <ToolGroup items={group} liveOpens={showToolCalls} />}
             {asks === undefined || askList === undefined ? null : asksAt(blocks, askList.shown, index).map((ask) => <AskCard key={ask.id} ask={ask} {...asks.card} />)}
           </StreamBlock></Fragment>

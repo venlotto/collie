@@ -405,13 +405,14 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled, paneId, s
           {t("prompt.reconnectNote")}
         </p>
       ) : null}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1" data-slot="prompt-options">
         {prompt.options.map((option, index) => {
           const id = `opt-${index}`;
           const busy = sending === id;
           return (
             <OptionButton
               key={index}
+              data-slot={option.label === "Close" && option.keys.length === 1 && option.keys[0] === "Escape" ? "prompt-close" : undefined}
               tone={busy ? "busy" : "default"}
               keyLabel={option.keyLabel ?? keyBadgeFallback(option.keys[0]!)}
               label={option.label}

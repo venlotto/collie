@@ -3402,7 +3402,7 @@ export function AgentChat({
               <WalkyOpenProvider open={messagesSheet ? openWalkyMessage : null} self={walkySelf}>
               <CardWaitingCtx.Provider value={questionNotes}>
                 <SessionStream
-                  botStyle={mobileShell}
+                  bot={mobileShell ? bot : undefined}
                   unreadSince={unreadSince}
                   feed={chatFeed}
                   clearBottom={floatingClear}
