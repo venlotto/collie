@@ -28,6 +28,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.
 - **Unread chats have a blue dot beside the preview.** Tap the count above or below the list to jump to unread chats. The profile, search and plus button stay within reach when the list scrolls or the device needs to sign in.
 - **Chat messages name the bot that sent or received them.** The thread counts messages and participating bots. A microphone adds dictation, and the green waveform sends a typed reply or opens voice input when the field is empty.
+- **Bot portraits identify participants in a conversation.** The thread shows their faces beside the message count and the sender or recipient. The reply controls and list previews keep the same proportions on desktop and phone.
 
 ### Fixed
 

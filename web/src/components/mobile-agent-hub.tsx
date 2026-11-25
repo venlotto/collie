@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, LayoutGrid, MessageCircle, Plus, Search, Send, Star, UsersRound } from "lucide-react";
+import { ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UsersRound } from "lucide-react";
 import { fetchChat } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
 import { paneRowKey } from "@/lib/hosts";
@@ -52,9 +52,10 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
     return () => { observer.disconnect(); abort.abort(); };
   }, [host, session, pane.paneId, pane.instance, pane.hasSession, pane.surface?.field, active, pane.lastActiveAt]);
   const text = preview?.text || pane.subtitle || pane.hint || pane.terminalTitle || pane.tabLabel || pane.agent;
-  const Icon = /^(mensaje de |\[walky-talky )/iu.test(text) ? UsersRound
-    : preview?.outgoing || /^(le )?escribió a /iu.test(text) ? Send : MessageCircle;
-  return <span ref={ref} className="bot-line"><Icon size={13} aria-hidden /><span>{text}</span></span>;
+  const Icon = !preview && pane.kind === "shell" && text === pane.agent ? null
+    : /^(mensaje de |\[walky-talky )/iu.test(text) ? UsersRound
+    : preview?.outgoing || /^(le )?escribió a /iu.test(text) ? Send : pane.asks?.length ? ListChecks : MessageCircle;
+  return <span ref={ref} className="bot-line">{Icon && <Icon size={13} aria-hidden />}<span>{text}</span></span>;
 }
 
 export function MobileAgentHub({ panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, accessNotice }: Props) {

@@ -3403,6 +3403,7 @@ export function AgentChat({
               <CardWaitingCtx.Provider value={questionNotes}>
                 <SessionStream
                   bot={mobileShell ? bot : undefined}
+                  peerIdentity={mobileShell ? p => identityOf(p, paneScope(scope ?? {}, p, servers, rootData?.sessions)) : undefined}
                   unreadSince={unreadSince}
                   feed={chatFeed}
                   clearBottom={floatingClear}

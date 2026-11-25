@@ -7,7 +7,7 @@ import { ItemView, PendingTurn, ToolGroup, groupRuns, standsAlone } from "@/comp
 import { useWalkyLive, useWalkyLog, useWalkySelf } from "@/components/walky-log";
 import { bareAddress, directionOf, parseWalkyCommand, resultId, selfOf, shellLineOf } from "@/lib/walky";
 import { sentTargetWords } from "@/components/walky-name-chip";
-import { senderNameOf, sentTargetAddress } from "@/lib/walky-names";
+import { livePaneAt, senderNameOf, sentTargetAddress } from "@/lib/walky-names";
 import { StreamBlock } from "@/components/stream-block";
 import { PromptPin } from "@/components/prompt-pin";
 import { StatusDot } from "@/components/status-badge";
@@ -28,7 +28,7 @@ import { clockTime } from "@/lib/format";
 import { t, type MessageKey } from "@/lib/i18n";
 import { holdsMask } from "@/lib/masked-text";
 import { blockOfPin, isPinnable, writingItemId } from "@/lib/message-pins";
-import type { Ask, PinRow, QueuedSendRow } from "@/lib/types";
+import type { AgentView, Ask, PinRow, QueuedSendRow } from "@/lib/types";
 import { AskCard, type AskCardProps } from "@/components/ask-card";
 import { pinAt, promptMap } from "@/lib/prompt-pin";
 import { recallScroll, rememberScroll } from "@/lib/scroll-memory";
@@ -596,6 +596,7 @@ function textTokens(size: number): CSSProperties {
 
 export function SessionStream({
   bot,
+  peerIdentity,
   unreadSince,
   feed,
   address,
@@ -620,6 +621,7 @@ export function SessionStream({
 }: {
   /** The held window plus its one control, from `useChatWindow`. */
   bot?: BotIdentity;
+  peerIdentity?: (pane: AgentView) => BotIdentity;
   unreadSince?: number;
   feed: ChatFeed;
   /** This pane's full address (host + session + id) — the key its scroll position is kept under. */
@@ -1093,16 +1095,22 @@ export function SessionStream({
     if (!botStyle) return null;
     let messages = window.entries.filter(e => !e.abandoned && (e.role === "user" || e.role === "assistant") &&
       e.parts.some(p => p.kind === "text" && p.text.trim())).length;
-    const peers = new Set<string>();
-    const captions = new Map<string, string>();
+    const peers = new Map<string, ReactNode>();
+    const captions = new Map<string, ReactNode>();
+    function portrait(peerAddress: string) {
+      const pane = livePaneAt(peerAddress, live);
+      const identity = pane && peerIdentity?.(pane);
+      return <BlobAvatar silhouette={identity?.silhouette ?? 0} color={identity?.color ?? 10} />;
+    }
     for (const [item] of blocks) {
       if (!item || !log) continue;
       if (item.kind === "user" && item.walky) {
         const row = log.byId.get(item.walky.id);
         if (!row || directionOf(row, self) !== "received") continue;
-        captions.set(item.id, `Mensaje de ${senderNameOf(row, live, self).name}`);
+        const face = row.kind === "agent" && row.from.address ? portrait(row.from.address) : null;
+        captions.set(item.id, <>Mensaje de {face} {senderNameOf(row, live, self).name}</>);
         if (row.kind === "agent" && row.from.address && bareAddress(row.from.address) !== bareAddress(selfOf(row, self ?? ""))) {
-          peers.add(bareAddress(row.from.address));
+          peers.set(bareAddress(row.from.address), face);
         }
       } else if (item.kind === "tool" && "output" in item.tool) {
         const line = shellLineOf(item.tool);
@@ -1111,14 +1119,18 @@ export function SessionStream({
         const id = resultId(item.tool.output);
         const row = id && log.byId.get(id);
         if (!row || directionOf(row, self) !== "sent") continue;
-        captions.set(item.id, `Escribió a ${sentTargetWords(row, live, self)}`);
-        if (row.receipt.target !== "all") peers.add(bareAddress(sentTargetAddress(row)));
+        const target = sentTargetAddress(row);
+        const face = row.receipt.target !== "all" ? portrait(target) : null;
+        captions.set(item.id, <>Escribió a {face} {sentTargetWords(row, live, self)}</>);
+        if (face) peers.set(bareAddress(target), face);
         messages++;
       }
     }
     const count = peers.size + 1;
-    return { captions, summary: messages > 1 ? `${messages} mensajes con ${count} ${count === 1 ? "Bot" : "Bots"}` : null };
-  }, [botStyle, blocks, log, self, live, window.entries]);
+    return { captions, summary: messages > 1 && bot ? <>{messages} mensajes con <span aria-hidden="true" className="bot-participants">
+      <BlobAvatar {...bot} />{Array.from(peers).slice(0, 2).map(([peerAddress, face]) => <Fragment key={peerAddress}>{face}</Fragment>)}
+    </span> {count} {count === 1 ? "Bot" : "Bots"}</> : null };
+  }, [botStyle, bot, peerIdentity, blocks, log, self, live, window.entries]);
   const firstUnread = unreadSince === undefined ? -1 : blocks.findIndex(group => group.some(item => item.ts && Date.parse(item.ts) > unreadSince));
   return (
     <ChatMessageList
