@@ -3413,8 +3413,8 @@ export function startServer(opts: {
         const denied = guard(req, cfg, "write", pairingGate);
         if (denied) return denied;
         if (host.kind !== "local" || url.searchParams.has("host")) return text("local session required", 400);
-        const rt = registry.get(sessionName);
-        if (!rt) return unknownSession();
+        const rt = localRuntime(sessionName, req.headers.get("accept-encoding"));
+        if (rt instanceof Response) return rt;
         if (!opts.botTrash) return text("unavailable", 503);
         const input = parseJsonObject(await req.text());
         const action = input?.action;

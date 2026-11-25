@@ -3570,7 +3570,7 @@ describe("muxConfigBody — the capability declaration, as the phone reads it", 
     const adapter = herdrMuxFactory.create({ endpoint: "/tmp/none.sock", timeoutMs: 100, options: {} });
     const wire = muxConfigBody(withWorktreeCapability(adapter, { git: "/usr/bin/git" }));
     // The controls of a durable program (M51 spec 08, M53 spec 05) are the program's to declare, never Herdr's.
-    const program = new Set(["steerTurn", "abortTurn", "starters", "renameSpace", "programActions", "programHistory", "reopenConversation"]);
+    const program = new Set(["steerTurn", "abortTurn", "starters", "programActions", "programHistory", "reopenConversation"]);
     // Since M81 the bridge makes a worktree with git and Herdr opens it as a space: `createWorktree` is
     // lifted from `createSpace` by the wrapper above.
     for (const cap of MUX_CAPABILITIES) expect({ cap, on: wire.capabilities[cap] }).toEqual({ cap, on: !program.has(cap) });
@@ -3954,7 +3954,7 @@ describe("the host gate — `?host=` selects among enrolled members and nothing 
     // The load-bearing claim: `?h=laptop` + `w1:p1` must never be served the DESK's `w1:p1`, and
     // pane ids collide across machines, so a fall-through here is a cross-host write.
     //
-    // All TWENTY-NINE session-scoped route handlers (tab create, workspace create, launch, this host's launcher
+    // The session-scoped route handlers (tab create, workspace create, launch, this host's launcher
     // rows, this host's folder list and a star on it, one journal blob, a Claude subagent transcript, a workspace's Changes list,
     // a workspace's Files view, the Files existence check by pane or workspace, the Files image read
     // by pane or workspace (ADR 0090), the Claude commands a pane would load, tab action, the space rename (M53 spec 05), the pane family, "look now", the New sheet's
@@ -3969,9 +3969,9 @@ describe("the host gate — `?host=` selects among enrolled members and nothing 
     // answer to an ask by id, the hook hold card's tap on a member's pane (M56 spec 12)) reach their runtime through the caller's resolver and
     // nothing else. One of them, the launcher rows, hands the resolver the lead's merge (ADR 0127), and
     // two, the launch and the branch create, hand it the lead's row carry (ADR 0127 point 3). The project
-    // picture (ADR 0160) is one more read, resolved like a blob.
+    // picture (ADR 0160), chat order and workspace moves also resolve through the caller.
     const carry = String.raw`undefined, leadRowCarry\(allowedLaunchers, homedir\(\)\)`;
-    expect([...src.matchAll(new RegExp(String.raw`await caller\.resolve\((?:leadRows|${carry})?\);`, "g"))]).toHaveLength(34);
+    expect([...src.matchAll(new RegExp(String.raw`await caller\.resolve\((?:leadRows|${carry})?\);`, "g"))]).toHaveLength(36);
     expect([...src.matchAll(/await caller\.resolve\(leadRows\);/g)]).toHaveLength(1);
     expect([...src.matchAll(new RegExp(String.raw`await caller\.resolve\(${carry}\);`, "g"))]).toHaveLength(2);
     // Exactly eight `registry.get(` calls remain, and each is a sanctioned one, named here rather
