@@ -1688,6 +1688,8 @@ function sendRecover<T>(recover?: Recover<T>): Recover<T> {
   return (status, detail) => {
     const recovered = recover?.(status, detail);
     if (recovered !== null && recovered !== undefined) return recovered;
+    // Keep the original pairing response available to isPairingRefusal.
+    if (isPairingRefusalBody(status, detail)) return null;
     const plain = plainFailureMessage(status, detail);
     if (plain !== null) throw new ApiError(plain, status);
     return null;

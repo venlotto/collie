@@ -1,3 +1,4 @@
+import { BotMirrorPending } from "./bot-mirror-pending";
 import { BotChatBar } from "./bot-chat-bar";
 import { botTime, identityOf } from "./bot-identity";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -3641,6 +3642,7 @@ export function AgentChat({
                   </div>
                 </>
               )}
+              {mobileShell && <BotMirrorPending address={paneScopeKey(scope, paneId)} screen={display} listRef={listRef} />}
               {trickCards}
             </ChatMessageList>
             ))}

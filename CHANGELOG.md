@@ -49,6 +49,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **The chat list shows the paired device’s initial.** A device without a name shows a profile icon. Opening the bot form shrinks and dims the list, keeps sign-in in the list, and leaves space between the bot preview and its name.
 
+- **The green chat button shows an arrow when you type.** Tap it to send, or press Enter on a desktop. Your message appears immediately, including in chats showing a terminal, and a failed send gives back the draft.
+
 - **A tap restores a workspace immediately after its deletion.** The completed hold consumes only its own click.
 
 - **Only moving rows need a transform during a drag.** Resting chats keep their ordinary rendering as a sheet opens or closes.
