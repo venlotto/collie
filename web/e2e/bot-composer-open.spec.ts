@@ -32,6 +32,7 @@ interface StateOptions {
   screen: string;
   run?: NonNullable<AgentView["agentRun"]>;
   starting?: boolean;
+  readyScreen?: string;
 }
 
 async function openState(page: Page, options: StateOptions) {
@@ -56,7 +57,7 @@ async function openState(page: Page, options: StateOptions) {
     paneId: agent.paneId,
     snapshot,
     chat: { ...fixtureKiroChat, paneId: agent.paneId },
-    screens: { idle: options.screen },
+    screens: { idle: options.screen, ready: options.readyScreen ?? options.screen },
     start: "idle",
   });
   if (run) {
@@ -144,13 +145,17 @@ test("working: a physical agent run sends through the existing queue", async ({ 
   expect(sends[0]).toMatchObject({ pane: "w1:p1", text: "Encola esta revisión", mode: "send" });
 });
 
-test("starting: the draft stays editable and Send is not held by the phone", async ({ page }) => {
-  const { sends } = await openState(page, { status: "unknown", surface: STARTING, screen: "$ kiro", starting: true });
+test("starting: the draft stays editable and Send queues until the agent is ready", async ({ page }) => {
+  const { sends, world, agent } = await openState(page, { status: "unknown", surface: STARTING, screen: "$ kiro", starting: true,
+    readyScreen: paneCapture("kiro--v3-idle-w120") });
   await typeAndShot(page, "starting", "Draft durante el arranque");
   const send = page.getByRole("button", { name: "Enviar", exact: true });
   await expect(send).toBeEnabled();
   await expect(send).not.toHaveAttribute("aria-disabled");
   await send.click();
+  expect(sends).toEqual([]);
+  Object.assign(agent, { status: "idle", surface: FREE });
+  world.show("ready");
   await expect.poll(() => sends.length).toBe(1);
   expect(sends[0]).toMatchObject({ pane: "w1:p1", text: "Draft durante el arranque", mode: "send" });
   await expect(page.getByText(/Collie no puede leer esta pantalla/)).toHaveCount(0);
