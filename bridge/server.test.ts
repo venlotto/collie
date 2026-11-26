@@ -2505,8 +2505,8 @@ describe("renamePane and its one-pane tab", () => {
     const stub: Partial<StateEngine> = { pokeNow: () => {}, current: () => ({ ...snapshot, bridge: "connected" }) };
     // SAFETY: renamePane reads only `current()`'s panes and tabs, and `pokeNow()`; the stub supplies both.
     const engine = stub as Pick<StateEngine, "current" | "pokeNow">;
-    const run = (body: { label: string | null }) =>
-      renamePane(adapter, engine, "w1:p1", request(JSON.stringify(body)), { record: (entry: AuditEntry) => void audit.push(entry) }, "pixel", "default");
+    const run = (body: { label: string | null; auto?: boolean }, autoName?: Parameters<typeof renamePane>[7]) =>
+      renamePane(adapter, engine, "w1:p1", request(JSON.stringify(body)), { record: (entry: AuditEntry) => void audit.push(entry) }, "pixel", "default", autoName);
     return { paneRenames, tabRenames, audit, run };
   };
   function fakePaneIn(paneId: string): AgentView {
@@ -2532,6 +2532,17 @@ describe("renamePane and its one-pane tab", () => {
     expect(audit).toEqual([
       { action: "pane.rename", paneId: "w1:p1", session: "default", device: "pixel", detail: { label: "agentbuffs", tabRenamed: true } },
     ]);
+  });
+
+  test("an auto rename marks a placeholder; a person's rename clears the mark", async () => {
+    const { run } = rig({ paneCount: 1 });
+    const marks: string[] = [];
+    const store = { mark: (session: string, paneId: string, label: string) => void marks.push(`mark ${session} ${paneId} ${label}`),
+      forget: (session: string, paneId: string) => void marks.push(`forget ${session} ${paneId}`) };
+    await run({ label: "Cometa", auto: true }, { store, session: "s" });
+    await run({ label: "Mi bot" }, { store, session: "s" });
+    await run({ label: null, auto: true }, { store, session: "s" });
+    expect(marks).toEqual(["mark s w1:p1 Cometa", "forget s w1:p1", "forget s w1:p1"]);
   });
 
   test("a tab with two panes keeps its name", async () => {

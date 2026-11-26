@@ -1988,6 +1988,7 @@ export const ko: Dictionary = {
   "apiError.launch.bad_folder": "이 폴더는 사용할 수 없습니다. 경로에 .. 또는 제어 문자를 넣을 수 없습니다.",
   "apiError.launch.folder_missing": "이 머신에는 {folder} 폴더가 없습니다.",
   "apiError.launch.pane_unknown": "해당 창을 찾을 수 없어 실행하지 못했습니다",
+  "apiError.launch.space_unknown": "해당 워크스페이스를 찾을 수 없어 실행하지 못했습니다",
   "apiError.launcher.adds_off": "이 머신에서는 휴대폰에서 실행 항목을 추가하는 기능이 꺼져 있습니다.",
   "apiError.launcher.free_text_off": "이 머신에서는 직접 입력한 명령이 꺼져 있습니다.",
   "apiError.launcher.bad_text": "해당 {field}은(는) 사용할 수 없습니다: {problem}.",

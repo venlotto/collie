@@ -1977,6 +1977,7 @@ export const zh: Dictionary = {
   "apiError.launch.bad_folder": "无法使用这个文件夹。路径不能包含 .. 或控制字符。",
   "apiError.launch.folder_missing": "这台机器上没有文件夹 {folder}。",
   "apiError.launch.pane_unknown": "找不到该窗格，未启动任何内容",
+  "apiError.launch.space_unknown": "找不到该工作区，未启动任何内容",
   "apiError.launcher.adds_off": "这台机器已关闭从手机添加启动器的功能。",
   "apiError.launcher.free_text_off": "这台机器已关闭手动输入命令的功能。",
   "apiError.launcher.bad_text": "该{field}无法使用：{problem}。",

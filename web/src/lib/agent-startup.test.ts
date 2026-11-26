@@ -7,6 +7,12 @@ const FREE: Surface = { revision: 3, turn: "idle", modal: "none", composer: "emp
 const ASK: Surface = { revision: 0, turn: "unknown", composer: "unknown", modal: { ask: { id: "trust", kind: "permission", channel: "keys", hash: "abc", options: [{ id: "1", label: "Continue" }] } } };
 
 describe("the first screen the bridge read", () => {
+  it("reads a wrapper that runs the launched harness as that harness (kimi and glm run Claude Code)", () => {
+    expect(firstScreenRead("claude", "kimi", FREE)).toBe(true);
+    expect(firstScreenRead("claude", "glm", ASK)).toBe(true);
+    expect(firstScreenRead("claude", "kimi", { ...FREE, reason: "no-match" })).toBe(false);
+    expect(firstScreenRead("codex", "kimi", FREE)).toBe(false);
+  });
   it("is a dialog or an input box of the launched harness, at any revision", () => {
     expect(firstScreenRead("kiro", "kiro", ASK)).toBe(true);
     expect(firstScreenRead("kiro", "kiro", FREE)).toBe(true);

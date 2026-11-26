@@ -40,6 +40,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Working bots pulse gently in the chat list and header.** A short status replaces the message preview while a bot works, needs an answer, or has a new result to read.
 - **Background runs show their activity on the same portraits.** The list keeps their elapsed time while they work and returns to the last message after you read their result.
+- **Double-click, right-click or hold the + to start a quick bot.** It opens at once, with no form, with the agent and reasoning of the last bot you created, for a quick task. Its random name changes to a short title once the bot knows its task. A plain tap still opens the full form.
 
 - **Wide screens keep several chats open side by side.** Open a second bot from the list and it joins the first instead of replacing it. Each window can be minimised to a tray under the chats, maximised to fill the space, or closed without stopping its bot, and the set of open chats is remembered on that device. One chat, a narrow window and the phone look as before.
 
@@ -62,6 +63,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Creating a bot fills the phone and always shows agent choices.** The sheet rises from the bottom edge and keeps the last agent and reasoning visible while the catalog loads. A host without profile support explains why the choices are unavailable and still uses its existing launch.
 - **The featured chat choice is ready on every device.** The space above the chat list holds one pinned bot; its choice is saved for each person and restored after a restart.
+- **A new bot can go into an existing workspace or a new one.** The creation sheet asks where the bot lives: an existing workspace from the list, a new one you name, or nothing, which puts it in a shared "Sin asignar" workspace that is created the first time and reused after that. A bot made with the quick gesture on "+" goes there too.
 - **Only your pinned chat fills the featured slot.** Pinning another chat replaces the previous one on every device, and unpinning or deleting it removes the slot; focus and list order no longer choose a chat for you.
 - **Hosted sign-in joins the declared access settings.** The existing SSO switch can also be set in the generated configuration, keeping each person's saved chat preferences on the same account.
 
