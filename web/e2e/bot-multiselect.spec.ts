@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fixtureAgents, fixtureSnapshot } from "@/test/handlers";
 import type { AgentView } from "@/lib/types";
 import { installApiStub, pinLocale } from "./fixtures/api";
+import { expectBotSheetPosition } from "./fixtures/bot-sheet";
 
 test.use({ serviceWorkers: "block" });
 
@@ -109,7 +110,7 @@ test("mantener pulsado, alternar, seleccionar todo y mover dos chats", async ({ 
   await toolbar.getByRole("button", { name: "Mover" }).click();
   const sheet = page.getByRole("dialog", { name: "Mover a" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator(".bot-sheet")).toHaveCSS("transform", "none");
+  await expectBotSheetPosition(sheet);
   await capture(page, "sheet-mover");
   await sheet.getByRole("button", { name: "Duck duck race" }).click();
   const target = page.locator("section").filter({ has: page.getByRole("button", { name: "Duck duck race", exact: true }) });
@@ -144,7 +145,7 @@ test("un solo chat va a papelera, se restaura y sólo se cierra al confirmar", a
   await remove.click();
   const confirm = page.getByRole("dialog", { name: "Eliminar definitivamente" });
   await expect(confirm).toBeVisible();
-  await expect(confirm.locator(".bot-sheet")).toHaveCSS("transform", "none");
+  await expectBotSheetPosition(confirm);
   await capture(page, "confirmacion");
   await confirm.getByRole("button", { name: "Cancelar" }).click();
   await expect(confirm).toHaveCount(0);
