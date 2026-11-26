@@ -43,7 +43,7 @@ export interface TriageSection {
  * are seeded with equal timestamps by the ledger; an idle pane is not unread just because it exists.
  * Both timestamps absent (an older bridge) yields `false`, so the section is simply empty there.
  */
-export function isUnseen(a: AgentView): boolean {
+export function isUnseen(a: Pick<AgentView, "kind" | "status" | "lastActiveAt" | "lastSeenAt">): boolean {
   return a.kind !== "shell" && (a.status === "done" || a.status === "idle") && settledUnseen(a);
 }
 
@@ -71,7 +71,7 @@ export function isQuestion(a: Pick<AgentView, "status" | "blockedBy">): boolean 
  * not for an answer; the next status the agent reports replaces it. Shell panes and every other
  * status pass through.
  */
-export function shownStatus(a: AgentView): AgentStatus {
+export function shownStatus(a: Pick<AgentView, "kind" | "status" | "blockedBy" | "lastActiveAt" | "lastSeenAt">): AgentStatus {
   if (a.kind === "shell") return a.status;
   if (a.status === "done" && !isUnseen(a)) return "idle";
   if (isErrorBlocked(a) && !settledUnseen(a)) return "idle";
@@ -79,7 +79,7 @@ export function shownStatus(a: AgentView): AgentStatus {
 }
 
 /** Whether the pane's last status change is newer than the last time it was seen (both from the bridge). */
-function settledUnseen(a: AgentView): boolean {
+function settledUnseen(a: Pick<AgentView, "lastActiveAt" | "lastSeenAt">): boolean {
   return (a.lastActiveAt ?? 0) > (a.lastSeenAt ?? 0);
 }
 

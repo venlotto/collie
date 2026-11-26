@@ -1623,6 +1623,10 @@ export const en = {
   // --- status (triage sections, status labels, counts) ---
   "status.section.needsYou": "Needs you",
   "status.section.readyUnseen": "Ready · unseen",
+  "bot.activity.working": "Working…",
+  "bot.activity.blocked": "Needs you",
+  "bot.activity.error": "Stopped",
+  "bot.activity.done": "Ready",
   "status.section.working": "Working",
   "status.section.recent": "Recent",
   "status.label.blocked": "needs you",

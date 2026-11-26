@@ -1471,6 +1471,10 @@ export const ko: Dictionary = {
   // --- status (triage sections, status labels, counts) ---
   "status.section.needsYou": "입력 대기",
   "status.section.readyUnseen": "완료 · 미확인",
+  "bot.activity.working": "작업 중…",
+  "bot.activity.blocked": "응답 필요",
+  "bot.activity.error": "중단됨",
+  "bot.activity.done": "완료",
   "status.section.working": "작업 중",
   "status.section.recent": "최근",
   "status.label.blocked": "입력 대기",
