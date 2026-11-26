@@ -239,7 +239,8 @@ import { currentWarrant, discardForeignWarrant, refreshWarrant, type WarrantPush
 import { CLEAR_BURST_MS, Push } from "./push.ts";
 import { currentNotesReader } from "./release-notes.ts";
 import { pluginRoot } from "./root.ts";
-import { agentPaneFilesRoot, buildId, filesPrivateFolders, paneReadHint, recentRead, startServer } from "./server.ts";
+import { agentPaneFilesRoot, buildId, filesPrivateFolders, paneReadHint, recentRead, renameSoleTab, startServer } from "./server.ts";
+import { BotAutoName } from "./bot-auto-name.ts";
 import { askFilesResolver } from "./hill/ask-files.ts";
 import {
   DEFAULT_SESSION_NAME,
@@ -1991,6 +1992,7 @@ const askReminders = new AskRemindBook();
 const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
 const uiSections = new UiSections(cfg.stateDir, !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase()));
 const botFeatured = new BotFeatured(cfg.stateDir, uiSections.sso);
+const botAutoName = new BotAutoName(cfg.stateDir);
 
 const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   const built = endpoint.kind === "program" ? programAdapter(endpoint.source) : terminalAdapter(endpoint.socketPath);
@@ -2066,6 +2068,16 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
     } catch {
       console.warn("[bot-featured] Could not prune the saved featured chat");
     }
+  });
+  // A bot created without a name carries a random placeholder until its agent titles the work.
+  engine.onUpdate(snapshot => {
+    botAutoName.reconcile(name, [...snapshot.agents, ...snapshot.shellPanes], async (paneId, label) => {
+      const renamed = await herdr.renamePane(paneId, label);
+      if (!renamed.ok) return false;
+      await renameSoleTab(herdr, engine, paneId, label);
+      engine.pokeNow();
+      return true;
+    });
   });
 
   // The branch of every pane's folder rides the same poll, fired and not awaited, for the cache
@@ -4522,6 +4534,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
   gitHeads,
   projectPictures,
   botTrash,
+  botAutoName,
   agentRuns: new AgentRuns(process.env.AGENT_RUNS_DIR || join(process.env.XDG_STATE_HOME || join(homedir(), ".local/state"), "agent-runs"),
     async (id, dir) => {
       const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });

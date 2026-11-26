@@ -10,6 +10,18 @@ import type { StartWhat } from "./api";
  */
 export const STARTUP_GATE_MS = 120_000;
 
+/**
+ * Wrappers on coder1 that run Claude Code under their own name (the multiplexer names the pane `kimi`
+ * or `glm`, never `claude`). The bridge reads them with Claude Code's profile (`identity.agentNames` in
+ * profiles/claude.json); this is the same fact for the phone, which launched the harness `claude`.
+ */
+const HARNESS_ALIASES: Readonly<Record<string, string>> = { kimi: "claude", glm: "claude" };
+
+/** Whether the multiplexer's agent name is the harness the phone launched, or a wrapper that runs it. */
+export function namesHarness(harness: string, agent: string | undefined): boolean {
+  return agent !== undefined && (agent === harness || HARNESS_ALIASES[agent] === harness);
+}
+
 /** Navigation intent, not pane metadata or a claim about the terminal's current keyboard. */
 export interface AgentLaunch {
   readonly id: string;
@@ -41,7 +53,7 @@ export function readAgentLaunch(state: JsonValue | undefined, paneId: string, sc
  * unread pane, a stale, torn or contested read, or a box proven not to take keys is not that screen.
  */
 export function firstScreenRead(harness: string, agent: string | undefined, surface: Surface | undefined): boolean {
-  if (agent !== harness || surface === undefined) return false;
+  if (!namesHarness(harness, agent) || surface === undefined) return false;
   if (surface.reason !== undefined || surface.staleFrame === true) return false;
   if (askOf(surface.modal) !== null || surface.modal === "unreadable") return true;
   return surface.composer === "empty" || surface.composer === "draft";

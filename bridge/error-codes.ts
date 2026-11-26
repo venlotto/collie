@@ -96,6 +96,7 @@ export const ERROR_CODES = {
    * snapshot — closed, or never existed. Nothing was created.
    */
   "launch.pane_unknown": "pane not found",
+  "launch.space_unknown": "workspace not found",
   /**
    * A launch named a `harness` id this host does not start (`bridge/harness-launch.ts`). The ids are
    * the list `GET /api/launchers` answered, so nothing a phone was shown is refused (ADR 0091).
