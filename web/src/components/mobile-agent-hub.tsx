@@ -110,9 +110,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       bottom: (footer.current?.getBoundingClientRect().top ?? bounds.bottom) - bounds.top,
     };
     const offset = list.scrollTop - bounds.top;
-    unreadRows.current = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"), row => {
-      const box = row.getBoundingClientRect();
-      return { row, top: box.top + offset, bottom: box.bottom + offset };
+    unreadRows.current = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"), button => {
+      const box = button.getBoundingClientRect();
+      return { row: button, top: box.top + offset, bottom: box.bottom + offset };
     });
     countUnread();
   }
