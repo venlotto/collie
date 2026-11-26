@@ -246,7 +246,7 @@
 .bot-trashed-workspace small { color: #8e8e93; }
 .bot-trashed-workspace button { min-height: 40px; padding: 0 12px; border-radius: 999px; background: #262628; font-size: 13px; }
 
-.agent-run-status { display: flex; align-items: center; justify-content: space-between; flex: none; gap: 12px; padding: 6px 16px; min-height: 44px; font-size: 14px; color: var(--muted-foreground); }
+.agent-run-status { display: flex; align-items: center; justify-content: space-between; flex: none; gap: 12px; padding: 6px 16px; min-height: 56px; font-size: 14px; color: var(--muted-foreground); }
 .agent-run-status button { color: #ff695f; min-height: 44px; padding-inline: 10px; }
 .agent-run-bar.bot-bar > .bot-back:last-of-type { grid-column: 1; }
 .agent-run-bar .bot-pill { grid-column: 2; }

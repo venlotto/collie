@@ -59,6 +59,7 @@ async function check(phone, pane, dir) {
     await expect(row).toContainText("Corriendo", { timeout: 45000 });
     await expect(page.locator(".bot-row").filter({ hasText: "Balance diario" })).toContainText("Listo");
     await shot("list");
+    const listNode = await page.locator(".bot-scroll").elementHandle();
     await row.click();
     await expect(page).toHaveURL(new RegExp(encodeURIComponent(pane)), { timeout: 15000 });
     await expect(page.getByText("¿Puedes revisar el resumen de las salas?", { exact: true })).toBeVisible({ timeout: 40000 });
@@ -67,12 +68,20 @@ async function check(phone, pane, dir) {
     await expect(page.getByText(progress, { exact: false }).last()).toBeVisible({ timeout: 45000 });
     await expect(page.locator(".bot-activity button").first()).toHaveAttribute("aria-expanded", "false");
     await expect(page.getByText("wc -l salas.csv", { exact: true })).toHaveCount(0);
+    expect(await listNode.evaluate(node => node === document.querySelector(".bot-scroll"))).toBe(true);
     await shot("chat");
     await page.reload(); // cold link to the original empty shell, with no SessionStart.
     await expect(page.getByText(progress, { exact: false }).last()).toBeVisible({ timeout: 40000 });
+    const statusBar = page.locator(".agent-run-status");
+    const statusEdges = () => statusBar.evaluate(node => {
+      const { top, bottom } = node.getBoundingClientRect();
+      return [top, bottom];
+    });
+    const runningEdges = await statusEdges();
     await page.getByRole("button", { name: "Detener", exact: true }).click();
     await expect.poll(() => stopped).toBe(1);
     await expect(page.locator(".agent-run-status")).toContainText("Falló", { timeout: 45000 });
+    expect(await statusEdges()).toEqual(runningEdges);
     await shot("failed");
     await page.getByRole("button", { name: "Volver a los chats" }).click();
     await page.locator(".bot-row").filter({ hasText: "Balance diario" }).click();
