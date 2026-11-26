@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const port = Number(process.env.BOT_TEST_PORT ?? 14785);
 const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
-  testDir: "./e2e", testMatch: ["bot-workspaces.spec.ts", "bot-multiselect.spec.ts", "bot-drag.spec.ts", "bot-idle-resume.spec.ts"],
+  testDir: "./e2e", testMatch: ["bot-workspaces.spec.ts", "bot-multiselect.spec.ts", "bot-drag.spec.ts", "bot-idle-resume.spec.ts", "bot-remember-sections.spec.ts"],
   workers: 2, timeout: 60_000, use: { baseURL, serviceWorkers: "block" },
   projects: [
     { name: "phone-webkit", use: { ...devices["iPhone 13"], viewport: { width: 390, height: 844 } } },

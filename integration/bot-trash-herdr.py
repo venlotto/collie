@@ -73,11 +73,11 @@ def exercise(root):
             assert "result" in reply, reply.get("error")
             return reply["result"]
 
-    def api(path, data=None, content_type="application/json"):
+    def api(path, data=None, content_type="application/json", method=None):
         req = Request(origin + path, headers={
             "Authorization": "Bearer " + token, "Origin": origin,
             "X-Requested-With": "XMLHttpRequest", "Content-Type": content_type,
-        }, data=data)
+        }, data=data, method=method)
         with urlopen(req, timeout=4) as reply:
             return json.load(reply)
 
@@ -164,10 +164,20 @@ def exercise(root):
         def post(path, body):
             return api(path, json.dumps(body).encode())
 
+        def folded_sections():
+            prefs = api("/api/ui-sections")
+            assert prefs["userId"] == "local"
+            return set(prefs["folded"])
+
+        section = json.dumps([None, None, wid], separators=(",", ":"))
+        assert not folded_sections()
+        changes = {section: True, "trash": True}
+        api("/api/ui-sections", json.dumps({"changes": changes}).encode(), method="PUT")
         assert post("/api/space/" + wid + "/rename", {"label": "Taller"})["ok"]
         assert rpc("workspace.get", workspace_id=wid)["workspace"]["label"] == "Taller"
         assert post("/api/space/" + wid + "/move", {"before": target["workspace_id"]})["ok"]
         assert rpc("workspace.list")["workspaces"][0]["workspace_id"] == wid
+        assert folded_sections() == set(changes)
         saved_order = post("/api/chat-order", {"workspaceId": wid, "paneId": members[1], "before": members[0]})
         assert saved_order["paneIds"] == members[::-1]
 
@@ -181,9 +191,11 @@ def exercise(root):
         bridge = start_bridge()
         eventually(lambda: len(group_rows()) == 2)
         assert all(p["trash"]["trashedAt"] == stamp for p in group_rows())
+        assert folded_sections() == set(changes)
         assert saved_order in api("/api/chat-order")
         assert post("/api/bot-action", {"action": "restoreWorkspace", "workspaceId": wid, "trashedAt": stamp})["ok"]
         eventually(lambda: all("trash" not in p for p in group_rows()))
+        assert folded_sections() == set(changes)
         assert not ledger.exists()
         assert post("/api/bot-action", {"action": "trashWorkspace", "workspaceId": wid})["ok"]
         stop(bridge)
@@ -197,6 +209,8 @@ def exercise(root):
         topology = rpc("session.snapshot")["snapshot"]
         assert [s["workspace_id"] for s in topology["workspaces"]] == [target["workspace_id"]]
         assert sorted(p["terminal_id"] for p in topology["panes"]) == sorted(untouched)
+        eventually(lambda: folded_sections() == {"trash"})
+        print("PASS isolated section preferences across rename, move, restart, trash, restore and purge")
         print("PASS isolated chat and workspace move, rename, order, restart, restore and seven-day purge")
     finally:
         if bridge is not None:

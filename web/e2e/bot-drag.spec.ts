@@ -22,6 +22,10 @@ async function world(page: Page) {
   const orders = new Map<string, string[]>();
   const writes: string[] = [];
   const trash: string[] = [];
+  await page.route("**/api/ui-sections", route => {
+    if (route.request().method() === "PUT") writes.push("fold");
+    return route.fulfill({ json: { userId: "local", folded: [] } });
+  });
   await page.route("**/api/snapshot*", r => r.fulfill({ json: { ...fixtureSnapshot, agents, workspaces: spaces,
     shellPanes: [], ts: Date.now(), device: { enforced: true, authorized: true, device: "Prueba" } } }));
   await page.route("**/api/chat-order*", r => {
@@ -169,6 +173,7 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
   const bottom = (await footer.boundingBox())!.y;
   const drag = await gesture(page, headers.first()); await drag.lift(); await drag.drop(headers.nth(1));
   await expect(headers.nth(1)).toHaveText("Ideas");
+  await expect(headers.nth(1)).toHaveAttribute("aria-expanded", "true");
   await page.reload(); await expect(headers.nth(1)).toHaveText("Ideas");
   const finishSampling = await sampleFooter(page);
   async function menu() {
@@ -176,6 +181,7 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
     return page.getByRole("dialog");
   }
   let dialog = await menu(); await expect(dialog).toBeVisible();
+  await expect(headers.nth(1)).toHaveAttribute("aria-expanded", "true");
   await page.waitForTimeout(290); await capture(page, "workspace");
   expect((await footer.boundingBox())!.y).toBe(bottom);
   await dialog.getByRole("button", { name: "Mover" }).click();
