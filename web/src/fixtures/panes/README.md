@@ -4100,6 +4100,21 @@ never had the bug, so that screen is cut to 39 columns, where the break falls in
 on the 56-column working screen. Tests: `web/src/lib/surface/frame.bottom-wraps.test.ts`,
 `web/src/lib/harness/codex/status-wrap.test.ts`, `bridge/surface/protocol.codex-status-wrap.test.ts`.
 
+### A field-only continuation of the status title (real capture, sanitized 2026-11-26)
+
+`codex--astra-working-status-title-wrap--w56.txt` is a real 56-column Codex frame, read with
+`format:"ansi"` and cut to the `Working` row, empty composer, status rows, key-hint row and their blank
+rows. Unlike the four constructed captures above, its thread title wraps onto a second row containing
+only `inicio`: no later field and no ` · ` separator remains on that row. Its SGR bytes are unchanged.
+The discarded transcript and queue rows carried no parser evidence. The model and session title are
+neutral, the working directory is `~/repos`, and no user, host, key or token remains.
+
+Before the field-only continuation rule, this frame had no composer while `Working (… esc to interrupt)`
+was inside the modal detector's tail window, so a successful send was followed by the unread-dialog
+card. The adapter must find the composer and show no card on both the styled and plain reads. A dialog
+key row, a continuation in another colour and a row with room left on the upper line must still be
+refused.
+
 ## Claude Code 2.1.322 on macOS: `⏺ main` background-agents footer (captured 2026-11-11)
 
 On macOS, stock Claude Code 2.1.322 draws the background-agents footer header with `⏺` (`U+23FA`,

@@ -11,6 +11,7 @@ import { __resetReport, openReport, unreadDialogReport, useReportTarget } from "
 import type { ComponentProps } from "react";
 import { DEFAULT_BOARD, setCell } from "@/lib/key-board";
 import { resetKeyBoard, setKeyBoard } from "@/lib/key-board-store";
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 import { CardDock } from "./card-dock";
 import { UnreadDialogBlock } from "./unread-dialog-block";
 
@@ -44,6 +45,37 @@ function renderCard(onAction = vi.fn(), disabled = false) {
 }
 
 describe("UnreadDialogBlock", () => {
+  it("renders the whole sheet and its armed key in Spanish", async () => {
+    setLocale("es");
+    await whenLocaleReady("es");
+    try {
+      const block = cardBlock();
+      const onAction = vi.fn();
+      render(
+        <UnreadDialogBlock
+          cancel={block.cancel}
+          lines={block.lines}
+          onAction={onAction}
+          onReport={vi.fn()}
+          onTypeAnyway={vi.fn()}
+        />,
+      );
+      expect(screen.getByText("Collie no puede leer esta pantalla. Tú sí.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Esc" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Enviar de todos modos" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Informar de un problema" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Ocultar los botones de esta tarjeta, mantener el terminal" }),
+      ).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "Esc" }));
+      expect(onAction).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "Pulsa de nuevo para enviar Esc" })).toBeInTheDocument();
+    } finally {
+      setLocale("en");
+    }
+  });
+
   it("renders the caption and exactly two controls: the declared key and Put away", () => {
     renderCard();
     expect(screen.getByText("Collie cannot read this screen. You can.")).toBeInTheDocument();
