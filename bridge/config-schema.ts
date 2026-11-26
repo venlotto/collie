@@ -160,6 +160,14 @@ export type ConfigSetting =
 export const CONFIG_SETTINGS: readonly ConfigSetting[] = [
   // ── bridge ─────────────────────────────────────────────────────────────────
   {
+    key: "koperca_bot_profiles",
+    env: "COLLIE_KOPERCA_BOT_PROFILES",
+    section: "bridge",
+    kind: "bool",
+    default: false,
+    doc: "Offer the installed Koperca agent wrappers and remember the last agent and reasoning effort used to create a bot.",
+  },
+  {
     key: "poll_ms",
     env: "COLLIE_POLL_MS",
     section: "bridge",

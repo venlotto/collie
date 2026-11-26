@@ -21,14 +21,12 @@
 [data-bots] {
   height: 100dvh;
   overflow: clip;
-  --bot-width: 100%;
   --bot-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   padding-bottom: var(--bot-bottom);
 }
-@media (min-width: 600px) { [data-bots] { --bot-width: 390px; } }
 [data-bots] [data-slot="app-header"] { display: none; }
 .bot-layout, .bot-sidebar, .bot-index, .bot-detail { display: flex; min-width: 0; min-height: 0; }
-.bot-layout { flex: 1; position: relative; width: min(100%, var(--bot-width)); margin-inline: auto; overflow: clip; }
+.bot-layout { flex: 1; position: relative; width: 100%; overflow: clip; }
 .bot-sidebar { isolation: isolate; }
 .bot-sidebar, .bot-detail, .bot-index { flex: 1; flex-direction: column; }
 .bot-detail {
@@ -104,7 +102,7 @@
 .bot-chat-bar { background: rgb(0 0 0 / 84%); backdrop-filter: blur(18px); z-index: 2; }
 .bot-back { width: auto; min-width: 40px; padding-inline: 7px; gap: 2px; }
 .bot-back b { font-size: 13px; }
-.bot-popup { position: fixed; inset: calc(58px + env(safe-area-inset-top)) max(14px, calc((100% - var(--bot-width)) / 2 + 14px)) auto auto; margin: 0; padding: 6px; border-radius: 16px; background: #222224; color: white; box-shadow: 0 8px 30px #0009; }
+.bot-popup { position: fixed; inset: calc(58px + env(safe-area-inset-top)) 14px auto auto; margin: 0; padding: 6px; border-radius: 16px; background: #222224; color: white; box-shadow: 0 8px 30px #0009; }
 .bot-popup button { display: block; padding: 10px 15px; text-align: left; width: 100%; }
 .bot-popup button:hover { background: #333338; border-radius: 12px; }
 .bot-date { text-align: center; margin: 16px 0 10px; font: 12px/18px -apple-system,BlinkMacSystemFont,"Inter",sans-serif; color: #8e8e93; }
@@ -169,6 +167,55 @@
 
 .bot-notice { position: absolute; z-index: 12; bottom: 74px; left: 16px; right: 16px; pointer-events: none; }
 
+.bot-detail-empty { display: none; }
+
+/* The same scrollports and composer occupy a second column once both panes fit. */
+@media (min-width: 768px) {
+  [data-bots] { padding-bottom: 0; }
+  .bot-layout {
+    --sidebar-width: clamp(250px, 26vw, 330px);
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+  .bot-sidebar, .bot-detail { padding-bottom: var(--bot-bottom); }
+  .bot-sidebar {
+    background: var(--glass-light, none), rgb(var(--glass-rgb, 18 18 20) / var(--glass-opacity, 1));
+    border-inline-end: 1px solid #323234;
+    box-shadow: var(--glass-edge, none);
+    -webkit-backdrop-filter: var(--glass-filter, none);
+    backdrop-filter: var(--glass-filter, none);
+  }
+  .bot-detail, .bot-layout[data-detail=true] .bot-detail {
+    position: relative;
+    transform: none;
+    transition: none;
+  }
+  .bot-detail-empty {
+    flex: 1;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    color: var(--muted-foreground);
+    font-size: 16px;
+  }
+  .bot-detail [data-slot="chrome-block"] { max-width: none; }
+  .bot-detail [data-slot="pane-reading"] div:has(> .bot-terminal) { padding-inline: 0; }
+  .bot-terminal { width: 100%; margin-inline: 0; }
+  .bot-picker { max-width: calc(var(--sidebar-width) - 32px); overflow-wrap: anywhere; }
+  .bot-sidebar:has(.bot-dialog[open][data-leaving=false]) .bot-list-surface { transform: none; }
+  .bot-dialog[open] { align-items: center; padding: 16px; }
+  .bot-sheet {
+    width: min(100%, 440px);
+    max-height: calc(100dvh - 32px);
+    animation-name: bot-dialog-in;
+  }
+  .bot-dialog[data-leaving=true] .bot-sheet { animation-name: bot-dialog-out; }
+  .bot-notice { left: auto; width: min(380px, 48%); }
+}
+@keyframes bot-dialog-in { from { opacity: 0; transform: scale(.97); } }
+@keyframes bot-dialog-out { to { opacity: 0; transform: scale(.97); } }
+
 .bot-featured { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 84px; margin-bottom: 6px; }
 .bot-featured-face { position: relative; }
 .bot-featured-face .bot-avatar { width: 49px; height: 49px; vertical-align: middle; }
@@ -176,7 +223,7 @@
 .bot-featured-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .bot-search-foot { display: flex; align-items: center; gap: 10px; }
 .bot-spaces { pointer-events: auto; background: #382c39; width: 43px; height: 43px; flex: none; }
-.bot-picker { position: fixed; inset: auto auto max(72px,calc(env(safe-area-inset-bottom) + 55px)) max(16px, calc((100% - var(--bot-width)) / 2 + 16px)); margin: 0; background: #262628; border-radius: 18px; padding: 7px; max-height: 52vh; overflow: auto; color: white; pointer-events: auto; }
+.bot-picker { position: fixed; inset: auto auto max(72px,calc(env(safe-area-inset-bottom) + 55px)) 16px; margin: 0; background: #262628; border-radius: 18px; padding: 7px; max-height: 52vh; overflow: auto; color: white; pointer-events: auto; }
 .bot-picker button { min-height: 42px; display: block; width: 100%; padding: 0 14px; text-align: left; }
 .bot-jump { position: absolute; z-index: 1; left: 50%; transform: translateX(-50%); border-radius: 99px; background: #076ad0; padding: 7px 12px; display: flex; align-items: center; gap: 6px; color: white; font-size: 13px; }
 .bot-jump-up { top: calc(64px + env(safe-area-inset-top)); }
@@ -259,6 +306,85 @@
 .bot-workspace-fields form button { justify-content: center; }
 .bot-workspace-fields .danger { color: #ff716b; }
 @media (prefers-reduced-motion: reduce) { .bot-index [data-drag-space] .bot-row,.bot-drop-trash { transition: none; } }
+
+.bot-launch-fields { flex: none; width: 94%; margin-top: 6px; display: grid; gap: 6px; }
+.bot-launch-fields fieldset { display: flex; align-items: center; min-width: 0; gap: 2px; background: #202023; border-radius: 16px; padding: 3px 5px; }
+.bot-launch-fields legend { float: left; width: 68px; padding-left: 5px; color: #c9c9d0; font-size: 12px; }
+.bot-launch-fields button { flex: 1; min-height: 32px; padding: 0 3px; font-size: 13px; border-radius: 999px; }
+.bot-launch-fields button[aria-pressed=true] { background: #53535c; color: #fff; font-weight: 600; }
+.bot-sheet:has(.bot-launch-fields) .bot-create { margin-top: 14px; }
+
+/* The inset hairline and reflection paint inside the existing boxes. */
+[data-bots], .bot-dialog {
+  --glass-rgb: 27 27 31;
+  --glass-opacity: .70;
+  --glass-filter: blur(24px) saturate(170%);
+  --glass-edge: inset 0 0 0 .5px rgb(255 255 255 / .11), inset 0 1px 0 rgb(255 255 255 / .09);
+  --glass-light: linear-gradient(168deg, rgb(255 255 255 / .065), transparent 48%);
+  --bot-head: calc(57px + env(safe-area-inset-top, 0px));
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-bots], .bot-dialog { --glass-opacity: 1; --glass-filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-bots], .bot-dialog { --glass-opacity: 1; --glass-filter: none; }
+}
+.bot-bar, .bot-search, .bot-circle, .bot-pill, .bot-user, .bot-sheet,
+.bot-popup, .bot-picker, .bot-drop-trash, [data-bots] [role="dialog"] > [data-presentation],
+.bot-detail [data-slot="composer-box"],
+.bot-detail [data-bot-controls] > button, .bot-sheet header .bot-circle {
+  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+/* Controls on an already filtered surface share its backdrop sample. */
+.bot-bar :is(.bot-circle,.bot-pill,.bot-user), .bot-sheet header .bot-circle,
+.bot-detail [data-bot-controls] > button {
+  --glass-rgb: 61 61 68;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.bot-bar .bot-user { --glass-rgb: 0 102 114; border-color: transparent; }
+.bot-detail [data-bot-controls] > [data-slot="composer-primary"] { --glass-rgb: 8 110 56; }
+.bot-drop-trash { --glass-rgb: 54 24 31; color: #ffebe8; }
+.bot-drop-trash[data-trash-over] { --glass-rgb: 114 25 30; background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity)); }
+.bot-select-bar button { color: #dfedff; }
+.bot-actions button:last-child, .bot-danger, .bot-workspace-fields .danger { color: #ffe8e3; }
+.bot-search input::placeholder, .bot-detail [data-slot="composer-box"] textarea::placeholder { color: #f2f2f5; }
+.bot-sheet input::placeholder { color: #adadb4; }
+.bot-action-sheet p, .bot-workspace-fields p { color: #f2f2f5; }
+.bot-sheet p[role=alert] { color: #ffe8e3; }
+.bot-search-foot { background: transparent; }
+.bot-list-surface > .bot-bar { position: absolute; inset: 0 0 auto; z-index: 2; }
+.bot-scroll { padding-top: calc(var(--bot-head) + 8px); scroll-padding-block: var(--bot-head) 58px; }
+.bot-row, .bot-index [data-drag-space] .bot-row { transition-property: transform, opacity; }
+
+/* Extend the scrollport behind the bars. The padding returns the space at
+   either end. A docked question still gets its own row above the composer. */
+.bot-chat-bar { position: relative; }
+.bot-chat-bar + div { --bot-head-overlap: var(--bot-head); }
+.bot-chat-bar + div:has(> [data-slot="collapse"] [data-slot="notice"]) { --bot-head-overlap: 0px; }
+.bot-chat-bar + div [data-slot="pane-reading"] { margin-top: calc(-1 * var(--bot-head-overlap)); }
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto {
+  scroll-padding-top: var(--bot-head-overlap);
+}
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::before {
+  content: ""; display: block; height: var(--bot-head-overlap);
+}
+.bot-chat-bar + div:has([data-slot="composer-box"]):not(:has([data-slot="card-dock"])) {
+  --bot-composer-overlap: 40px;
+}
+.bot-detail [data-slot="pane-reading"] { margin-bottom: calc(-1 * var(--bot-composer-overlap, 0px)); }
+.bot-detail [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::after {
+  content: ""; display: block; height: var(--bot-composer-overlap, 0px);
+}
+.bot-detail [data-slot="chrome-block"], .bot-detail [data-slot="chrome-block"] > .bg-chrome { background: transparent; }
+
+[data-bots] [role="dialog"] > [data-presentation] {
+  --muted-foreground: #f2f2f5;
+  max-width: min(100%, 390px);
+}
 
 .bot-trashed-workspace { min-height: 70px; display: flex; gap: 10px; align-items: center; padding: 8px 10px; }
 .bot-trashed-workspace > span { flex: 1; min-width: 0; }

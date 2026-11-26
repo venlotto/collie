@@ -2390,7 +2390,14 @@ export type AddedLauncherResponse =
  * client knowing which machine answered (a peer's home is not this browser's, and is not even
  * necessarily the same string as the lead's).
  */
+export interface BotCreatePrefs { agent: string; effort: string }
+export interface BotCreateCatalog {
+  agents: { id: string; harness: string; efforts: string[] }[];
+  last: BotCreatePrefs | null;
+}
+
 export interface LaunchersResponse {
+  botCreate?: BotCreateCatalog;
   launchers: Launcher[];
   home: string;
   /**

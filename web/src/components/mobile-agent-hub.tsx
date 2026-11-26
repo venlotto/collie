@@ -97,26 +97,40 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   const footer = useRef<HTMLDivElement>(null);
   const [below, setBelow] = useState(0);
   const [above, setAbove] = useState(0);
+  const unreadRows = useRef<{ row: HTMLButtonElement; top: number; bottom: number }[]>([]);
+  const visibleBand = useRef({ top: 0, bottom: 0 });
   function unreadOutside() {
-    const list = scroll.current;
-    if (!list) return { above: [], below: [] };
-    const bounds = list.getBoundingClientRect();
-    const bottom = footer.current?.getBoundingClientRect().top ?? bounds.bottom;
-    const unread = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"));
+    const offset = scroll.current?.scrollTop ?? 0;
     return {
-      above: unread.filter(el => el.getBoundingClientRect().bottom <= bounds.top),
-      below: unread.filter(el => el.getBoundingClientRect().top >= bottom),
+      above: unreadRows.current.filter(r => r.bottom <= visibleBand.current.top + offset),
+      below: unreadRows.current.filter(r => r.top >= visibleBand.current.bottom + offset),
     };
   }
-  function measure() {
+  function countUnread() {
     const outside = unreadOutside();
     setAbove(outside.above.length);
     setBelow(outside.below.length);
   }
-  useEffect(measure, [panes, workspaces, featured, query, folded, accessNotice, mode]);
+  // Geometry changes with the list or chrome. Scrolling only changes the offset.
+  function measureUnread() {
+    const list = scroll.current;
+    if (!list) return;
+    const bounds = list.getBoundingClientRect();
+    visibleBand.current = {
+      top: (list.previousElementSibling?.getBoundingClientRect().bottom ?? bounds.top) - bounds.top,
+      bottom: (footer.current?.getBoundingClientRect().top ?? bounds.bottom) - bounds.top,
+    };
+    const offset = list.scrollTop - bounds.top;
+    unreadRows.current = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"), button => {
+      const box = button.getBoundingClientRect();
+      return { row: button, top: box.top + offset, bottom: box.bottom + offset };
+    });
+    countUnread();
+  }
+  useEffect(measureUnread, [panes, workspaces, featured, query, folded, accessNotice, mode]);
   useEffect(() => {
     if (!scroll.current || !footer.current || !window.ResizeObserver) return;
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(measureUnread);
     observer.observe(scroll.current);
     observer.observe(footer.current);
     return () => observer.disconnect();
@@ -254,7 +268,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
         <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
       </header>}
-      <div className="bot-scroll" ref={scroll} onScroll={measure}>
+      <div className="bot-scroll" ref={scroll} onScroll={countUnread}>
         {accessNotice}
         {organize.error && <p role="alert" className="bot-access">{organize.error}</p>}
         {error && !sheet && <p className="bot-access" role="alert">{error}</p>}
@@ -277,8 +291,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         </section>}
         {!trashedSpaces.length && !trashRows.length && !accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
       </div>
-      {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
-      {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
+      {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.row.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
+      {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.row.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
     </div>
     {organize.menu && <WorkspaceMenu {...organize.menu} />}
     {organize.dragging && <div className="bot-drop-trash"><Trash2 size={19} />Papelera</div>}

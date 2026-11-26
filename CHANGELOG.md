@@ -25,6 +25,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ### Added
 
+- **New bots remember your last agent and reasoning effort.** The next creation on the same host opens with those choices on any device.
+
 - **A chat can move without restarting its terminal.** Herdr gives the running pane a tab in the destination workspace and keeps its shell and scrollback.
 - **Chats in Trash stay recoverable for seven days.** Collie keeps the terminal running until permanent deletion or expiry, even across a bridge restart.
 - **Hold a chat to select one or several.** The list offers Move and Delete, and Trash lets you restore selected chats or confirm permanent deletion.
@@ -41,6 +43,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ### Changed
 
+- **Chat controls float over the conversation in dark glass.** Headers, search, reply controls and action sheets share a translucent surface. Reducing transparency gives them an opaque background.
+
+- **Unread counters reuse row positions while the list scrolls.** The list measures again when its contents or bars change size. Attachment and action panels also use the chat’s glass material.
+
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.
 - **Unread chats have a blue dot beside the preview.** Tap the count above or below the list to jump to unread chats. The profile, search and plus button stay within reach when the list scrolls or the device needs to sign in.
 - **Chat messages name the bot that sent or received them.** The thread counts messages and participating bots. A microphone adds dictation, and the green waveform sends a typed reply or opens voice input when the field is empty.
@@ -50,11 +56,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Bot chats group each turn’s work behind one tap.** Open the step count to read commands and reasoning. Failed steps and questions stay visible, and the terminal uses the full reading area.
 
+- **Wide windows show the chat list beside the conversation.** The terminal fills the conversation panel, and resizing keeps the current chat and draft in place.
+
 ### Fixed
 
 - **On macOS, a linked Claude Code session takes your phone messages by data.** After `collie harness link claude`, the Collie plugin inside Claude Code could not read its process id on a Mac, so it never bound and every message was typed into the terminal. The plugin now names its Claude Code session instead, and Collie takes the process id from the hook events of that session (`collie hooks install claude` sends them). The first answer often says that it does not know the session yet, because the hook event comes a moment later, so the plugin asks again after 1, 3, 10 and 30 seconds. Linux is unchanged. `collie harness unlink claude` turns the link off. Thanks @wraithyy (#864).
 
-- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the list in place, including on a desktop where the same phone-width column is centered.
+- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the phone list in place.
 
 - **The chat list shows the paired device’s initial.** A device without a name shows a profile icon. Opening the bot form shrinks and dims the list, keeps sign-in in the list, and leaves space between the bot preview and its name.
 
@@ -66,6 +74,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Collie refreshes in place when you return.** After half an hour unattended, the app pauses polling and animations. Your first tap or keystroke works immediately and refreshes the screen.
 
 - **Messages reach idle Codex chats with the agents hint.** On Codex 0.172.0 the phone checks the input box and submits the message when the shortcut hint disappears. A refused queued message shows the reason and keeps its resend action.
+
+- **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
 
 ## [1.31.0] - 2026-11-24
 
