@@ -46,6 +46,7 @@
 // ORDER. Every operation runs on one queue, in the order it was called. A pane's text written and
 // then wiped for a password prompt is therefore gone, whatever the two transactions' timing.
 
+import { currentAccount } from "./koperca-account";
 import { basePath } from "@/lib/base-path";
 import { getPairingExpiry } from "@/lib/pairing";
 import { paneScopeKey, type Scope } from "@/lib/scope";
@@ -542,6 +543,8 @@ function forget(backend: Backend): void {
 }
 
 function indexedDBFactory(): IDBFactory | null {
+  // Account-bound pages keep private pane text in this document's memory backend.
+  if (currentAccount()) return null;
   try {
     return globalThis.indexedDB ?? null;
   } catch {

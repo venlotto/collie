@@ -1,3 +1,6 @@
+import type { MuxSnapshot } from "./mux/types.ts";
+import { createKopercaSso, type SsoPrincipal } from "./koperca-sso.ts";
+import { KopercaTenancy } from "./koperca-tenancy.ts";
 import type { BotTrash } from "./bot-trash.ts";
 import { chatOrderId } from "../web/src/lib/chat-order.ts";
 import { ChatOrderStore } from "./chat-order.ts";
@@ -56,6 +59,8 @@ import { paneClears, paneTag, type NotificationCoordinator } from "./notificatio
 import { browseFolders, type FolderBrowseContext } from "./folder-browse.ts";
 import { MAX_FAVOURITES, MAX_FOLDER_CHARS, type FolderSurface } from "./folders.ts";
 import { isValidWorktreeBranch } from "./worktree-branch.ts";
+import { BotCreateStore } from "./bot-create.ts";
+import { findTool } from "./tools.ts";
 import { createHarnessProbe, type HarnessProbe } from "./harness-launch.ts";
 import { endsInShellPrompt } from "./surface/shell-prompt.ts";
 import { isUnsettled, LAUNCH_NO_PROMPT_TEXT, LAUNCH_UNKNOWN_TEXT, launchReplay, memoryLaunchReceipts, type LaunchAnswer, type LaunchReceiptSurface } from "./launch-receipts.ts";
@@ -1304,6 +1309,8 @@ export interface UpdateLineDeps {
 export type TelemetryDeps = Pick<Telemetry, "view" | "choose" | "trouble">;
 
 export function startServer(opts: {
+  sso?: ReturnType<typeof createKopercaSso>;
+  legacyOwnerSub?: string;
   botTrash?: BotTrash;
   cfg: Config;
   registry: SessionRegistry;
@@ -1639,6 +1646,7 @@ export function startServer(opts: {
    * probe, which asks nothing until the first `GET /api/launchers`.
    */
   harnesses?: HarnessProbe;
+  botProfileStore?: (dir: string) => BotCreateStore;
   /**
    * The New sheet's last branch choices per repo (M48, `bridge/worktree-choices.ts`). Absent means an
    * in-memory store; `bridge/index.ts` passes the file-backed one.
@@ -1678,6 +1686,15 @@ export function startServer(opts: {
   repoTricks?: RepoIndexSurface;
 }) {
   const { cfg, registry, push, snooze, notifyPrefs, updateMonitor, audit, activity, crew } = opts;
+  const sso = opts.sso === undefined ? createKopercaSso() : opts.sso;
+  const legacyOwner = opts.legacyOwnerSub ?? process.env.COLLIE_LEGACY_OWNER_SUB;
+  if (sso && (!legacyOwner?.trim() || cfg.basePath !== "/" || crew.mode !== "solo")) {
+    throw new Error("Koperca SSO requires a confirmed COLLIE_LEGACY_OWNER_SUB and a solo bridge at /");
+  }
+  const tenancy = sso ? new KopercaTenancy(cfg.stateDir, legacyOwner!) : null;
+  if (tenancy && opts.botTrash) opts.botTrash.onRetainedTab = tenancy.retainTab.bind(tenancy);
+  const actors = new WeakMap<Request, SsoPrincipal>();
+  const tenantTopology = new WeakMap<Request, MuxSnapshot>();
   // The prompt-cache ledger, built in bridge/index.ts beside the journal registry it probes through,
   // because the state engine's poll is what drives it and that poll is wired there. Undefined when
   // `COLLIE_TRANSCRIPT` is off: no journal, no probe, and every pane reads exactly as it did in 1.8.2.
@@ -1720,7 +1737,7 @@ export function startServer(opts: {
    * addresses count at all ({@link browserPairingGate}).
    */
   const pairingGate: PairingGate | undefined =
-    pairing === undefined
+    sso || pairing === undefined
       ? undefined
       : browserPairingGate(pairing, localCredential, (req) => server.requestIP(req)?.address, cfg.host);
   const folders = opts.folders;
@@ -1731,6 +1748,14 @@ export function startServer(opts: {
   const answerReceipts = opts.answerReceipts ?? memoryAnswerReceipts();
   const controlReceipts = opts.controlReceipts ?? memoryControlReceipts();
   const harnesses = opts.harnesses ?? createHarnessProbe();
+  const profileStore = opts.botProfileStore ?? (process.env.COLLIE_KOPERCA_BOT_PROFILES === "1"
+    ? (dir: string) => new BotCreateStore(dir, id => findTool(id, process.env, homedir()))
+    : undefined);
+  function botCreateFor(req: Request) {
+    if (!tenancy) return profileStore?.(cfg.stateDir);
+    const actor = actors.get(req);
+    return actor && profileStore?.(tenancy.preferencesDir(actor.sub));
+  }
   const worktreeChoices = opts.worktreeChoices ?? memoryWorktreeChoices();
   const worktreeFolderSetting = opts.worktreeFolderSetting ?? memoryWorktreeFolderSetting();
   const machines = opts.machines;
@@ -1776,7 +1801,12 @@ export function startServer(opts: {
     gate: { busy: false },
   };
   /** Who the requester is, across both device gates — see {@link requestDevice}. */
-  const whois = (req: Request): DeviceAuth => requestDevice(req, cfg, pairingGate);
+  const whois = (req: Request): DeviceAuth => {
+    const actor = actors.get(req);
+    return actor
+      ? { enforced: true, device: actor.username, authorized: actor.role !== "viewer" && deviceAuth(req, cfg).authorized }
+      : requestDevice(req, cfg, pairingGate);
+  };
   // The composer diagnostic's file (bridge/diag-composer.ts): nothing touches the disk until a phone reports one.
   const chatOrder = new ChatOrderStore(cfg.stateDir);
   const composerDiag = new ComposerDiagStore(diagFileIo(cfg.stateDir), { version: opts.version });
@@ -2364,6 +2394,7 @@ export function startServer(opts: {
       if (rt instanceof Response) return rt;
       return launch(rt.herdr, rt.engine, req, caller.audit, caller.device(), rt.name, allowedLaunchers, {}, {
         viaCrew: caller.via === "crew",
+        botCreate: botCreateFor(req),
         harnesses,
         receipts: launchReceipts,
         launchWindow: opts.launchWindow,
@@ -2395,7 +2426,7 @@ export function startServer(opts: {
       // The lead's folder questions are answered to the lead alone: a phone's `?cwd=` asks nothing.
       const asked = caller.via === "crew" ? url.searchParams.getAll(CWD_PARAM) : undefined;
       // A durable program's starters ride the same list (ADR 0102); every other multiplexer has none.
-      return launchersRoute(allowedLaunchers, acceptEncoding, harnesses, launchersAdding, rt.herdr.listStarters?.bind(rt.herdr), asked);
+      return launchersRoute(allowedLaunchers, acceptEncoding, harnesses, launchersAdding, rt.herdr.listStarters?.bind(rt.herdr), asked, botCreateFor(req));
     }
     // Add, remove or rename a row a phone added (ADR 0094). Writes, on the write gate. Since ADR 0127
     // they are answered by THIS machine's store whatever `?host=` says (the browser caller's resolver
@@ -2801,10 +2832,17 @@ export function startServer(opts: {
         if (viewer !== null) noteSeenSlot(viewer, req, read, url, paneId, rt);
         return read;
       }
-      if (action === "history" && req.method === "GET")
-        return paneHistory(cfg, journals, transcripts, rt.engine, herdr, paneId, url, req);
-      if (action === "chat" && req.method === "GET")
-        return paneChat(cfg, journals, live, rt.engine, herdr, paneId, url, req, rt.send === undefined ? undefined : (pane) => rt.send!.queuedOf(rt.name, pane));
+      if ((action === "history" || action === "chat") && req.method === "GET") {
+        const actor = actors.get(req);
+        // Directory-based journal discovery can resolve a different user's log in a shared cwd.
+        // Use just the session named by the authorized live terminal in multi-user reads.
+        const ref = actor && actor.role !== "admin"
+          ? tenantTopology.get(req)?.panes.find(pane => pane.paneId === paneId)?.agentSession ?? null
+          : undefined;
+        if (action === "history") return paneHistory(cfg, journals, transcripts, rt.engine, herdr, paneId, url, req, ref);
+        return paneChat(cfg, journals, live, rt.engine, herdr, paneId, url, req,
+          rt.send === undefined || (actor && actor.role !== "admin") ? undefined : pane => rt.send!.queuedOf(rt.name, pane), ref);
+      }
       if (action === "pins" && (req.method === "GET" || req.method === "POST" || req.method === "DELETE")) {
         let body: JsonValue | undefined;
         if (req.method === "POST") {
@@ -3254,6 +3292,18 @@ export function startServer(opts: {
       const deposedAnswer = opts.deposed?.(req, url);
       if (deposedAnswer) return secure(deposedAnswer);
 
+      if (!sso) return dispatchBrowser(req, url);
+      try {
+        return await routeBrowser(req, url);
+      } catch {
+        // A mux or tenant store failure may include host paths and request data.
+        return secure(sso.finish(req, text("Estado de Collie no disponible", 503)));
+      }
+    }),
+  });
+
+  async function dispatchBrowser(req: Request, url: URL, actor?: SsoPrincipal): Promise<Response> {
+      const { pathname } = url;
       // ── The health check (M15/04) ────────────────────────────────────────
       // `GET /api/health`: is this collie up, and WHICH BUILD is answering? The detached updater
       // polls it after a restart, and the version is the whole point — a service that came back on
@@ -5316,9 +5366,86 @@ export function startServer(opts: {
       }
 
       // ── Static PWA (with SPA fallback) ───────────────────────────────────
-      return serveStatic(pathname, req.headers.get("accept-encoding"), WEB_DIR, cfg.basePath);
-    }),
-  });
+      return serveStatic(pathname, req.headers.get("accept-encoding"), WEB_DIR, cfg.basePath,
+        actor && { ...actor, legacyOwner: actor.sub === legacyOwner });
+  }
+
+  async function routeBrowser(req: Request, url: URL): Promise<Response> {
+    const { pathname } = url;
+    if (!sso || !tenancy) throw new Error("SSO was not initialized");
+    const actor = await sso.authorize(req, pathname);
+    if (actor instanceof Response) return secure(actor);
+    let res: Response;
+    if (req.headers.has("upgrade")) {
+      res = text("upgrade unavailable", 403);
+    } else if (pathname === "/sw.js") {
+      // Retire any worker previously installed on this origin. Account-bound data is network only.
+      res = new Response("self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.registration.unregister()));", {
+        headers: { "Content-Type": "text/javascript", "Cache-Control": "no-store" },
+      });
+    } else if (pathname.startsWith("/api/")) {
+      const read = ["GET", "HEAD"].includes(req.method) || (pathname === "/api/refresh" && req.method === "POST");
+      const denied = guard(req, cfg, read ? "read" : "write");
+      const rt = localRuntime(url.searchParams.get("session") ?? undefined, null);
+      if (denied) res = denied;
+      else if (rt instanceof Response || (actor.role !== "admin" && !rt.isPrimary && !tenancy.ownedSessions(actor.sub).includes(rt.name))) {
+        res = text("not found", 404);
+      }
+      else {
+        const scopedApi = async (runtime: SessionRuntime, input: Request) => {
+          let verified: MuxSnapshot | undefined;
+          return tenancy.handle({
+            req: input, pathname, actor, session: runtime.name,
+            active: () => sso.active(req, actor),
+            profileStore,
+            topology: async () => {
+              verified = await runtime.herdr.snapshot();
+              return verified;
+            },
+            trash: terminalId => opts.botTrash?.lookup(runtime.name, terminalId),
+            hasTrashForWorkspace: id => opts.botTrash?.hasWorkspaceEntries(runtime.name, id) ?? false,
+            next: async scoped => {
+              if (!sso.active(req, actor)) return text("Sesión caducada", 401);
+              actors.set(scoped, actor);
+              if (verified && actor.role !== "admin") tenantTopology.set(scoped, verified);
+              const target = new URL(scoped.url);
+              if (actor.role !== "admin") target.searchParams.delete("sessions");
+              return dispatchBrowser(scoped, target, actor);
+            },
+          });
+        };
+        res = await scopedApi(rt, req);
+        if (res.ok && actor.role !== "admin" && pathname === "/api/snapshot") {
+          const scopes = new Set(tenancy.ownedSessions(actor.sub));
+          const others = registry.ordered().filter(other => other !== rt && scopes.has(other.name));
+          const widen = selectView(url).widen;
+          if (others.length || widen) {
+            // SAFETY: all snapshot bodies in this branch are the tenant policy's projections.
+            const selected: SnapshotResponse = await res.json();
+            const sources = [{ name: rt.name, snapshot: selected }];
+            for (const other of others) {
+              const scopedUrl = new URL(req.url);
+              scopedUrl.searchParams.set("session", other.name);
+              const response = await scopedApi(other, new Request(scopedUrl, { headers: req.headers, signal: req.signal }));
+              if (!response.ok) continue;
+              const snap: SnapshotResponse = await response.json();
+              if (!snap.agents.length && !snap.shellPanes.length) continue;
+              selected.sessions.push(...snap.sessions);
+              sources.push({ name: other.name, snapshot: snap });
+            }
+            if (widen) {
+              selected.agents = widenedPanes(sources.map(({ name, snapshot }) => ({ name, panes: snapshot.agents })));
+              selected.shellPanes = widenedPanes(sources.map(({ name, snapshot }) => ({ name, panes: snapshot.shellPanes })));
+            }
+            res = withBuildHeader(json(selected, req.headers.get("accept-encoding")), await buildId());
+          }
+        }
+      }
+    } else {
+      res = await dispatchBrowser(req, url, actor);
+    }
+    return secure(sso.finish(req, sso.active(req, actor) ? res : text("Sesión caducada", 401)));
+  }
 
   console.log(`[bridge] listening on http://${cfg.host}:${cfg.port}  (poll ${cfg.pollMs}ms)`);
   if (cfg.basePath !== "/") {
@@ -5760,6 +5887,7 @@ export async function paneHistory(
   paneId: string,
   url: URL,
   req: Request,
+  boundSession?: AgentSessionRef | null,
 ): Promise<Response> {
   const accept = req.headers.get("accept-encoding");
   const unavailable = (reason: "disabled" | "no-session" | "no-log") =>
@@ -5783,7 +5911,9 @@ export async function paneHistory(
   // discovery widens WHICH panes answer, never how an answer is read. A shell, or a harness whose
   // integration isn't installed, still names nothing discoverable: no-session, an ordinary answer
   // rather than an error.
-  const ref = await journalRefOf(adapter, pane, panes, await discoveryHints(adapter, pane, mux, paneId));
+  const ref = boundSession === undefined
+    ? await journalRefOf(adapter, pane, panes, await discoveryHints(adapter, pane, mux, paneId))
+    : boundSession;
   if (ref === null) return unavailable("no-session");
 
   try {
@@ -6050,6 +6180,7 @@ export async function paneChat(
   url: URL,
   req: Request,
   queuedOf?: (paneId: string) => readonly ReceiptQueued[],
+  boundSession?: AgentSessionRef | null,
 ): Promise<Response> {
   const accept = req.headers.get("accept-encoding");
   const unavailable = (reason: "disabled" | "no-session" | "no-log", detail?: "shared-folder") =>
@@ -6072,8 +6203,10 @@ export async function paneChat(
   // The reported ref, or the discovered one — the history route's rule, word for word. Discovery
   // runs per poll here, a bounded newest-first walk that costs milliseconds in the common case;
   // the resolved path below is what the live window holds.
-  const ref = await journalRefOf(adapter, pane, panes, await discoveryHints(adapter, pane, mux, paneId));
-  if (ref === null) return unavailable("no-session", await noSessionDetail(adapter, pane, panes));
+  const ref = boundSession === undefined
+    ? await journalRefOf(adapter, pane, panes, await discoveryHints(adapter, pane, mux, paneId))
+    : boundSession;
+  if (ref === null) return unavailable("no-session", boundSession === undefined ? await noSessionDetail(adapter, pane, panes) : undefined);
 
   const params = chatParams(url);
   try {
@@ -8360,9 +8493,11 @@ export async function launchersRoute(
   adding?: { merged: () => Promise<MergedLaunchers>; file: string; recent?: () => Promise<RecentRun[]> },
   starters?: () => Promise<MuxStarters>,
   folders?: readonly string[],
+  botCreate?: BotCreateStore,
 ): Promise<Response> {
   const rows = await getLaunchers();
   const body: LaunchersResponse = { launchers: rows, home: homedir() };
+  if (botCreate) body.botCreate = botCreate.catalog();
   if (folders !== undefined && folders.length > 0) body.folders = folderAnswers(folders, body.home);
   if (harnesses !== undefined) body.harnesses = await harnesses.list();
   // ADR 0094: the switches, this machine's `launchers.toml` path, the recipes, the rows held back, and
@@ -9030,6 +9165,7 @@ export async function launch(
   // A starter (ADR 0102) has its own receipt and never touches the multiplexer's create calls, so it
   // is handed over before the launch's own receipt and kinds are read.
   if (isStarterBody(fields)) {
+    if (fields.botCreate !== undefined) return text("bad bot profile", 400);
     return launchStarter(fields, {
       mux: herdr,
       receipts: deps.starterReceipts ?? memoryStarterReceipts(),
@@ -9057,6 +9193,12 @@ export async function launch(
     deps.accounts,
   );
   if (picked instanceof Response) return picked;
+  const profile = deps.botCreate?.resolve(fields.botCreate);
+  if (fields.botCreate !== undefined) {
+    if (!profile || picked.kind !== "harness" || picked.harness !== profile.harness ||
+        fields.signIn !== undefined || fields.account !== undefined) return text("bad bot profile", 400);
+    picked.row = { label: profile.prefs.agent, command: profile.command };
+  }
 
   // The client never sends a command line, except as a one-off `run`, which met its gates above. It
   // may send the pane it wants the launch to open BESIDE, and the folder the sheet's Where field names.
@@ -9124,6 +9266,7 @@ export async function launch(
   if (requestId !== undefined) receipts.track(requestId, work);
   // What follows a launch that worked runs when the run ends, also after the deadline below has answered.
   const afterLaunch = async (answer: LaunchAnswer): Promise<void> => {
+    if (answer.ok && profile) deps.botCreate?.save(profile.prefs);
     // A folder the sheet named that worked joins Recent, as a space created there does. Never a row's
     // pinned folder, which the operator already wrote down, and never on a failure.
     if (answer.ok && asked !== undefined && row?.cwd === undefined && deps.folders !== undefined) {
@@ -9163,6 +9306,7 @@ export async function launch(
 
 /** What `launch` needs beyond the route's own arguments. Every field defaults for a test. */
 export interface LaunchDeps {
+  botCreate?: BotCreateStore;
   /**
    * True when the call came over the crew link from this machine's lead (`caller.via === "crew"`).
    * A carried `row` is then run when this machine's own list has no match AND the request carries the
@@ -11957,6 +12101,7 @@ export async function serveStatic(
   acceptEncoding: string | null,
   webDir: string = WEB_DIR,
   basePath: string = "/",
+  actor?: SsoPrincipal & { legacyOwner: boolean },
 ): Promise<Response> {
   const resolved = resolveStaticPath(pathname, webDir);
   if (!resolved) return text("forbidden", 403);
@@ -11988,6 +12133,12 @@ export async function serveStatic(
   // the worker keeps its policy under a mount too.
   else if (isSttWorkerScript(rel)) headers["content-security-policy"] = STT_WORKER_CSP;
   if (rel === "sw.js") headers["service-worker-allowed"] = "/";
+
+  if (actor && rel === "index.html") {
+    const escaped = JSON.stringify(actor).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+    const body = (await file.text()).replace(/<script src="(?:\.\/|\/)?theme-init\.js"><\/script>/, "").replace("<head>", () => `<head><meta name="collie-sso" content="${escaped}">`);
+    return secure(new Response(body, { headers: { ...headers, "cache-control": "private, no-store" } }));
+  }
 
   // Under a mount the app shell is the one file not served as it lies on disk: its root-absolute
   // references and its `<meta name="collie-base">` are resolved to the mount here (ADR 0052). At the

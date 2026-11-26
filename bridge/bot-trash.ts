@@ -30,6 +30,7 @@ export class BotTrash {
   private readonly file: string;
   private rows = new Map<string, Entry>();
   private lane = Promise.resolve();
+  onRetainedTab?: (session: string, space: string, previous: string, retained: string) => void;
   constructor(private dir: string, private runtime: (session: string) => Target | undefined, private now = Date.now) {
     this.file = join(dir, "bot-trash.json");
     if (!existsSync(this.file)) return;
@@ -59,6 +60,14 @@ export class BotTrash {
       if (obj?.deleting) row.deleting = true;
       this.rows.set(key(session, terminalId), row);
     }
+  }
+
+  hasWorkspaceEntries(session: string, workspaceId: string): boolean {
+    for (const row of this.rows.values()) {
+      if (row.session === session && (row.originalWorkspaceId === workspaceId ||
+          row.previousTrash?.originalWorkspaceId === workspaceId)) return true;
+    }
+    return false;
   }
 
   lookup(session: string, terminalId: string) {
@@ -149,7 +158,7 @@ export class BotTrash {
       if (action === "purge" && row) {
         // Persist intent before closing. A crash after the mux write resumes cleanup only.
         if (!row.deleting) this.save(session, terminalId, { ...row, deleting: true });
-        if (pane) await this.closeTrashedPane(mux, terminalId, pane, snapshot, row.workspaceLabel !== undefined && pane.spaceId === row.originalWorkspaceId);
+        if (pane) await this.closeTrashedPane(session, mux, terminalId, pane, snapshot, row.workspaceLabel !== undefined && pane.spaceId === row.originalWorkspaceId);
         this.cleanUploads(session, terminalId);
         new ChatOrderStore(this.dir).forget(session, terminalId);
         this.save(session, terminalId);
@@ -169,13 +178,22 @@ export class BotTrash {
     });
   }
 
-  private async closeTrashedPane(mux: MuxAdapter, terminalId: string, pane: MuxPane, snapshot: MuxSnapshot, removeEmptyWorkspace: boolean) {
+  private async closeTrashedPane(session: string, mux: MuxAdapter, terminalId: string, pane: MuxPane, snapshot: MuxSnapshot, removeEmptyWorkspace: boolean) {
+    let retainedPane: string | undefined;
     // Herdr drops the workspace with its last pane. Keep it for an individual chat deletion.
     if (!removeEmptyWorkspace && snapshot.panes.filter(p => p.spaceId === pane.spaceId).length === 1) {
       const kept = await mux.createTab({ spaceId: pane.spaceId });
       if (!kept.ok) throw new Error("No se pudo conservar el workspace.");
+      retainedPane = kept.value.paneId;
     }
     const current = await mux.snapshot();
+    if (retainedPane && this.onRetainedTab) {
+      const retained = current.panes.find(p => p.paneId === retainedPane && p.spaceId === pane.spaceId);
+      if (!retained?.terminalId || snapshot.panes.some(p => p.terminalId === retained.terminalId)) {
+        throw new Error("No se pudo identificar el nuevo terminal.");
+      }
+      this.onRetainedTab(session, pane.spaceId, terminalId, retained.terminalId);
+    }
     const live = current.panes.find(p => p.terminalId === terminalId);
     if (!live) return;
     if (live.paneId !== pane.paneId || (!removeEmptyWorkspace && !current.panes.some(p => p.spaceId === live.spaceId && p.paneId !== live.paneId))) {

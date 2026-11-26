@@ -1,3 +1,4 @@
+import { currentAccount } from "./koperca-account";
 import { basePath, mounted } from "./base-path";
 import { BUILD, isStaleBuild } from "./build";
 import { setChunkReloader } from "./chunk-reload";
@@ -412,7 +413,7 @@ export function subscribeControllerChanged(listener: () => void): () => void {
 // The worker's own messages. Registered in module scope rather than inside `onRegisteredSW`, because
 // a worker that was ALREADY installing when this document loaded starts posting before the
 // registration callback has run.
-if ("serviceWorker" in navigator) {
+if (!currentAccount() && "serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("message", (event: MessageEvent) => {
     // SAFETY: `MessageEvent.data` is `any` — a structured clone from our own registered worker, which
     // is the only thing that can reach this listener on a same-origin page. Every field is read
@@ -458,7 +459,7 @@ function nudge(worker: ServiceWorker): void {
   worker.postMessage({ type: "SKIP_WAITING" }, []);
 }
 
-if ("serviceWorker" in navigator) {
+if (!currentAccount() && "serviceWorker" in navigator) {
   void navigator.serviceWorker
     .register(mounted("/sw.js"), { scope: basePath() })
     .then(onRegistered)

@@ -2203,7 +2203,14 @@ export interface LaunchersAdding {
  * own file. `home` is that host's operator home dir, so the client can shorten a pinned `cwd` with a
  * leading `~` without knowing which machine answered.
  */
+export interface BotCreatePrefs { agent: string; effort: string }
+export interface BotCreateCatalog {
+  agents: { id: string; harness: string; efforts: string[] }[];
+  last: BotCreatePrefs | null;
+}
+
 export interface LaunchersResponse {
+  botCreate?: BotCreateCatalog;
   launchers: Launcher[];
   home: string;
   /**

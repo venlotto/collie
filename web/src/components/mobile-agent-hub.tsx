@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { currentAccount } from "@/lib/koperca-account";
+import { AccountAvatar } from "./account-avatar";
 import { chatOrderId } from "@/lib/chat-order";
 import { WorkspaceMenu } from "./bot-workspace-menu";
 import { dragScope, sectionKey, useBotOrganization } from "./bot-organization";
@@ -242,7 +244,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         <strong aria-live="polite">{chosen.length} {chosen.length === 1 ? "seleccionado" : "seleccionados"}</strong>
         <button disabled={busy} onClick={() => setSelection(new Set(choices.map(rowId)))}>Seleccionar todo</button>
       </header> : <header className="bot-bar">
-        <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
+        {currentAccount() ? <AccountAvatar username={deviceName} initial={initial} /> :
+          <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>}
         <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
       </header>}
       <div className="bot-scroll" ref={scroll} onScroll={measure}>

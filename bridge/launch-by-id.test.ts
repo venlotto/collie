@@ -8,6 +8,7 @@ import { signInFolder } from "./account-folder.ts";
 import { Accounts } from "./accounts-routes.ts";
 import { accountTest } from "./accounts-skip.ts";
 import { memoryAccountStore } from "./accounts-store.ts";
+import { BotCreateStore } from "./bot-create.ts";
 import { AuditLog } from "./audit.ts";
 import { harnessLaunch } from "./harness-launch.ts";
 import { LAUNCH_RECEIPTS_FILE, LaunchReceiptStore, coerceLaunchReceipt, isUnsettled, memoryLaunchReceipts } from "./launch-receipts.ts";
@@ -137,6 +138,49 @@ async function run(fake: FakeMux, body: JsonObject, deps: LaunchDeps = {}) {
   const parsed = (await res.json().catch(() => null)) as CreateResponse | null;
   return { status: res.status, body: parsed };
 }
+
+describe("hosted bot creation", () => {
+  let dir: string;
+  beforeEach(async () => { dir = await mkdtemp(join(tmpdir(), "collie-create-")); });
+  afterEach(async () => { await rm(dir, { recursive: true, force: true }); });
+
+  test("only completed launches replace the preference, including after reopening the store", async () => {
+    const botCreate = new BotCreateStore(dir, id => id);
+    expect(botCreate.catalog().last).toBeNull();
+    const mux = new FakeMux();
+    const receipts = memoryLaunchReceipts();
+    const deps = { botCreate, receipts };
+    for (const [agent, harness, effort, command] of [
+      ["codexp", "codex", "high", "codexp -c model_reasoning_effort=high"],
+      ["claudep", "claude", "medium", "claudep --effort medium"],
+      ["kimi", "claude", "low", "kimi --effort low"],
+    ] as const) {
+      const prefs = { agent, effort };
+      const requestId = agent === "codexp" ? ID : undefined;
+      expect((await run(mux, { harness, requestId, botCreate: prefs }, deps)).status).toBe(200);
+      expect(mux.texts.at(-1)?.[1]).toBe(command);
+      expect(new BotCreateStore(dir, id => id).catalog().last).toEqual(prefs);
+    }
+    await run(mux, { requestId: ID, harness: "codex", botCreate: { agent: "codexp", effort: "high" } }, deps);
+    mux.failText = true;
+    expect((await run(mux, { harness: "claude", botCreate: { agent: "claudep", effort: "low" } }, deps)).body?.ok).toBe(false);
+    expect(botCreate.catalog().last).toEqual({ agent: "kimi", effort: "low" });
+    expect((await stat(join(dir, "last-create-prefs.json"))).mode & 0o777).toBe(0o600);
+  });
+
+  test("invalid, unavailable and mismatched choices are refused before a pane exists", async () => {
+    const mux = new FakeMux();
+    const botCreate = new BotCreateStore(dir, id => id === "codexp" ? id : null);
+    await writeFile(join(dir, "last-create-prefs.json"), "{");
+    expect(botCreate.catalog().last).toBeNull();
+    for (const [harness, agent, effort] of [
+      ["codex", "codexp", "other"], ["claude", "codexp", "high"], ["claude", "claudep", "low"],
+    ] as const) {
+      expect((await run(mux, { harness, botCreate: { agent, effort } }, { botCreate })).status).toBe(400);
+    }
+    expect(mux.spaces).toHaveLength(0);
+  });
+});
 
 describe("POST /api/launch — by id", () => {
   test("a Kiro id launch types its program, kiro-cli, not the id", async () => {

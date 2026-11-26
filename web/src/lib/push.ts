@@ -1,3 +1,4 @@
+import { currentAccount } from "./koperca-account";
 import { fetchConfig, registerPushSubscription } from "@/lib/api";
 import { basePath, mounted } from "@/lib/base-path";
 import { t } from "@/lib/i18n";
@@ -114,7 +115,7 @@ export function subscribeBody(
 }
 
 export function pushSupported(): boolean {
-  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  return !currentAccount() && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
 function urlB64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
