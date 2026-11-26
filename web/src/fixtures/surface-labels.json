@@ -2515,6 +2515,16 @@
    "version": "0.171.0",
    "state": "idle"
   },
+  "codex--v0172-agent-hint-idle.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-agent-hint-probe.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
   "codex--v0166-trust--w120.txt": {
    "harness": "codex",
    "version": "0.166.0",

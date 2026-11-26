@@ -857,6 +857,8 @@ export interface Profile {
      * for a harness whose key differs by platform; this field holds the default list.
      */
     readonly submit: readonly string[];
+    /** Versions measured to submit with Enter on a positively idle, framed message box. */
+    readonly idleEnterVersions?: readonly string[];
     /** The lists for the platforms that differ from `submit`, by `process.platform`. {@link forPlatform} applies them. Optional. */
     readonly submitByPlatform?: Readonly<Record<string, readonly string[]>>;
     /**
@@ -1806,6 +1808,11 @@ export function parseProfile(raw: JsonValue): Profile {
     },
   };
   let keys: Profile["keys"] = Object.keys(platformSubmit.byPlatform).length === 0 ? baseKeys : { ...baseKeys, submitByPlatform: platformSubmit.byPlatform };
+  if (keysNode.idleEnterVersions !== undefined) {
+    const idleEnterVersions = textList(keysNode.idleEnterVersions, "keys.idleEnterVersions", 1);
+    if (idleEnterVersions.some((version) => !SEMVER.test(version))) fail("keys.idleEnterVersions", "must contain exact X.Y.Z versions");
+    keys = { ...keys, idleEnterVersions };
+  }
   if (keysNode.interruptClearsDraft !== undefined) {
     if (keysNode.interruptClearsDraft !== true && keysNode.interruptClearsDraft !== false) fail("keys.interruptClearsDraft", "must be true or false");
     keys = { ...keys, interruptClearsDraft: keysNode.interruptClearsDraft };

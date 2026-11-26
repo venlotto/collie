@@ -198,7 +198,10 @@ describe("HoldStore", () => {
     const store = new HoldStore(dir, () => 1_000);
     const entry = store.add(input("req-000001"));
     expect(heldRow(entry)).toEqual({ requestId: "req-000001", mode: "send", text: "text of req-000001", heldAt: 1_000, expiresAt: 1_000 + HOLD_MS, state: "held" });
-    const ended = store.end("req-000001", "refused", "pane_gone")!;
+    const detail = "The pane closed before the message could go out.";
+    const ended = store.end("req-000001", "refused", "pane_gone", undefined, detail)!;
+    const restored = new HoldStore(dir, () => 1_001);
+    expect(heldRow(restored.get(ended.id)!)).toMatchObject({ text: entry.text, state: "ended", detail });
     expect(heldRow(ended)).toMatchObject({ state: "ended", outcome: "refused", reason: "pane_gone" });
     expect(store.remove("req-000001")).toBe(true);
     expect(store.remove("req-000001")).toBe(false);

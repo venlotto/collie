@@ -473,6 +473,8 @@ export interface HeldRow {
   /** On an `ended` row: how it closed. */
   readonly outcome?: SendOutcome;
   readonly reason?: SendReason;
+  /** The settled receipt’s explanation, when available. */
+  readonly detail?: string;
   /** What holds it ({@link HeldCause}); absent on a row a bridge before 1.24.1 held. */
   readonly cause?: HeldCause;
   /**

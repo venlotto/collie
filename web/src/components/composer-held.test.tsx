@@ -372,7 +372,7 @@ describe("the held-send card", () => {
     const calls = fakeDelete({ body: { result: "dismissed" } });
     const sends = fakeSend((posted) => ({ receipt: { requestId: posted.id, outcome: "refused", reason: "not_free", keys: [] }, offers: [] }));
     renderComposer({ held: [row("req00001", "ended", { outcome: "refused", reason: "write_failed" })] });
-    expect(screen.getByText("Not sent. Check the pane, then send again.")).toBeInTheDocument();
+    expect(screen.getByText("The terminal did not take the keys, so nothing was typed. Send again.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Resend the message" }));
     await waitFor(() => expect(sends).toHaveLength(1));
     await waitFor(() => expect(screen.queryByRole("button", { name: "Resend the message" })).toBeEnabled());
@@ -523,6 +523,16 @@ describe("the held-send card", () => {
     await user.click(screen.getByRole("button", { name: "Dismiss the message" }));
     await waitFor(() => expect(calls).toHaveLength(1));
     expect(screen.getByPlaceholderText(/type a reply/i)).toHaveValue("");
+  });
+
+  it("shows a settled probe's detail on the collapsed card and on its resend row", async () => {
+    const user = userEvent.setup();
+    const detail = "One Backspace removed the probe character, so the box is clean again.";
+    renderComposer({ held: [row("req00001", "ended", { outcome: "refused", reason: "probe_failed", detail }), row("req00002", "held")] });
+    expect(screen.getByText(detail)).toBeInTheDocument();
+    await user.click(showAll());
+    expect(within(document.querySelector<HTMLElement>('[data-slot="held-row"]')!).getByText(detail)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Resend the message" })).toBeEnabled();
   });
 
   it("a row whose pane closed offers Dismiss only", () => {
