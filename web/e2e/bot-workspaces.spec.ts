@@ -404,6 +404,9 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
     await expect.poll(() => scroller.evaluate(el => el.scrollTop)).toBe(65);
   }
 
+  // The scroll event changes the terminal from following its tail to reading history.
+  await expect(reader.locator("..").getByRole("button", { name: "Desplazarse a lo más reciente" })).toBeVisible();
+
   for (const [width, height] of [[768, 1024], [390, 844], [1280, 800], [1920, 1080]] as const) {
     await page.setViewportSize({ width, height });
     await expect(detail).toBeInViewport();
@@ -412,7 +415,8 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
     await expect(page).toHaveURL(url);
     expect(await screen!.evaluate(el => el.isConnected)).toBe(true);
     expect(await field!.evaluate(el => el.isConnected)).toBe(true);
-    for (const scroller of [list, reader]) expect(await scroller.evaluate(el => el.scrollTop)).toBe(65);
+    expect(await list.evaluate(el => el.scrollTop), `sidebar at ${width}px`).toBe(65);
+    expect(await reader.evaluate(el => el.scrollTop), `terminal at ${width}px`).toBe(65);
 
     const box = (await detail.boundingBox())!;
     if (width === 390) {
