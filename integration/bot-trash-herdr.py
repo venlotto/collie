@@ -48,9 +48,16 @@ def exercise(root):
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]
     origin = f"http://127.0.0.1:{port}"
+    wrapper_dir = root / "fixture wrappers"
+    wrapper_dir.mkdir()
+    for name in ("codexp", "claudep", "kimi"):
+        program = wrapper_dir / name
+        program.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$0.args\"\n")
+        program.chmod(0o700)
     env = {
         "HOME": str(root), "USER": "fixture", "SHELL": "/bin/sh", "TERM": "xterm-256color",
-        "PATH": f"{Path(shutil.which('bun')).parent}:/usr/local/bin:/usr/bin:/bin",
+        "COLLIE_KOPERCA_BOT_PROFILES": "1",
+        "PATH": f"{wrapper_dir}:{Path(shutil.which('bun')).parent}:/usr/local/bin:/usr/bin:/bin",
         "XDG_CONFIG_HOME": str(root / "config"), "XDG_DATA_HOME": str(root / "data"),
         "XDG_STATE_HOME": str(root / "state"), "XDG_CACHE_HOME": str(root / "cache"), "XDG_RUNTIME_DIR": str(root),
         "HERDR_SOCKET_PATH": str(sock), "HERDR_PLUGIN_CONFIG_DIR": str(root / "plugin"),
@@ -197,6 +204,26 @@ def exercise(root):
         topology = rpc("session.snapshot")["snapshot"]
         assert [s["workspace_id"] for s in topology["workspaces"]] == [target["workspace_id"]]
         assert sorted(p["terminal_id"] for p in topology["panes"]) == sorted(untouched)
+        # Exercise the real shell command with harmless local executables.
+        catalog = api("/api/launchers")["botCreate"]
+        assert catalog["last"] is None
+        assert [profile["id"] for profile in catalog["agents"]] == ["codexp", "claudep", "kimi"]
+        for agent, harness, effort, args in (
+            ("codexp", "codex", "high", ["-c", "model_reasoning_effort=high"]),
+            ("claudep", "claude", "medium", ["--effort", "medium"]),
+            ("kimi", "claude", "low", ["--effort", "low"]),
+        ):
+            prefs = {"agent": agent, "effort": effort}
+            receipt = post("/api/launch", {"harness": harness, "botCreate": prefs, "cwd": str(root)})
+            assert receipt["ok"]
+            delivered = wrapper_dir / (agent + ".args")
+            eventually(delivered.is_file)
+            assert delivered.read_text().splitlines() == args
+            assert api("/api/launchers")["botCreate"]["last"] == prefs
+        stop(bridge)
+        bridge = start_bridge()
+        assert eventually(lambda: api("/api/launchers")["botCreate"]["last"]) == prefs
+        print("PASS installed fixture wrappers receive the chosen argv and the bridge remembers after restart")
         print("PASS isolated chat and workspace move, rename, order, restart, restore and seven-day purge")
     finally:
         if bridge is not None:

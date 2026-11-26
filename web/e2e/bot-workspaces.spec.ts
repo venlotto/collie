@@ -211,6 +211,39 @@ test("reducir transparencia conserva barras opacas sin desenfoque", async ({ pag
   })).toBe("none");
 });
 
+test("scroll de una lista larga bajo el vidrio", async ({ page }) => {
+  await installApiStub(page);
+  const agents = Array.from({ length: 80 }, (_, i) => ({
+    ...fixtureAgents[0]!, paneId: "w1:p" + i, paneLabel: "Conversación " + i,
+  }));
+  await page.route(url => url.pathname === "/api/snapshot", route => route.fulfill({
+    json: { ...fixtureSnapshot, agents, shellPanes: [] },
+  }));
+  await page.goto("/");
+  const list = page.locator(".bot-scroll");
+  await expect(list.locator(".bot-row")).toHaveCount(agents.length);
+  const result = await list.evaluate(el => new Promise<{ elapsed: number; frames: number; intervals: number[]; distance: number }>(resolve => {
+    const intervals: number[] = [];
+    requestAnimationFrame(start => {
+      let previous = start;
+      function frame(now: number) {
+        const elapsed = now - start;
+        intervals.push(now - previous);
+        previous = now;
+        el.scrollTop = elapsed;
+        if (elapsed < 1500) requestAnimationFrame(frame);
+        else resolve({ elapsed, frames: intervals.length, intervals, distance: el.scrollTop });
+      }
+      requestAnimationFrame(frame);
+    });
+  }));
+  expect(result.distance).toBeGreaterThan(1000);
+  if (process.env.BOT_SCREENSHOTS) {
+    await mkdir(process.env.BOT_SCREENSHOTS, { recursive: true });
+    await writeFile(join(process.env.BOT_SCREENSHOTS, test.info().project.name + "-scroll.json"), JSON.stringify(result));
+  }
+});
+
 for (const pairedGate of [false, true]) {
   test(pairedGate ? "unpaired device keeps navigation" : "sign-in keeps navigation", async ({ page }) => {
     await installApiStub(page);
