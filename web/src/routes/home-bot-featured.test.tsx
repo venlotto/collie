@@ -56,4 +56,3 @@ describe("HomeRoute's featured slot", () => {
     await waitFor(() => expect(document.querySelector(".bot-featured")).toBeNull(), { timeout: 10_000 });
   });
 });
-
