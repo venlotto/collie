@@ -56,6 +56,8 @@ import { paneClears, paneTag, type NotificationCoordinator } from "./notificatio
 import { browseFolders, type FolderBrowseContext } from "./folder-browse.ts";
 import { MAX_FAVOURITES, MAX_FOLDER_CHARS, type FolderSurface } from "./folders.ts";
 import { isValidWorktreeBranch } from "./worktree-branch.ts";
+import { BotCreateStore } from "./bot-create.ts";
+import { findTool } from "./tools.ts";
 import { createHarnessProbe, type HarnessProbe } from "./harness-launch.ts";
 import { endsInShellPrompt } from "./surface/shell-prompt.ts";
 import { isUnsettled, LAUNCH_NO_PROMPT_TEXT, LAUNCH_UNKNOWN_TEXT, launchReplay, memoryLaunchReceipts, type LaunchAnswer, type LaunchReceiptSurface } from "./launch-receipts.ts";
@@ -1731,6 +1733,9 @@ export function startServer(opts: {
   const answerReceipts = opts.answerReceipts ?? memoryAnswerReceipts();
   const controlReceipts = opts.controlReceipts ?? memoryControlReceipts();
   const harnesses = opts.harnesses ?? createHarnessProbe();
+  const botCreate = process.env.COLLIE_KOPERCA_BOT_PROFILES === "1"
+    ? new BotCreateStore(cfg.stateDir, id => findTool(id, process.env, homedir()))
+    : undefined;
   const worktreeChoices = opts.worktreeChoices ?? memoryWorktreeChoices();
   const worktreeFolderSetting = opts.worktreeFolderSetting ?? memoryWorktreeFolderSetting();
   const machines = opts.machines;
@@ -2361,6 +2366,7 @@ export function startServer(opts: {
       if (rt instanceof Response) return rt;
       return launch(rt.herdr, rt.engine, req, caller.audit, caller.device(), rt.name, allowedLaunchers, {}, {
         viaCrew: caller.via === "crew",
+        botCreate,
         harnesses,
         receipts: launchReceipts,
         launchWindow: opts.launchWindow,
@@ -2392,7 +2398,7 @@ export function startServer(opts: {
       // The lead's folder questions are answered to the lead alone: a phone's `?cwd=` asks nothing.
       const asked = caller.via === "crew" ? url.searchParams.getAll(CWD_PARAM) : undefined;
       // A durable program's starters ride the same list (ADR 0102); every other multiplexer has none.
-      return launchersRoute(allowedLaunchers, acceptEncoding, harnesses, launchersAdding, rt.herdr.listStarters?.bind(rt.herdr), asked);
+      return launchersRoute(allowedLaunchers, acceptEncoding, harnesses, launchersAdding, rt.herdr.listStarters?.bind(rt.herdr), asked, botCreate);
     }
     // Add, remove or rename a row a phone added (ADR 0094). Writes, on the write gate. Since ADR 0127
     // they are answered by THIS machine's store whatever `?host=` says (the browser caller's resolver
@@ -8357,9 +8363,11 @@ export async function launchersRoute(
   adding?: { merged: () => Promise<MergedLaunchers>; file: string; recent?: () => Promise<RecentRun[]> },
   starters?: () => Promise<MuxStarters>,
   folders?: readonly string[],
+  botCreate?: BotCreateStore,
 ): Promise<Response> {
   const rows = await getLaunchers();
   const body: LaunchersResponse = { launchers: rows, home: homedir() };
+  if (botCreate) body.botCreate = botCreate.catalog();
   if (folders !== undefined && folders.length > 0) body.folders = folderAnswers(folders, body.home);
   if (harnesses !== undefined) body.harnesses = await harnesses.list();
   // ADR 0094: the switches, this machine's `launchers.toml` path, the recipes, the rows held back, and
@@ -9027,6 +9035,7 @@ export async function launch(
   // A starter (ADR 0102) has its own receipt and never touches the multiplexer's create calls, so it
   // is handed over before the launch's own receipt and kinds are read.
   if (isStarterBody(fields)) {
+    if (fields.botCreate !== undefined) return text("bad bot profile", 400);
     return launchStarter(fields, {
       mux: herdr,
       receipts: deps.starterReceipts ?? memoryStarterReceipts(),
@@ -9054,6 +9063,12 @@ export async function launch(
     deps.accounts,
   );
   if (picked instanceof Response) return picked;
+  const profile = deps.botCreate?.resolve(fields.botCreate);
+  if (fields.botCreate !== undefined) {
+    if (!profile || picked.kind !== "harness" || picked.harness !== profile.harness ||
+        fields.signIn !== undefined || fields.account !== undefined) return text("bad bot profile", 400);
+    picked.row = { label: profile.prefs.agent, command: profile.command };
+  }
 
   // The client never sends a command line, except as a one-off `run`, which met its gates above. It
   // may send the pane it wants the launch to open BESIDE, and the folder the sheet's Where field names.
@@ -9121,6 +9136,7 @@ export async function launch(
   if (requestId !== undefined) receipts.track(requestId, work);
   // What follows a launch that worked runs when the run ends, also after the deadline below has answered.
   const afterLaunch = async (answer: LaunchAnswer): Promise<void> => {
+    if (answer.ok && profile) deps.botCreate?.save(profile.prefs);
     // A folder the sheet named that worked joins Recent, as a space created there does. Never a row's
     // pinned folder, which the operator already wrote down, and never on a failure.
     if (answer.ok && asked !== undefined && row?.cwd === undefined && deps.folders !== undefined) {
@@ -9160,6 +9176,7 @@ export async function launch(
 
 /** What `launch` needs beyond the route's own arguments. Every field defaults for a test. */
 export interface LaunchDeps {
+  botCreate?: BotCreateStore;
   /**
    * True when the call came over the crew link from this machine's lead (`caller.via === "crew"`).
    * A carried `row` is then run when this machine's own list has no match AND the request carries the

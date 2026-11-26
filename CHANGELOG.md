@@ -32,6 +32,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Drag a chat to arrange it within its workspace.** Drop it on another workspace or the trash. Hold a workspace heading to rename, move or trash the group. Restore the group from Trash within seven days.
 
+- **New bots remember your last agent and reasoning effort.** The next creation on the same host opens with those choices on any device.
+
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.

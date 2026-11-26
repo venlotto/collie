@@ -67,6 +67,7 @@ const KEYS = new Map<string, KeyFate>([
   ["collie:project-picture-copies:v1", { area: "local", prefix: false, fate: "wiped", why: "small copies of pictures this pairing's repositories named" }],
   ["collie:project-picture-panes:v1", { area: "local", prefix: false, fate: "wiped", why: "which picture version each pane of this pairing shows" }],
   // ── Kept: how this phone likes to look and behave, never what a session said ──
+  ["collie:bot-create:v1:", { area: "local", prefix: true, fate: "kept", why: "last bot launcher and effort on this machine" }],
   ["collie:theme:v1", { area: "local", prefix: false, fate: "kept", why: "preference" }],
   ["collie:design:v1", { area: "local", prefix: false, fate: "kept", why: "preference" }],
   ["collie:themes:v1", { area: "local", prefix: false, fate: "kept", why: "preference, the imported colour themes (M57)" }],

@@ -73,6 +73,7 @@ import type {
   FolderBrowseResponse,
   FoldersResponse,
   LaunchersResponse,
+  BotCreatePrefs,
   LaunchCheckResponse,
   RecentRunsResponse,
   SentAnswer,
@@ -2329,7 +2330,7 @@ export function launch(command: string, besidePaneId?: string, scope?: Scope, re
  */
 export type StartWhat =
   | { kind: "row"; command: string }
-  | { kind: "harness"; id: string }
+  | { kind: "harness"; id: string; botCreate?: BotCreatePrefs }
   | { kind: "shell" }
   /** A starter a durable program offers, by its id (ADR 0102). It takes no text and never starts on a branch's folder. */
   | { kind: "starter"; id: string }
@@ -2341,6 +2342,7 @@ export type BranchableWhat = Exclude<StartWhat, { kind: "run" }>;
 
 /** POST /api/launch's body from the New page. A named contract so `startLaunch` infers against it, and a test reads it. */
 export interface StartLaunchBody {
+  botCreate?: BotCreatePrefs;
   command?: string;
   harness?: string;
   shell?: true;
@@ -2368,7 +2370,10 @@ export function startLaunch(
 ): Promise<CreateResponse> {
   const body: StartLaunchBody = { requestId: opts.requestId };
   if (what.kind === "row") body.command = what.command;
-  else if (what.kind === "harness") body.harness = what.id;
+  else if (what.kind === "harness") {
+    body.harness = what.id;
+    if (what.botCreate) body.botCreate = what.botCreate;
+  }
   else if (what.kind === "starter") body.starter = what.id;
   else body.shell = true;
   // A starter has no folder: the bridge ignores one, so none is sent.
