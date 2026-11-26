@@ -324,8 +324,8 @@ for (const inset of [0, 34]) {
       const observer = new MutationObserver(changes => {
         const target = changes.some(change => change.attributeName === "data-detail") ? panel : surface;
         const transition = target.getAnimations().find(a => a instanceof CSSTransition && a.transitionProperty === "transform");
-        const duration = transition?.effect?.getTiming().duration;
-        if (!transition || typeof duration !== "number" || duration <= 0) return;
+        const duration = Number(transition?.effect?.getTiming().duration);
+        if (!transition || !(duration > 0)) return;
         const time = transition.currentTime;
         transition.currentTime = duration / 2;
         record("midpoint");
