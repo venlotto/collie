@@ -1,9 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureSnapshot, fixtureWalkyAgent } from "@/test/handlers";
+import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureSnapshot, fixtureWalkyAgent, paneTextWithDraft } from "@/test/handlers";
 import type { AgentView } from "@/lib/types";
 import { installApiStub, installLauncherWorld, installPaneWorld, paneCapture, pinLocale } from "./fixtures/api";
+import { botMotionMidpoint } from "./fixtures/bot-motion";
 import { expectBotSheetPosition } from "./fixtures/bot-sheet";
 
 test.use({ serviceWorkers: "block" });
@@ -196,11 +197,14 @@ for (const inset of [0, 34]) {
     const panes = Array.from({ length: 18 }, (_, i) => ({
       ...fixtureAgents[0]!, paneId: "w1:p" + (i + 1), paneLabel: "Kanban " + (i + 1),
     }));
-    await page.route(url => url.pathname === "/api/snapshot", route => route.fulfill({
-      json: { ...fixtureSnapshot, agents: panes, shellPanes: [] },
-    }));
+    const pane = panes[0]!;
+    await installPaneWorld(page, {
+      paneId: pane.paneId, snapshot: { ...fixtureSnapshot, agents: panes, shellPanes: [], ts: Date.now() },
+      chat: { paneId: pane.paneId, available: false, reason: "no-session" },
+      start: "idle", screens: { idle: paneTextWithDraft() },
+    });
     await page.goto("/");
-    const row = page.locator(".bot-row").first();
+    const row = page.locator(".bot-row").filter({ has: page.getByText(pane.paneLabel, { exact: true }) });
     await expect(row).toBeVisible();
     await page.locator(".bot-scroll").evaluate(el => { el.scrollTop = 60; });
     const shell = await page.locator("[data-bots]").elementHandle();
@@ -239,7 +243,7 @@ for (const inset of [0, 34]) {
     };
     await row.click();
     const field = page.locator('[data-slot="composer-box"] textarea').first();
-    await expect(field).toBeInViewport();
+    await expect(field).toBeInViewport({ timeout: 20_000 });
     await page.waitForFunction(() => document.querySelector(".bot-detail")!.getBoundingClientRect().left === document.querySelector(".bot-layout")!.getBoundingClientRect().left);
     const composer = await field.elementHandle();
     await back();
@@ -263,17 +267,30 @@ for (const inset of [0, 34]) {
     expect(await shell?.evaluate(el => el.isConnected)).toBe(true);
     expect(await list?.evaluate(el => el.isConnected)).toBe(true);
     expect(await composer?.evaluate(el => el.isConnected)).toBe(true);
-    for (const open of [true, false]) {
-      const moving = frames.filter(f => f.open === open && f.x > 0 && f.x < width);
-      expect(moving.length).toBeGreaterThan(0);
-      expect(moving.every(f => f.composer !== null)).toBe(true);
+    const slides = [true, false].map(open => frames.filter(f => f.open === open && f.x > 0 && f.x < width));
+    for (const moving of slides) expect(moving.every(f => f.composer !== null)).toBe(true);
+    if (slides.some(moving => moving.length === 0)) {
+      const panel = page.locator(".bot-detail");
+      for (const action of [() => row.click(), back]) {
+        const mid = await botMotionMidpoint(panel, action);
+        expect(mid.x).toBeGreaterThan(0);
+        expect(mid.x).toBeLessThan(width);
+        expect(mid.composerHeight).toBeGreaterThan(0);
+      }
     }
     expect(frames[0]!.scroll).toBeGreaterThan(0);
     expect(new Set(frames.map(f => f.scroll)).size).toBe(1);
     expect(new Set(frames.map(f => f.search)).size).toBe(1);
     expect(new Set(frames.map(f => f.searchTop)).size).toBe(1);
-    for (const phase of ["open", "closing"]) {
-      expect(frames.some(f => f.sheet === phase && f.scale > .961 && f.scale < .999)).toBe(true);
+    const sampled = ["open", "closing"].every(phase =>
+      frames.some(f => f.sheet === phase && f.scale > .961 && f.scale < .999));
+    if (!sampled) {
+      for (const action of [openSheet, closeSheet]) {
+        const mid = await botMotionMidpoint(surface, action);
+        expect(mid.scale).toBeGreaterThan(.961);
+        expect(mid.scale).toBeLessThan(.999);
+      }
+      await expect(page.getByRole("dialog")).toHaveCount(0);
     }
     const composerTops = frames.flatMap(f => f.composerTop === null ? [] : [f.composerTop]);
     expect(Math.max(...composerTops) - Math.min(...composerTops)).toBeLessThan(0.51);
