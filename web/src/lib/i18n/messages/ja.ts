@@ -1470,6 +1470,10 @@ export const ja: Dictionary = {
   // --- status (triage sections, status labels, counts) ---
   "status.section.needsYou": "要対応",
   "status.section.readyUnseen": "準備完了（未読）",
+  "bot.activity.working": "作業中…",
+  "bot.activity.blocked": "応答が必要",
+  "bot.activity.error": "停止しました",
+  "bot.activity.done": "完了",
   "status.section.working": "処理中",
   "status.section.recent": "履歴",
   "status.label.blocked": "要対応",

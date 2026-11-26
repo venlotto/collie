@@ -1490,6 +1490,10 @@ export const de: Dictionary = {
   // --- status (triage sections, status labels, counts) ---
   "status.section.needsYou": "Eingabe erforderlich",
   "status.section.readyUnseen": "Bereit · Ungesehen",
+  "bot.activity.working": "Arbeitet…",
+  "bot.activity.blocked": "Braucht dich",
+  "bot.activity.error": "Angehalten",
+  "bot.activity.done": "Fertig",
   "status.section.working": "In Arbeit",
   "status.section.recent": "Zuletzt",
   "status.label.blocked": "wartet auf Eingabe",

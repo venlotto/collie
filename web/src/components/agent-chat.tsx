@@ -2639,7 +2639,7 @@ export function AgentChat({
             DESIGN.md §4 forbids — every top-level block "begins and ends on the same x". 768px and
             not the 640px every other route uses: a 640px column minus its 16px gutters clips an
             80-column mirror, so the pane pair get their own claim. */}
-        {mobileShell && bot && agent ? <BotChatBar bot={bot} unread={herd.filter(isUnseen).length}
+        {mobileShell && bot && agent ? <BotChatBar bot={bot} pane={agent} unread={herd.filter(isUnseen).length}
           pinned={pinMatcher(pins)(agent)} pin={() => setPinned(agent, !pinMatcher(pins)(agent), herd)} back={onBackArrow ?? onBack}
           terminal={!chatShown} toggleView={transcriptReadable && !gridless ? () => paneViewChange(chatShown ? "terminal" : "chat") : undefined} /> : <RouteHeader
           onHome={onBackArrow ?? onBack}
