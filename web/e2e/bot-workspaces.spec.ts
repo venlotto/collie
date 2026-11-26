@@ -432,7 +432,7 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
     const controls = (await footer.boundingBox())!;
     expect(controls.x + controls.width).toBeLessThanOrEqual(side.width);
     const terminalBox = (await terminal.boundingBox())!;
-    const scrollbar = await reader.evaluate(el => el.offsetWidth - el.clientWidth);
+    const scrollbar = await reader.evaluate(el => el.getBoundingClientRect().width - el.clientWidth);
     expect(terminalBox.x).toBeCloseTo(box.x, 0);
     expect(terminalBox.width + scrollbar).toBeCloseTo(box.width, 0);
     const composer = (await detail.locator('[data-slot="composer-box"]').boundingBox())!;
