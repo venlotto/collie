@@ -16,7 +16,7 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 def eventually(read):
-    deadline = time.monotonic() + 12
+    deadline = time.monotonic() + float(os.environ.get("BOT_TEST_TIMEOUT_SECONDS", "12"))
     while time.monotonic() < deadline:
         try:
             value = read()
