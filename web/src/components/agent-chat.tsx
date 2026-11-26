@@ -2622,7 +2622,7 @@ export function AgentChat({
           right edge. app-header.tsx's `wide` claim carries the identical ladder, or the header and
           the mirror stop sharing that edge. */}
       {/* In a large screen's column the column is the bound (ADR 0120), so the ladder stands down there. */}
-      <div ref={chatRootRef} className={cn("flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden", !inStrip && "mx-auto max-w-[100dvw] md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-[1400px]")}>
+      <div ref={chatRootRef} className={cn("flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden", !inStrip && !mobileShell && "mx-auto max-w-[100dvw] md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-[1400px]")}>
         {/* Header — this route's contribution to the ONE header shell, which is mounted above the
             outlet in RootLayout and is the same element on every screen (so the Collie mark is not
             only identical, it is literally the same drawing, still turning). The pane's own bits are
