@@ -1283,7 +1283,7 @@ function wrappedEdgeFrame(rows: readonly FrameRow[], lowest: number, idle: IdleP
  * passes whatever follows: there the edge's shape, the frame's own checks and the modal cues on the
  * wrapped rows ({@link Frame.bottomWrap}) are what hold.
  */
-function wrapsOnto(upper: string, lower: string, width: number): boolean {
+export function wrapsOnto(upper: string, lower: string, width: number): boolean {
   const head = upper.trimEnd();
   const need = (head.endsWith("-") ? 0 : 1) + displayWidth(firstToken(lower.trim()));
   return width - displayWidth(head) <= need;

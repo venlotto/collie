@@ -18,10 +18,12 @@
 // walk reaches, not the thing that decides whether the composer exists.
 
 import { trimTrailingBlank, type StyledLine } from "../../blocks";
-import { findInputFrame, readIsUnstyled } from "../../surface/frame";
+import { findInputFrame, readIsUnstyled, wrapsOnto } from "../../surface/frame";
+import { displayWidth } from "../../text-width";
 import { requireProfile } from "../../surface/profile";
 import {
   isBlank,
+  isFieldOnlyStatusContinuation,
   isHintRow,
   isStatusRow,
   lastNonBlankIndex,
@@ -58,8 +60,20 @@ const CODEX_IDLE = requireProfile("codex").idle;
  * the rows it names under the box's edge (`Frame.bottomWrap`) must end at `last`.
  */
 function wrappedStatus(lines: StyledLine[], last: number): number {
-  const wrap = findInputFrame(lines, CODEX_IDLE)?.bottomWrap;
-  return wrap !== undefined && wrap.last === last ? wrap.first - 1 : last;
+  const frame = findInputFrame(lines, CODEX_IDLE);
+  const wrap = frame?.bottomWrap;
+  if (wrap !== undefined && wrap.last === last) return wrap.first - 1;
+  // A thread title can wrap onto a row of its own, with no later field and so no ` · ` for the
+  // profile's bottom anchor to match. The frame still finds the first status row. Accept that next
+  // row only as the same coloured field, soft-wrapped at the screen's edge; a key row or a foreign
+  // row under the box stays outside the composer.
+  const first = frame?.bottom ?? -1;
+  if (first < 0 || last !== first + 1) return last;
+  const upper = lines[first]!;
+  const lower = lines[last]!;
+  const width = Math.max(...lines.map((line) => displayWidth(rstrip(lineText(line)))));
+  if (!wrapsOnto(rstrip(lineText(upper)), rstrip(lineText(lower)), width)) return last;
+  return isFieldOnlyStatusContinuation(upper, lower, readIsUnstyled(lines)) ? first : last;
 }
 
 // A draft wraps onto indented continuation rows between the prompt row and the status row.
@@ -148,9 +162,15 @@ function locateStatusRow(texts: string[], clean: StyledLine[], plain: boolean): 
   const last = lastNonBlankIndex(texts);
   if (last < 0) return -1;
   if (isStatusRow(texts[last]!, clean[last], plain)) return last;
+  // A field-only continuation is not a status row by itself. Ask the frame whether it wraps the
+  // status row above, both with and without Codex's separate key-hint row below it.
+  const wrapped = wrappedStatus(clean, last);
+  if (wrapped < last && isStatusRow(texts[wrapped]!, clean[wrapped], plain)) return last;
   const above = last - 1;
   if (above < 0 || !isHintRow(texts[last]!, clean[last], plain)) return -1;
-  return isStatusRow(texts[above]!, clean[above], plain) ? above : -1;
+  if (isStatusRow(texts[above]!, clean[above], plain)) return above;
+  const wrappedAbove = wrappedStatus(clean, above);
+  return wrappedAbove < above && isStatusRow(texts[wrappedAbove]!, clean[wrappedAbove], plain) ? above : -1;
 }
 
 /** The starfield rows directly above the prompt belong to the composer band, and leave the mirror

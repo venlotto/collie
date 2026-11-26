@@ -433,6 +433,31 @@ function isPlainStatusRow(row: string): boolean {
   return fields.every((field) => field.trim() !== "" && codePointCount(field) <= MAX_STATUS_FIELD_CHARS && !KEY_HINT_FIELD.test(field));
 }
 
+/** A dialog's key row, never a word wrapped out of a status field. */
+const DIALOG_KEY_ROW = /^(?:press )?(?:enter|esc(?:ape)?|tab|space|ctrl\+\S+|shift\+\S+|[↑↓←→?⚠])(?:\s|$)/iu;
+
+/**
+ * The second row of a status field soft-wrapped on its own, with no ` · ` left on it. Codex breaks a
+ * long thread title this way: the first status row ends inside the coloured title and the next row
+ * holds only its remaining words in that same paint. The caller still proves the upper row is the
+ * box's bottom edge and that the words really wrap; this predicate contributes the row shape and,
+ * on a styled read, the renderer evidence. On a plain read the shape and the caller's geometry are
+ * all the evidence there is, so a dialog's key lead is refused by its words too.
+ */
+export function isFieldOnlyStatusContinuation(upper: StyledLine, lower: StyledLine, plain: boolean): boolean {
+  const text = rstrip(lineText(lower));
+  if (!HINT_ROW.test(text) || hasControlChar(text) || text.includes(STATUS_SEPARATOR) || DIALOG_KEY_ROW.test(text.trimStart())) return false;
+  if (codePointCount(text) > MAX_STATUS_FIELD_CHARS + STATUS_INDENT.length) return false;
+  if (plain) return true;
+
+  const above = foldTrailingPadding(upper.segments);
+  const below = foldTrailingPadding(lower.segments);
+  if (above === null || below === null || below.length !== 2 || !isIndentSegment(below[0]!)) return false;
+  const field = above[above.length - 1]!;
+  const continuation = below[1]!;
+  return isFieldSegment(field) && isFieldSegment(continuation) && continuation.fg === field.fg;
+}
+
 /** True when the row could be the composer's status line. Never decisive alone — the composer
  *  is located by the prompt-row-above-status shape at the buffer tail, not by any single row.
  *  `line` is the same row, styled; without it only the `Context`-bearing shape can be accepted.
