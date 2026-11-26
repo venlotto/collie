@@ -12,6 +12,7 @@ import { BOT_CREATE_PROFILES } from "@/lib/bot-create-profiles";
 import { type AgentView, type LaunchersResponse } from "@/lib/types";
 import { BlobAvatar } from "./bot-identity";
 import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { setBotDisplay } from "@/lib/bot-display";
 
 function localName() { setStatus("El nombre quedó guardado en este dispositivo.", "info"); }
 
@@ -92,6 +93,7 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
     if (outcome.kind === "done" && outcome.paneId) {
       if (profile) cacheBotPrefs(host, prefs);
       saveBot(scope, outcome.paneId, { name: name.trim(), silhouette, color });
+      setBotDisplay(scope, outcome.paneId, "chat");
       if (rename.capable) {
         void renamePane(outcome.paneId, name.trim(), scope).then(res => res.ok ? undefined : localName(), localName);
       }

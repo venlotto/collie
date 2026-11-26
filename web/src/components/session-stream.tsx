@@ -603,6 +603,8 @@ export function SessionStream({
   address,
   working,
   starting = false,
+  unavailable = false,
+  onShowTerminal,
   showToolCalls,
   showCompactions,
   fontSize,
@@ -638,6 +640,9 @@ export function SessionStream({
    * which is only true of a pane that should have one by now.
    */
   starting?: boolean;
+  /** Messages was chosen but this bot has no readable transcript. Never fall through to Terminal. */
+  unavailable?: boolean;
+  onShowTerminal?: () => void;
   /** Settings → Look and feel. Off folds every run, including a lone step, to one summary line. */
   showToolCalls: boolean;
   /** Settings → Look and feel. Off draws a compaction as a one-line marker and never builds its recap. */
@@ -1044,11 +1049,11 @@ export function SessionStream({
   // A shared folder is no "nothing yet": no session will appear until the agent is restarted, so a
   // new pane says it too (#508).
   const shared = sharedFolderLine(status, agent);
-  const explain = starting && missing && shared === null ? null : chatStatusKey(status);
+  const explain = unavailable ? null : starting && missing && shared === null ? null : chatStatusKey(status);
   const empty = blocks.length === 0;
   // The window answered, or the pane is new and nothing is missing that should be there. Either way
   // what the stream draws is the thread, and the thread may be running or empty.
-  const reading = status.kind === "live" || (starting && (status.kind === "empty" || missing));
+  const reading = !unavailable && (status.kind === "live" || (starting && (status.kind === "empty" || missing)));
 
   // ── ONE MOVE AT THE TAP (M104) ──────────────────────────────────────────────
   // A line the composer of a pane with a screen put here (`seen`) is drawn only where the thread is read: a pane whose
@@ -1318,6 +1323,16 @@ export function SessionStream({
         <ReceiptQueueCards rows={window.queuedSends} act={onReturned ?? null} />
       )}
 
+      {unavailable && (
+        <div data-slot="chat-unavailable" className="flex flex-col items-center gap-4 px-6 py-16 text-center">
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("chat.mode.bot.unavailable")}</p>
+          {onShowTerminal && (
+            <Button type="button" variant="outline" className="min-h-11" onClick={onShowTerminal}>
+              {t("chat.mode.bot.showTerminal")}
+            </Button>
+          )}
+        </div>
+      )}
       {/* The reading, when there is one, and only where there is nothing to read under it. A stale
           member keeps its turns — they were true when they arrived, and a version skew does not
           unsay them — so this sits at the end rather than in their place. */}

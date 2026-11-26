@@ -81,6 +81,15 @@ const rows: [string, ChatGateInput, PaneBody][] = [
 ];
 
 describe("paneBody", () => {
+  it("keeps a bot's chosen Messages state when no transcript can be read, unless Terminal was explicit", () => {
+    for (const input of [
+      row({ chat: false, chatUnavailable: true }),
+      row({ journal: "off", chatUnavailable: true }),
+      row({ history: "unknown", activity: "ended", chatUnavailable: true }),
+    ]) expect(paneBody(input)).toBe("start");
+    expect(paneBody(row({ chat: false }))).toBe("terminal");
+  });
+
   it.each(rows)("%s", (_name, input, body) => {
     expect(paneBody(input)).toBe(body);
   });

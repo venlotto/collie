@@ -933,7 +933,10 @@ export const en = {
   // and moves the operator's own screen, which this never does.
   "chat.mode.view.label": "View",
   "chat.mode.option.terminal": "Terminal",
-  "chat.mode.option.chat": "Chat",
+  "chat.mode.option.chat": "Messages",
+  "chat.mode.bot.help": "Messages shows the conversation as chat. Terminal shows the screen as it is.",
+  "chat.mode.bot.unavailable": "Messages can't read this conversation yet. You can keep writing here, or open the terminal without losing the thread.",
+  "chat.mode.bot.showTerminal": "Show terminal",
   "chat.mode.chat": "Chat view",
   "chat.mode.terminal": "Terminal view",
   // The row EXPLAINS rather than hides (M41/11): a control that disappears on some panes is how an

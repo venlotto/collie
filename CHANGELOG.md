@@ -82,6 +82,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
 - **Chat bars now show real glass over scrolling messages.** Conversations move beneath translucent, blurred header and reply surfaces on iPhone and desktop, with clearance that follows a growing composer. Reduced Transparency still makes every bar solid.
+- **Every bot opens in Messages unless you choose Terminal.** The chat menu's View setting saves that choice for the bot on the server and shares it across your devices, without restarting the pane or losing the conversation. Kimi now opens its Claude-backed conversation correctly, and a conversation that cannot be read yet offers a reversible View terminal action instead of silently leaving Messages.
 
 ## [1.31.0] - 2026-11-24
 

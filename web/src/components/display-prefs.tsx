@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n";
 import type { PaneView } from "@/lib/pane-view";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/icons/icon";
+import { BotViewControl } from "@/components/bot-view-control";
 
 // The pane body's display prefs, as LABELLED rows in the ⚙ sheet on the belt.
 //
@@ -49,6 +50,8 @@ export interface PaneViewControl {
   showing: PaneView;
   /** Write the standing choice. The pane's ⋮ menu writes the same value. */
   onChange: (view: PaneView) => void;
+  /** A bot's server-side choice: two segments, and Chat stays selectable while its transcript starts. */
+  bot?: boolean;
   /** Why THIS pane keeps the terminal, when it must. Set means Chat cannot be chosen here. */
   note?: string;
   /**
@@ -175,6 +178,9 @@ function TextSizeRow({
  * app is broken.
  */
 function ViewRow({ view }: { view: PaneViewControl }) {
+  if (view.bot === true && view.agentView === undefined) {
+    return <BotViewControl value={view.chosen} onChange={view.onChange} />;
+  }
   const options: { value: PaneView | "agent-view"; label: string }[] = [
     { value: "terminal", label: t("chat.mode.option.terminal") },
     { value: "chat", label: t("chat.mode.option.chat") },
