@@ -2406,6 +2406,9 @@ export type StartWhat =
 export type BranchableWhat = Exclude<StartWhat, { kind: "run" }>;
 
 /** POST /api/launch's body from the New page. A named contract so `startLaunch` infers against it, and a test reads it. */
+/** Where a start opens: an existing workspace by id, or a new one with this name. */
+export type SpaceTarget = { id: string } | { label: string };
+
 export interface StartLaunchBody {
   botCreate?: BotCreatePrefs;
   command?: string;
@@ -2415,6 +2418,10 @@ export interface StartLaunchBody {
   cwd?: string;
   /** The pane whose space this opens a new tab in (the route's own `paneId` field). Absent: a new space. */
   paneId?: string;
+  /** An existing workspace to open a new tab in, by id. Never with `paneId` or `spaceLabel`. */
+  spaceId?: string;
+  /** The name of the NEW workspace to open. Never with `paneId` or `spaceId`. */
+  spaceLabel?: string;
   /** An added account's id (M101). Sent only with `harness`; absent for Default and for every other start. */
   account?: string;
   /** Type the agent's sign-in line instead of the plain start. Only with `harness`. */
@@ -2430,10 +2437,14 @@ export interface StartLaunchBody {
  */
 export function startLaunch(
   what: BranchableWhat,
-  opts: { cwd?: string; requestId: string; besidePaneId?: string; account?: string; signIn?: boolean },
+  opts: { cwd?: string; requestId: string; besidePaneId?: string; space?: SpaceTarget; account?: string; signIn?: boolean },
   scope?: Scope,
 ): Promise<CreateResponse> {
   const body: StartLaunchBody = { requestId: opts.requestId };
+  if (opts.space !== undefined && what.kind !== "starter") {
+    if ("id" in opts.space) body.spaceId = opts.space.id;
+    else body.spaceLabel = opts.space.label;
+  }
   if (what.kind === "row") body.command = what.command;
   else if (what.kind === "harness") {
     body.harness = what.id;

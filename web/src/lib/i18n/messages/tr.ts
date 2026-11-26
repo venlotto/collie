@@ -1871,6 +1871,7 @@ export const tr: Dictionary = {
   "apiError.launch.bad_folder": "Bu klasör kullanılamaz. Yol .. veya denetim karakterleri içeremez.",
   "apiError.launch.folder_missing": "Bu makinede {folder} klasörü yok.",
   "apiError.launch.pane_unknown": "Bu bölme artık yok, hiçbir şey başlatılmadı",
+  "apiError.launch.space_unknown": "Bu çalışma alanı artık yok, hiçbir şey başlatılmadı",
   "apiError.launcher.adds_off": "Telefondan başlatıcı eklemek bu makinede kapalı.",
   "apiError.launcher.free_text_off": "Elle yazılan komut bu makinede kapalı.",
   "apiError.launcher.bad_text": "Bu {field} kullanılamaz: {problem}.",
