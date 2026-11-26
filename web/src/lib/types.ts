@@ -11,7 +11,8 @@ import type { HoldNote } from "@/lib/surface/hold";
 export type AgentStatus = "idle" | "working" | "blocked" | "done" | "unknown";
 
 export interface AgentView {
-  agentRun?: { id: string; status: "running" | "done" | "failed" | "timeout" | "orphaned"; start: number; end: number | null };
+  agentRun?: { id: string; rootId?: string; status: "running" | "done" | "stopped" | "failed" | "timeout" | "orphaned"; start: number; end: number | null;
+    name?: string; harness?: string; canResume?: boolean; plan?: boolean };
   /** Herdr's terminal identity survives a move even when the pane address changes. */
   terminalId?: string;
   trash?: { trashedAt: number; originalWorkspaceId: string; workspaceLabel?: string };

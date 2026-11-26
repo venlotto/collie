@@ -3427,20 +3427,44 @@ export function startServer(opts: {
         return localRuntime(sessionName, req.headers.get("accept-encoding"));
       };
 
-      const runRoute = /^\/api\/pane\/agent-run(?:%3a|:)([a-zA-Z0-9._-]+)\/(chat|stop-run)$/iu.exec(pathname);
+      const runRoute = /^\/api\/pane\/agent-run(?:%3a|:)([a-zA-Z0-9._-]+)\/(chat|stop-run|resume|implement)$/iu.exec(pathname);
       if (runRoute && opts.agentRuns) {
-        const stopping = runRoute[2] === "stop-run";
-        if (req.method !== (stopping ? "POST" : "GET")) return text("method not allowed", 405);
-        const denied = guard(req, cfg, stopping ? "write" : "read", pairingGate);
+        const action = runRoute[2]!;
+        if (req.method !== (action === "chat" ? "GET" : "POST")) return text("method not allowed", 405);
+        const denied = guard(req, cfg, action === "chat" ? "read" : "write", pairingGate);
         if (denied) return denied;
         if (isLocalRequest(req, pairingGate)) return localKeyRefusal();
         if (host.kind !== "local" || url.searchParams.has("host") || !registry.get(sessionName)?.isPrimary)
           return text("local session required", 400);
         const id = runRoute[1]!;
-        if (stopping) {
+        if (action === "stop-run") {
           if (!await opts.agentRuns.stop(id)) return text("run is not active", 409);
           audit.record({ action: "agent-run.stop", device: whois(req).device, detail: { id } });
           return json({ ok: true }, null);
+        }
+        if (action === "resume" || action === "implement") {
+          const bytes = await readCappedBody(new Response(req.body), 64 * 1024);
+          if (!bytes) return text("body too large", 413);
+          const fields = parseJsonObject(new TextDecoder().decode(bytes));
+          const textField = asJsonString(fields?.text) ?? "";
+          const requestId = asJsonString(fields?.requestId) ?? "";
+          if (!isRequestId(requestId)) return text("bad requestId", 400);
+          // The primary runtime is guaranteed by the host gate above. Reuse its mux port: no Herdr
+          // socket is dialled here, and a new implementation tab never takes the terminal's focus.
+          const rt = registry.get(sessionName)!;
+          const mux = {
+            waitReady: async (paneId: string) => (await awaitPaneReady(rt.herdr, paneId, { accepts: endsInShellPrompt })).ready,
+            createTab: (request: Parameters<typeof rt.herdr.createTab>[0]) => rt.herdr.createTab(request),
+          };
+          const result = action === "resume" ? await opts.agentRuns.resume(id, textField, requestId, mux)
+            : await opts.agentRuns.implement(id, textField, requestId, asJsonString(fields?.agent) ?? "", asJsonString(fields?.effort) ?? "high", mux);
+          if (!result.ok) {
+            const status = result.reason === "not-found" ? 404 : result.reason === "bad-request" ? 400 :
+              result.reason === "launch-failed" ? 502 : result.reason === "unavailable" ? 422 : 409;
+            return text(result.reason, status);
+          }
+          audit.record({ action: "agent-run." + action, device: whois(req).device, detail: { id, runId: result.runId, paneId: result.paneId } });
+          return json({ ok: true, runId: result.runId, paneId: result.paneId }, null);
         }
         const paneId = "agent-run:" + id;
         const result = await opts.agentRuns.chat(id, cfg.transcript ? journals : null, live, chatParams(url), marksPaneSeen(req, "chat"));

@@ -38,6 +38,7 @@ interface Elsewhere {
 }
 
 const ELSEWHERE: readonly Elsewhere[] = [
+  { file: "bridge/agent-runs.ts", count: 2, why: "both paths are inside `this.dir`, agent-run's own private runs directory (index.ts takes it from AGENT_RUNS_DIR or the user's state home): one continuation prompt and its non-secret link sidecar; agent-run is a POSIX-only supervisor, so these routes never launch on Windows" },
   { file: "bridge/surface/pane-lock.ts", count: 8, why: "the machine-wide pane locks (M102 spec 16, and the folder made again when it vanished) are shared by every bridge of the user, so they cannot sit in one bridge's state folder: the user's runtime folder, else the state home; a lock holds a pid, a start time and two times, nothing private, and its 0600 and 0700 only keep other users from blocking a pane" },
   { file: "bridge/activity.ts", count: 2, why: "`this.dir` is `cfg.stateDir`, set in the constructor" },
   { file: "bridge/audit.ts", count: 1, why: "the appender is handed `<stateDir>/audit.log` by index.ts and cli/crew.ts" },

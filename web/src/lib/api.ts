@@ -2191,6 +2191,18 @@ export function stopAgentRun(id: string, scope: Scope) {
   return req<{ ok: boolean }>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/stop-run`, scope), { method: "POST" });
 }
 
+export interface AgentRunActionResponse { ok: true; runId: string | null; paneId: string | null }
+export function resumeAgentRun(id: string, text: string, requestId: string, scope: Scope): Promise<AgentRunActionResponse> {
+  return req<AgentRunActionResponse>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/resume`, scope), {
+    method: "POST", body: JSON.stringify({ text, requestId }),
+  });
+}
+export function implementAgentRun(id: string, text: string, agent: string, effort: string, requestId: string, scope: Scope): Promise<AgentRunActionResponse> {
+  return req<AgentRunActionResponse>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/implement`, scope), {
+    method: "POST", body: JSON.stringify({ text, agent, effort, requestId }),
+  });
+}
+
 export function actOnBot(action: BotAction, pane: AgentView, scope: Scope, workspaceId?: string) {
   return req<{ ok: boolean }>(withScope("/api/bot-action", scope), {
     method: "POST", body: JSON.stringify({ action, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),

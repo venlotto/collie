@@ -64,6 +64,31 @@ test("join shell panes without hooks, follow the main rollout and stop only the 
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test("a native continuation reads its shared Claude journal once", async () => {
+  const root = await mkdtemp(join(tmpdir(), "collie-run-native-chain-"));
+  try {
+    const dir = join(root, "runs"), project = join(root, "projects/test");
+    await Promise.all([mkdir(dir), mkdir(project, { recursive: true })]);
+    const parent = "20261126T030000-plan-abcd", child = "20261126T031000-plan-beef";
+    const sid = "11111111-2222-4444-8888-999999999999";
+    const journal = join(project, sid + ".jsonl");
+    const base = { name: "plan", agent: "kimi", cwd: "/work/plan", created_at: new Date().toISOString(),
+      ended_at: new Date().toISOString(), status: "done", session_id: sid, journal };
+    await Promise.all([writeFile(join(dir, parent + ".status"), JSON.stringify({ ...base, id: parent })),
+      writeFile(join(dir, child + ".status"), JSON.stringify({ ...base, id: child })),
+      writeFile(join(dir, child + ".collie.json"), JSON.stringify({ version: 1, continues: parent }))]);
+    const row = (uuid: string, text: string) => JSON.stringify({ type: "assistant", uuid, timestamp: base.created_at,
+      message: { role: "assistant", content: [{ type: "text", text }] } }) + "\n";
+    await writeFile(journal, row("parent-turn", "Plan anterior.") + row("child-turn", "Continuación nueva."));
+    const source = new AgentRuns(dir, async () => false, new ActivityLedger({ stateDir: root }));
+    const chat = await source.chat(parent, { claude: claudeJournal(join(root, "projects")) },
+      new LiveWindows(new TranscriptStore()), { limit: 20 }, false);
+    expect(chat?.upserts.map(entry => [entry.uuid, entry.parts[0]])).toEqual([
+      ["parent-turn", { kind: "text", text: "Plan anterior." }],
+      ["child-turn", { kind: "text", text: "Continuación nueva." }],
+    ]);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
 test("a settled run shares its read receipt across pane reassignment, polls and a bridge restart", async () => {
   const root = await mkdtemp(join(tmpdir(), "collie-run-seen-"));
   const dir = join(root, "runs");

@@ -44,6 +44,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Wide screens keep several chats open side by side.** Open a second bot from the list and it joins the first instead of replacing it. Each window can be minimised to a tray under the chats, maximised to fill the space, or closed without stopping its bot, and the set of open chats is remembered on that device. One chat, a narrow window and the phone look as before.
 
+- **Finished background runs can resume or implement their plans.** Reply in the same bot to continue with its saved session or a contextual summary. A finished plan also offers Implement, which opens a separate implementation bot with your chosen agent and instructions to work on a new branch and open a PR.
+
 ### Changed
 
 - **Chat controls float over the conversation in dark glass.** Headers, search, reply controls and action sheets share a translucent surface. Reducing transparency gives them an opaque background.

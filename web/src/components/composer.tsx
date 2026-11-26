@@ -171,7 +171,9 @@ function verifiedNote(note: SendNote, when: SendWhen | undefined): keyof typeof 
 }
 
 export interface ComposerHandle {
-  /** Focus the input and put the caret at the end — used by the mirror-tap-to-focus in AgentChat. */
+  /** The composed line and its confirmed-launch clear, for an agent-run's separate Implement action. */
+  composedLine: () => string;
+  clearDraft: () => void;
   focusInput: () => void;
   /**
    * Open the box for a message to another session (M62): the Reply of the pane's Messages sheet. The
@@ -375,10 +377,11 @@ interface ComposerProps {
   /** Snap the mirror to the live tail (follow + revalidate + scroll) after a successful send. */
   onSent: () => void;
   /**
-   * Replace every text send with one named, local action. A finished detached run uses this to offer a
-   * new chat: there is no resume route, and the shell that displays its log must never receive the text.
+   * Replace a text send with one named action. A finished detached run uses this to resume its agent
+   * or, when that is impossible, to offer a new chat without writing into the log viewer. The action
+   * receives the composed line and answers whether the confirmed launch may clear the draft.
    */
-  sendAction?: { label: string; onSelect: () => void } | undefined;
+  sendAction?: { label: string; onSelect: (text: string) => boolean | Promise<boolean>; requiresDraft?: boolean; busy?: boolean } | undefined;
   /**
    * Opens the pane's Messages sheet (M62 spec 03): where the held mark above the box takes a tap. Absent
    * where the pane has no sheet, and then no mark is drawn.
@@ -1673,9 +1676,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const lineCanStartRef = useRef<() => boolean>(() => false);
   const keepLineRef = useRef<(line: string) => void>(() => undefined);
   const takeInRef = useRef<(text: string) => void>(() => undefined);
+  const composedLineRef = useRef<() => string>(() => "");
+  composedLineRef.current = () => composeLine(inputValueRef.current, attachmentsRef.current, isShell);
   useImperativeHandle(
     ref,
     () => ({
+      composedLine: () => composedLineRef.current(),
+      clearDraft: () => clearComposedDraftRef.current(),
       focusInput: focusInputImmediately,
       startMessage: (aim) => {
         startMessage(aim);
@@ -2253,6 +2260,19 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   function secretRefusal(fromSecret: boolean): SendRefusal | null {
     return secretFieldRef.current && !fromSecret ? phoneRefusal(translate("composer.secret.onlyField")) : null;
   }
+  function performSendAction(value: string): void {
+    const action = sendAction;
+    if (!action || action.busy || (action.requiresDraft === true && !value.trim())) return;
+    void Promise.resolve(action.onSelect(value)).then(confirmed => {
+      if (confirmed) {
+        clearComposedDraft();
+        onSent();
+      }
+      return undefined;
+    }).catch((thrown) => {
+      setSendRefusal(phoneRefusal(describeThrownError(thrown)));
+    });
+  }
   async function send(value: string, isDraft: boolean, when?: SendWhen, tap?: ViewTap, fromSecret = false): Promise<boolean> {
     // A shell line keeps its leading space or tab, which keeps it out of Sent (M61): the bridge checks
     // the raw text. An agent pane's text is trimmed at both ends, as it always was. The emptiness
@@ -2261,7 +2281,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     const t = isShell ? value.trimEnd() : trimmed;
     if (!trimmed) return false;
     if (sendAction !== undefined) {
-      sendAction.onSelect();
+      performSendAction(t);
       return false;
     }
     // A tap that cannot go out says why (M102 spec 11): the quick reply, the palette, the harness pill and the
@@ -2782,7 +2802,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // `armedWhen` keeps the choice across the two taps (the confirm button calls this with it).
   function onSendClick(when?: SendWhen) {
     if (sendAction !== undefined) {
-      sendAction.onSelect();
+      performSendAction(composeLine(input, attachments, isShell));
       return;
     }
     // A reply in message mode goes to the other session through the bridge's walky route, and is not
@@ -5032,8 +5052,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 box && (mirrored ? "col-start-1" : boxOpen ? "col-start-5" : "col-start-3"),
                 box && (boxOpen ? "row-start-3" : "row-start-1"),
               )}
-              disabled={locked || sending}
-              onClick={sendAction.onSelect}
+              disabled={locked || sending || sendAction.busy || (sendAction.requiresDraft === true && !hasDraft)}
+              onClick={() => performSendAction(confirmLine)}
               aria-label={sendAction.label}
             >
               {sendAction.label}

@@ -69,7 +69,8 @@ export type PaneProgress =
  * those so a freshly-created tab/space is reachable and you can launch your own agent in it.
  */
 export interface AgentView {
-  agentRun?: { id: string; status: "running" | "done" | "failed" | "timeout" | "orphaned"; start: number; end: number | null };
+  agentRun?: { id: string; rootId?: string; status: "running" | "done" | "stopped" | "failed" | "timeout" | "orphaned"; start: number; end: number | null;
+    name?: string; harness?: string; canResume?: boolean; plan?: boolean };
   /** Herdr's terminal identity survives a move even when the pane address changes. */
   terminalId?: string;
   trash?: { trashedAt: number; originalWorkspaceId: string; workspaceLabel?: string };

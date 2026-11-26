@@ -176,12 +176,12 @@ test("needs-you: typing stays open and Send goes to the protected dialog answer"
   expect(sends).toEqual([]);
 });
 
-test("stopped: a shell-backed done run offers a new chat and never writes to the log viewer", async ({ page }) => {
+test("stopped: an unsupported done run offers a new chat and never writes to the log viewer", async ({ page }) => {
   const now = Date.now();
   const { sends, world } = await openState(page, { status: "done", surface: STARTING, screen: "tail -F agent.log",
-    run: { id: "finished-run", status: "done", start: now - 9 * 60_000, end: now } });
+    run: { id: "finished-run", status: "done", start: now - 9 * 60_000, end: now, canResume: false } });
   await expect(page.getByRole("main").getByText(/Listo · 9 min/)).toBeVisible();
-  await expect(page.getByText("El agente terminó. Abre un chat nuevo para continuar.")).toBeVisible();
+  await expect(page.getByText("Este run no puede retomarse. Abre un chat nuevo.")).toBeVisible();
   const before = page.url();
   await typeAndShot(page, "stopped", "Continuar sin tocar la shell");
   expect(page.url()).toBe(before);
@@ -193,4 +193,63 @@ test("stopped: a shell-backed done run offers a new chat and never writes to the
   await expect(page).toHaveURL(/\/new\?pane=w1%3Ap1|[?&]over=%2Fnew%3Fpane%3Dw1%253Ap1/);
   expect(sends).toEqual([]);
   expect(world.writes).toEqual([]);
+});
+
+test("finished: resume launches the same run and clears the draft only after confirmation", async ({ page }) => {
+  const now = Date.now();
+  const { sends, world } = await openState(page, { status: "done", surface: STARTING, screen: "tail -F agent.log",
+    run: { id: "finished-run", status: "done", start: now - 9 * 60_000, end: now, canResume: true, harness: "kimi" } });
+  const resumes: unknown[] = [];
+  await page.route(url => /\/api\/pane\/agent-run(?::|%3A)finished-run\/resume$/u.test(url.pathname), async route => {
+    resumes.push(route.request().postDataJSON());
+    await route.fulfill({ json: { ok: true, runId: "continued-run", paneId: "w1:p1" } });
+  });
+  const field = await typeAndShot(page, "resume", "Retoma el último ajuste");
+  await page.getByRole("button", { name: "Continuar con el agente", exact: true }).click();
+  await expect.poll(() => resumes.length).toBe(1);
+  expect(resumes[0]).toMatchObject({ text: "Retoma el último ajuste", requestId: expect.any(String) });
+  await expect(field).toHaveValue("");
+  await expect(page.locator("footer").getByText("Trabajando…", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Trabajando…", exact: true })).toBeDisabled();
+  expect(sends).toEqual([]);
+  expect(world.writes).toEqual([]);
+});
+
+test("finished: a failed resume keeps the draft and offers the explained new-chat fallback", async ({ page }) => {
+  const now = Date.now();
+  await openState(page, { status: "done", surface: STARTING, screen: "tail -F agent.log",
+    run: { id: "finished-run", status: "failed", start: now - 9 * 60_000, end: now, canResume: true, harness: "codexp" } });
+  await page.route(url => url.pathname.endsWith("/resume"), route => route.fulfill({ status: 422, json: { error: "unavailable" } }));
+  const words = "Conserva este borrador";
+  const field = await typeAndShot(page, "resume-failed", words);
+  await page.getByRole("button", { name: "Continuar con el agente", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Abrir chat nuevo", exact: true })).toBeEnabled();
+  await expect(field).toHaveValue(words);
+  await expect(page.getByRole("alert").filter({ hasText: "No se pudo retomar" })).toBeVisible();
+});
+
+test("plan: Implement confirms the profile and extra instructions, then opens the new bot", async ({ page }) => {
+  const now = Date.now();
+  await openState(page, { status: "done", surface: STARTING, screen: "tail -F agent.log",
+    run: { id: "finished-run", status: "done", start: now - 9 * 60_000, end: now, canResume: true, plan: true, name: "plan-sync-bnc-nexo", harness: "codexp" } });
+  const implementations: unknown[] = [];
+  await page.route(url => url.pathname.endsWith("/implement"), async route => {
+    implementations.push(route.request().postDataJSON());
+    await route.fulfill({ json: { ok: true, runId: null, paneId: "w1:p9" } });
+  });
+  await typeAndShot(page, "implement", "Añade pruebas de regresión");
+  await page.getByRole("button", { name: "Implementar", exact: true }).click();
+  await expect(page.getByText(/¿Lanzar implementación de plan-sync-bnc-nexo/)).toBeVisible();
+  await page.getByRole("button", { name: "claudep", exact: true }).click();
+  await page.getByRole("button", { name: "max", exact: true }).click();
+  const directory = process.env.BOT_SCREENSHOTS;
+  if (directory) {
+    await mkdir(directory, { recursive: true });
+    const device = test.info().project.name === "phone-webkit" ? "iphone-webkit" : "desktop";
+    await page.screenshot({ path: join(directory, device + "-implement-confirm.png"), scale: "css", animations: "disabled" });
+  }
+  await page.getByLabel("Implementar plan").getByRole("button", { name: "Implementar", exact: true }).click();
+  await expect.poll(() => implementations.length).toBe(1);
+  expect(implementations[0]).toMatchObject({ text: "Añade pruebas de regresión", agent: "claudep", effort: "max", requestId: expect.any(String) });
+  await expect(page).toHaveURL(/\/pane\/w1(?::|%3A)p9/u);
 });

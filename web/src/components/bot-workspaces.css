@@ -424,5 +424,7 @@
 .agent-run-progress { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .agent-run-progress small { font-size: 12px; line-height: 1.35; }
 .agent-run-status button { color: #ff695f; min-height: 44px; padding-inline: 10px; }
+.agent-run-status .agent-run-implement { color: var(--primary-foreground); background: var(--primary); border-radius: var(--radius); font-weight: 600; }
+.agent-run-status .agent-run-implement:disabled { opacity: .55; }
 .agent-run-bar.bot-bar > .bot-back:last-of-type { grid-column: 1; }
 .agent-run-bar .bot-pill { grid-column: 2; }

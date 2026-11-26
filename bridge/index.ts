@@ -4542,7 +4542,12 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
     async (id, dir) => {
       const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });
       return await child.exited === 0;
-    }, activity),
+    }, activity,
+    async (argv, extraEnv = {}) => {
+      const child = Bun.spawn([...argv], { stdin: "ignore", stdout: "pipe", stderr: "pipe", env: { ...process.env, ...extraEnv } });
+      const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+      return { code, stdout, stderr };
+    }),
   uiSections,
   botFeatured,
   botDisplays,
