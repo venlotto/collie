@@ -1,3 +1,4 @@
+import type { AgentRuns } from "./agent-runs.ts";
 import type { BotTrash } from "./bot-trash.ts";
 import { chatOrderId } from "../web/src/lib/chat-order.ts";
 import { ChatOrderStore } from "./chat-order.ts";
@@ -1305,6 +1306,7 @@ export type TelemetryDeps = Pick<Telemetry, "view" | "choose" | "trouble">;
 
 export function startServer(opts: {
   botTrash?: BotTrash;
+  agentRuns?: AgentRuns;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -3411,6 +3413,27 @@ export function startServer(opts: {
         return localRuntime(sessionName, req.headers.get("accept-encoding"));
       };
 
+      const runRoute = /^\/api\/pane\/agent-run(?:%3a|:)([a-zA-Z0-9._-]+)\/(chat|stop-run)$/iu.exec(pathname);
+      if (runRoute && opts.agentRuns) {
+        const stopping = runRoute[2] === "stop-run";
+        if (req.method !== (stopping ? "POST" : "GET")) return text("method not allowed", 405);
+        const denied = guard(req, cfg, stopping ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        if (isLocalRequest(req, pairingGate)) return localKeyRefusal();
+        if (host.kind !== "local" || url.searchParams.has("host") || !registry.get(sessionName)?.isPrimary)
+          return text("local session required", 400);
+        const id = runRoute[1]!;
+        if (stopping) {
+          if (!await opts.agentRuns.stop(id)) return text("run is not active", 409);
+          audit.record({ action: "agent-run.stop", device: whois(req).device, detail: { id } });
+          return json({ ok: true }, null);
+        }
+        const paneId = "agent-run:" + id;
+        const result = live && journals && cfg.transcript && await opts.agentRuns.chat(id, journals, live, chatParams(url));
+        if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
+        return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
+      }
+
       if (pathname === "/api/bot-action") {
         if (req.method !== "POST") return text("method not allowed", 405);
         const denied = guard(req, cfg, "write", pairingGate);
@@ -3480,6 +3503,9 @@ export function startServer(opts: {
         const plan = snapshotPlan(host.kind === "member" ? host.id : null, selectView(url));
         const body = localSnapshot(plan.local.session, device.enforced ? device : null, plan.local.widen);
         if (!body) return unknownSession();
+        if (opts.agentRuns && host.kind === "local" && registry.get(plan.local.session)?.isPrimary && !isLocalRequest(req, pairingGate)) {
+          await opts.agentRuns.attach(body, registry.get(plan.local.session)!.name);
+        }
         // The ONE place the lead re-serialises (§9.2). With no crew this is the identity function's
         // absence: `body` goes out as assembled, same keys, same order, same bytes, same ETag.
         // The merged body's ETag is then the lead's own assertion about its own merged view — a

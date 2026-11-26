@@ -11,6 +11,7 @@ import { packageCommand } from "../cli/package-command.ts";
 import { sendsReportRows } from "../cli/send-findings.ts";
 import { realExec, realFiles } from "../cli/sys.ts";
 import { collieBinary as collieBinaryOf, HOST, surfacePlatform } from "./host.ts";
+import { AgentRuns } from "./agent-runs.ts";
 import { BotTrash, TRASH_INTERVAL } from "./bot-trash.ts";
 import { ActivityLedger } from "./activity.ts";
 import { trackActivity } from "./activity-tracking.ts";
@@ -4500,6 +4501,11 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
   gitHeads,
   projectPictures,
   botTrash,
+  agentRuns: new AgentRuns(process.env.AGENT_RUNS_DIR || join(process.env.XDG_STATE_HOME || join(homedir(), ".local/state"), "agent-runs"),
+    async (id, dir) => {
+      const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });
+      return await child.exited === 0;
+    }),
   walkyInstance: (session, paneId) => walkyInstances.tokenOf(session, paneId),
   // The pane read's `linked` (M99 spec 15): the session half of the send pick, one function.
   paneLinked: paneIsLinked,

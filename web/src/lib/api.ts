@@ -2184,6 +2184,10 @@ export function focusPane(paneId: string, scope?: Scope): Promise<ActionResponse
 }
 
 export type BotAction = "move" | "trash" | "restore" | "purge";
+export function stopAgentRun(id: string, scope: Scope) {
+  return req<{ ok: boolean }>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/stop-run`, scope), { method: "POST" });
+}
+
 export function actOnBot(action: BotAction, pane: AgentView, scope: Scope, workspaceId?: string) {
   return req<{ ok: boolean }>(withScope("/api/bot-action", scope), {
     method: "POST", body: JSON.stringify({ action, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),

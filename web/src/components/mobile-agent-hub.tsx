@@ -1,3 +1,4 @@
+import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { chatOrderId } from "@/lib/chat-order";
 import { WorkspaceMenu } from "./bot-workspace-menu";
@@ -165,7 +166,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   const choices = (mode === "trash" ? trashRows : groupRows).filter(selectable);
   const rowId = (p: AgentView) => JSON.stringify([scopeOf(p).session, p.terminalId, p.trash?.trashedAt]);
   const chosen = choices.filter(p => selection.has(rowId(p)));
-  const destinations = [...groups.values()].filter(g => chosen.length > 0 && chosen.every(p =>
+  const destinations = [...groups.values()].filter(g => g.id !== "agent-runs" && chosen.length > 0 && chosen.every(p =>
     scopeOf(p).session === g.scope.session && !g.scope.host));
   function select(p: AgentView, add: boolean) {
     if (!selectable(p) || busy) return;
@@ -229,7 +230,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       <span className="bot-copy">
         <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
         {days !== undefined ? <span className="bot-line">Se elimina en {days} {days === 1 ? "día" : "días"}</span> :
-          <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
+          <span className="bot-row-preview">{p.agentRun ? <span className="bot-line">{runProgress(p.agentRun)}</span> : <Preview pane={p} scope={scope} active={current} />}{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
       </span>
     </BotRow></li>;
   }
@@ -253,7 +254,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
-        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={!group.scope.host || undefined} data-drag-scope={dragScope(group.scope)}>
+        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
           <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}

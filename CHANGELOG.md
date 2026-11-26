@@ -32,6 +32,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Drag a chat to arrange it within its workspace.** Drop it on another workspace or the trash. Hold a workspace heading to rename, move or trash the group. Restore the group from Trash within seven days.
 
+- **Detached agent runs stream in their workspace chats.** Open a run to follow its conversation, check its elapsed time or stop it. Runs without a launch pane appear together.
+
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.
