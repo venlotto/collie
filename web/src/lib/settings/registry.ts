@@ -257,6 +257,7 @@ export const NOT_SETTINGS: ReadonlyMap<string, string> = new Map([
   ["collie:derived:v1", "a cache of the colours derived from the applied theme: applyTheme rebuilds it, theme-init.js reads it for the first frame"],
   ["collie:session-later", "trick proposals closed with Not now"],
   ["collie:ask-drafts:v1", "answers marked on the Asks pages and not sent yet: unsent words, not a choice"],
+  ["collie:bot-featured:v1:legacy-pins-migrated", "whether this device already carried its old pins into the single featured chat"],
   ["collie:bot-featured:v1:", "first-paint cache of the chat featured on the hosted list"],
   ["collie:bot-sections:v1:", "first-paint cache of the hosted list's folded workspaces"],
   ["collie:bot-create:v1:", "first-paint cache of the last successful bot launch"],

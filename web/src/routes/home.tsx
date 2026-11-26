@@ -10,7 +10,7 @@ import { useNav } from "@/hooks/use-nav";
 import { findPane, paneScope } from "@/lib/hosts";
 import { prefetchPaneData } from "@/lib/loaders";
 import { pairedDevicesPath, panePath } from "@/lib/nav";
-import { useBotFeatured, featuredBotPane } from "@/lib/bot-featured";
+import { useBotFeatured, featuredBotPane, useLegacyPinMigration } from "@/lib/bot-featured";
 import { usePairing } from "@/lib/pairing";
 import { useRootData } from "@/lib/route-data";
 import type { Scope } from "@/lib/scope";
@@ -28,6 +28,7 @@ export function HomeRoute() {
   const scopeOf = (pane: AgentView) => paneScope(data.scope, pane, data.servers, data.sessions);
   const active = paneId ? findPane(panes, paneId, data.scope, data.servers, data.sessions) : undefined;
   const visible = panes.filter(p => !p.trash);
+  useLegacyPinMigration(visible);
   const featured = featuredBotPane(visible, pinnedTop);
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (

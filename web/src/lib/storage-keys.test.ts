@@ -58,6 +58,7 @@ const KEYS = new Map<string, KeyFate>([
   // Decision ids of trick proposals closed with "Not now" in their session (lib/hill/session-later.ts, 2026-11-17): they name this pairing's bridge decisions, so they go with it.
   ["collie:session-later", { area: "local", prefix: false, fate: "wiped", why: "decision ids of this pairing's trick proposals, closed in their session" }],
   ["collie:bot-sections:v1:", { area: "local", prefix: true, fate: "wiped", why: "workspace IDs and pending fold preferences for this pairing" }],
+  ["collie:bot-featured:v1:legacy-pins-migrated", { area: "local", prefix: false, fate: "wiped", why: "whether this device already carried its old pins into the single featured chat (removed with the featured cache prefix)" }],
   ["collie:bot-featured:v1:", { area: "local", prefix: true, fate: "wiped", why: "the single featured chat and its pending preference write for this pairing" }],
   ["collie:bot:v1:", { area: "local", prefix: true, fate: "wiped", why: "bot names and appearance for this pairing" }],
   ["collie:recent-panes:v1", { area: "local", prefix: false, fate: "wiped", why: "the panes this device opened last: pane addresses and workspace names (lib/recent-panes.ts)" }],

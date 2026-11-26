@@ -4,6 +4,7 @@ import { botAccountForPage } from "./bot-account";
 import { loadBotFeaturedCache, saveBotFeaturedCache } from "./bot-featured-cache";
 import { sameBotFeaturedPin, type BotFeaturedPin } from "./bot-featured-wire";
 import { paneRowKey } from "./hosts";
+import { currentPins, usePins } from "./pins";
 import { panePlaceParts } from "./pane-name";
 import type { AgentView } from "./types";
 import { onWipe } from "./wipe";
@@ -24,6 +25,8 @@ export class BotFeaturedStore {
   private timer?: ReturnType<typeof setTimeout>;
   private pending?: { value: BotFeaturedPin | null };
   private featured: BotFeaturedPin | null = null;
+  /** True once this document has heard the server (or SSO store) answer, so a local default can never overwrite it. */
+  loaded = false;
   private readonly listeners = new Set<() => void>();
 
   readonly account: SectionAccount | null;
@@ -38,6 +41,7 @@ export class BotFeaturedStore {
   }
 
   read = () => this.featured;
+  hasPending = () => this.pending !== undefined;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
@@ -53,6 +57,8 @@ export class BotFeaturedStore {
   setPane = (pane: AgentView, on: boolean, now: number = Date.now()) => {
     if (this.abort.signal.aborted) return;
     if (!on && (!this.featured || !botFeaturedMatches(this.featured, pane))) return;
+    // Any deliberate pin settles the old per-device pins for good.
+    if (on) markLegacyPinsMigrated();
     const next = on ? { row: paneRowKey(pane), space: panePlaceParts(pane).space, at: now } : null;
     this.pending = { value: next };
     this.publish(next);
@@ -74,6 +80,7 @@ export class BotFeaturedStore {
     try {
       const reply = await requestBotFeatured(account, this.abort.signal, change);
       if (this.abort.signal.aborted || reply.userId !== this.account?.userId) return;
+      this.loaded = true;
       if (change && this.pending && sameBotFeaturedPin(this.pending.value, change.value)) this.pending = undefined;
       const next = this.pending ? this.pending.value : reply.featured;
       this.publish(next);
@@ -151,4 +158,57 @@ export function useBotFeatured() {
     };
   }, [store]);
   return { featured, setFeatured: store.setPane, clearFeatured: store.clearPane };
+}
+
+// MIGRATION FROM THE DEVICE'S OLD PINS
+// Before the single slot, "Fijar chat" appended to `collie:pins:v1` (lib/pins.ts, up to 32 per device) and the
+// slot showed the first pinned chat in list order. Those pins would otherwise vanish from the top. Once per
+// device, after the server has answered with NO featured chat and nothing is waiting to be written, the most
+// recently pinned old pin whose chat is still visible becomes the one featured chat. A featured chat that
+// already exists (this or another device) always wins. The old store is left untouched: the classic
+// dashboard's Pinned group still reads it.
+const MIGRATED_KEY = "collie:bot-featured:v1:legacy-pins-migrated"; // under the cache prefix, so a device wipe forgets it too
+
+function legacyPinsMigrated(): boolean {
+  try { return localStorage.getItem(MIGRATED_KEY) === "1"; } catch { return true; }
+}
+
+function markLegacyPinsMigrated(): void {
+  try { localStorage.setItem(MIGRATED_KEY, "1"); } catch { /* Without storage the check runs once per load. */ }
+}
+
+/** Test seam: forget that this device migrated. */
+export function __resetLegacyPinsMigrated(): void {
+  try { localStorage.removeItem(MIGRATED_KEY); } catch { /* ignore */ }
+}
+
+/** The pane the old pins would have put in the slot: the newest pin whose chat is visible now. */
+export function legacyFeaturedPane(panes: readonly AgentView[], pins: readonly { row: string; space: string; at: number }[]): { pane: AgentView; at: number } | undefined {
+  let best: { pane: AgentView; at: number } | undefined;
+  for (const pin of pins) {
+    const pane = panes.find(p => !p.trash && paneRowKey(p) === pin.row && panePlaceParts(p).space === pin.space);
+    if (pane && (!best || pin.at > best.at)) best = { pane, at: pin.at };
+  }
+  return best;
+}
+
+/** Mount once on the Grok list with its visible chats. */
+export function useLegacyPinMigration(visible: readonly AgentView[]) {
+  const store = featuredStore();
+  const legacy = usePins();
+  useEffect(() => {
+    if (legacyPinsMigrated() || visible.length === 0 || !store.account || store.account.role === "viewer") return;
+    let live = true;
+    void store.firstRead().then(() => {
+      if (!live || legacyPinsMigrated() || !store.loaded) return false;
+      if (store.read() !== null || store.hasPending()) { markLegacyPinsMigrated(); return false; }
+      if (currentPins().length === 0) { markLegacyPinsMigrated(); return false; }
+      const found = legacyFeaturedPane(visible, currentPins());
+      if (!found) return false; // chats may still be loading; try again on the next change
+      store.setPane(found.pane, true, found.at);
+      markLegacyPinsMigrated();
+      return true;
+    });
+    return () => { live = false; };
+  }, [store, visible, legacy]);
 }

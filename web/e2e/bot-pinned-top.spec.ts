@@ -161,3 +161,28 @@ test("otro dispositivo recibe el pin y la papelera lo retira sin borrar la fila 
   await expect.poll(() => world.featured()).toBeNull();
   await expect(page.locator('section[data-workspace="trash"] .bot-row')).toHaveText(/Alfa/);
 });
+
+test("los pines viejos del dispositivo migran: el más reciente queda como único destacado", async ({ page }) => {
+  const world = await setup(page);
+  // SAFETY: setup() builds exactly two agents, Alfa and Beta.
+  const [alfa, beta] = world.agents as [AgentView, AgentView];
+  const old = [{ ...pinOf(alfa), at: 100 }, { ...pinOf(beta), at: 200 }];
+  // Only the first load seeds the old store; after the migration a reload must not read it again.
+  await page.addInitScript(([pins]) => { if (!sessionStorage.getItem("seeded")) { sessionStorage.setItem("seeded", "1"); localStorage.setItem("collie:pins:v1", pins); } }, [JSON.stringify(old)]);
+  await page.goto("/");
+  const featured = page.locator(".bot-featured");
+  await expect(featured).toHaveCount(1);
+  await expect(featured).toContainText("Beta");
+  await expect.poll(() => world.featured()?.row).toBe(pinOf(beta).row);
+  await shot(page, "migracion-pines-viejos");
+  await page.reload();
+  await expect(page.locator(".bot-featured")).toContainText("Beta");
+  // An unpin afterwards is final: the old pins never come back.
+  await openChat(page, "Beta");
+  await changePin(page, "Desfijar chat");
+  await backToList(page);
+  await expect(page.locator(".bot-featured")).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(".bot-row")).toHaveCount(2);
+  await expect(page.locator(".bot-featured")).toHaveCount(0);
+});

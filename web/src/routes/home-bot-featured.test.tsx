@@ -8,6 +8,7 @@ import { panePlaceParts } from "@/lib/pane-name";
 import type { AgentView } from "@/lib/types";
 import { fixtureAgents, fixtureSnapshot } from "@/test/handlers";
 import { server } from "@/test/msw";
+import { __reloadPins } from "@/lib/pins";
 import { wipeDevice } from "@/lib/wipe";
 import { HomeRoute } from "./home";
 
@@ -54,5 +55,61 @@ describe("HomeRoute's featured slot", () => {
     featured = null;
     act(() => { window.dispatchEvent(new Event("online")); });
     await waitFor(() => expect(document.querySelector(".bot-featured")).toBeNull(), { timeout: 10_000 });
+  });
+});
+
+describe("HomeRoutes migration of this devices old pins", () => {
+  const legacy = (...pins: ReturnType<typeof pinOf>[]) => { localStorage.setItem("collie:pins:v1", JSON.stringify(pins)); __reloadPins(); };
+  const puts: unknown[] = [];
+
+  it("features the most recent old pin once, and never again after an unpin", async () => {
+    puts.length = 0;
+    let stored: ReturnType<typeof pinOf> | null = null;
+    // Older pin on the focused chat, newer pin on the other: the newer one wins, not the first in list order.
+    legacy(pinOf(fixtureAgents[1]!, 100), pinOf(fixtureAgents[0]!, 200));
+    server.use(
+      http.get("/api/bot-featured", () => HttpResponse.json({ userId: "local", featured: stored })),
+      http.put("/api/bot-featured", async ({ request }) => {
+        // SAFETY: the app's requestBotFeatured is the only writer in this test world and always sends this shape.
+        const body = await request.json() as { featured: ReturnType<typeof pinOf> | null };
+        puts.push(body.featured);
+        stored = body.featured;
+        return HttpResponse.json({ userId: "local", featured: stored });
+      }),
+      http.get("/api/snapshot", () => HttpResponse.json(data)),
+    );
+    renderHome();
+    await waitFor(() => expect(document.querySelector(".bot-featured")).toHaveTextContent("claude"), { timeout: 10_000 });
+    await waitFor(() => expect(puts).toHaveLength(1));
+    expect(puts[0]).toMatchObject({ row: paneRowKey(fixtureAgents[0]!), at: 200 });
+    expect(localStorage.getItem("collie:bot-featured:v1:legacy-pins-migrated")).toBe("1");
+  });
+
+  it("lets a featured chat that already exists on the server win over the old pins", async () => {
+    puts.length = 0;
+    legacy(pinOf(fixtureAgents[0]!, 200));
+    server.use(
+      http.get("/api/bot-featured", () => HttpResponse.json({ userId: "local", featured: pinOf(fixtureAgents[1]!, 5) })),
+      http.put("/api/bot-featured", async ({ request }) => { puts.push(await request.json()); return HttpResponse.json({ userId: "local", featured: null }); }),
+      http.get("/api/snapshot", () => HttpResponse.json(data)),
+    );
+    renderHome();
+    await waitFor(() => expect(document.querySelector(".bot-featured")).toHaveTextContent("codex"), { timeout: 10_000 });
+    await waitFor(() => expect(localStorage.getItem("collie:bot-featured:v1:legacy-pins-migrated")).toBe("1"));
+    expect(puts).toHaveLength(0);
+  });
+
+  it("does nothing when the device has no old pins", async () => {
+    puts.length = 0;
+    server.use(
+      http.get("/api/bot-featured", () => HttpResponse.json({ userId: "local", featured: null })),
+      http.put("/api/bot-featured", async ({ request }) => { puts.push(await request.json()); return HttpResponse.json({ userId: "local", featured: null }); }),
+      http.get("/api/snapshot", () => HttpResponse.json(data)),
+    );
+    renderHome();
+    await screen.findByRole("button", { name: "webapp" });
+    await waitFor(() => expect(localStorage.getItem("collie:bot-featured:v1:legacy-pins-migrated")).toBe("1"));
+    expect(document.querySelector(".bot-featured")).toBeNull();
+    expect(puts).toHaveLength(0);
   });
 });
