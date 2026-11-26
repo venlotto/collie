@@ -16,6 +16,9 @@ import { isUnseen } from "@/lib/triage";
 import type { Scope } from "@/lib/scope";
 import type { AgentView, TranscriptEntry, WorkspaceView } from "@/lib/types";
 import { BlobAvatar, botTime, identityOf } from "./bot-identity";
+import { useLocale } from "@/hooks/use-locale";
+import { activityStatusOf, type ActivityStatus } from "@/lib/activity-status";
+import { BotActivityAvatar, activityLabel } from "./bot-activity-avatar";
 
 interface Props {
   writable: boolean;
@@ -33,7 +36,7 @@ interface Props {
   accessNotice?: ReactNode;
 }
 
-function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; active: boolean }) {
+function Preview({ pane, scope, active, status, label }: { pane: AgentView; scope: Scope; active: boolean; status: ActivityStatus; label: string }) {
   const [preview, setPreview] = useState<{ text: string; outgoing: boolean } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
   const { host, session } = scope;
@@ -63,6 +66,7 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
     observer.observe(node);
     return () => { observer.disconnect(); abort.abort(); };
   }, [host, session, pane.paneId, pane.instance, pane.hasSession, pane.surface?.field, active, pane.lastActiveAt]);
+  if (status !== "idle") return <span ref={ref} className="bot-line" data-activity={status}><span>{label}</span></span>;
   const text = preview?.text || pane.subtitle || pane.hint || pane.terminalTitle || pane.tabLabel || pane.agent;
   const Icon = !preview && pane.kind === "shell" && text === pane.agent ? null
     : /^(mensaje de |\[walky-talky )/iu.test(text) ? UsersRound
@@ -73,6 +77,7 @@ function Preview({ pane, scope, active }: { pane: AgentView; scope: Scope; activ
 const segmenter = graphemeSegmenter();
 
 export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
+  useLocale();
   const [query, setQuery] = useState("");
   const { folded, toggle, setClosed } = useBotSections();
   const [mode, setMode] = useState<"chats" | "trash" | null>(null);
@@ -215,6 +220,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   function row(p: AgentView) {
     const scope = scopeOf(p);
     const bot = identityOf(p, scope);
+    const status = p.trash ? "idle" : activityStatusOf(p);
     const current = !!active && paneRowKey(active) === paneRowKey(p);
     const matching = mode === (p.trash ? "trash" : "chats");
     const days = p.trash && Math.max(0, Math.ceil(7 - (Date.now() - p.trash.trashedAt) / 86_400_000));
@@ -224,11 +230,11 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       onHold={selectable(p) ? () => select(p, true) : undefined}
       onPress={() => { if (!mode && !p.trash) onPress(p); }}
       onOpen={() => { if (mode || p.trash) select(p, false); else onOpen(p); }}>
-      <BlobAvatar {...bot} />
+      <BotActivityAvatar bot={bot} status={status} />
       <span className="bot-copy">
         <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
         {days !== undefined ? <span className="bot-line">Se elimina en {days} {days === 1 ? "día" : "días"}</span> :
-          <span className="bot-row-preview">{p.agentRun ? <span className="bot-line">{runProgress(p.agentRun)}</span> : <Preview pane={p} scope={scope} active={current} />}{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
+          <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} status={status} label={activityLabel(status)} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
       </span>
     </BotRow></li>;
   }
