@@ -2019,6 +2019,7 @@ export const es: Dictionary = {
   "apiError.launch.bad_folder": "Esa carpeta no se puede usar. La ruta no puede contener .. ni caracteres de control.",
   "apiError.launch.folder_missing": "No hay ninguna carpeta {folder} en esta máquina.",
   "apiError.launch.pane_unknown": "Ese panel ya no existe, no se inició nada",
+  "apiError.launch.space_unknown": "Ese workspace ya no existe, no se inició nada",
   "apiError.launcher.adds_off": "Añadir lanzadores desde un teléfono está desactivado en esta máquina.",
   "apiError.launcher.free_text_off": "Un comando escrito a mano está desactivado en esta máquina.",
   "apiError.launcher.bad_text": "No se puede usar ese {field}: {problem}.",

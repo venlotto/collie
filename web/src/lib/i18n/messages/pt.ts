@@ -1874,6 +1874,7 @@ export const pt: Dictionary = {
   "apiError.launch.bad_folder": "Essa pasta não pode ser usada. O caminho não pode conter .. nem caracteres de controle.",
   "apiError.launch.folder_missing": "Não há nenhuma pasta {folder} nesta máquina.",
   "apiError.launch.pane_unknown": "Esse painel não existe mais, nada foi iniciado",
+  "apiError.launch.space_unknown": "Esse workspace não existe mais, nada foi iniciado",
   "apiError.launcher.adds_off": "Adicionar inicializadores a partir de um telefone está desativado nesta máquina.",
   "apiError.launcher.free_text_off": "Um comando digitado à mão está desativado nesta máquina.",
   "apiError.launcher.bad_text": "Esse {field} não pode ser usado: {problem}.",

@@ -1952,6 +1952,7 @@ export const ru: Dictionary = {
   "apiError.launch.bad_folder": "Эту папку нельзя использовать. В пути не должно быть .. и управляющих символов.",
   "apiError.launch.folder_missing": "На этой машине нет папки {folder}.",
   "apiError.launch.pane_unknown": "Эта панель исчезла, ничего не запущено",
+  "apiError.launch.space_unknown": "Это рабочее пространство исчезло, ничего не запущено",
   "apiError.launcher.adds_off": "Добавление средств запуска с телефона отключено на этой машине.",
   "apiError.launcher.free_text_off": "Команда, введённая вручную, отключена на этой машине.",
   "apiError.launcher.bad_text": "Это значение {field} использовать нельзя: {problem}.",

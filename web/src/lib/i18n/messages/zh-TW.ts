@@ -1976,6 +1976,7 @@ export const zhTW: Dictionary = {
   "apiError.launch.bad_folder": "無法使用這個資料夾。路徑不能包含 .. 或控制字元。",
   "apiError.launch.folder_missing": "這台機器上沒有資料夾 {folder}。",
   "apiError.launch.pane_unknown": "找不到此窗格，未啟動任何內容",
+  "apiError.launch.space_unknown": "找不到此工作區，未啟動任何內容",
   "apiError.launcher.adds_off": "這台機器已關閉從手機新增啟動器的功能。",
   "apiError.launcher.free_text_off": "這台機器已關閉手動輸入指令的功能。",
   "apiError.launcher.bad_text": "該{field}無法使用：{problem}。",

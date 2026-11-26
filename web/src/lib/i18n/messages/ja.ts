@@ -1997,6 +1997,7 @@ export const ja: Dictionary = {
   "apiError.launch.bad_folder": "このフォルダーは使えません。パスに .. や制御文字を含めることはできません。",
   "apiError.launch.folder_missing": "このマシンにはフォルダー {folder} がありません。",
   "apiError.launch.pane_unknown": "そのペインは見つかりません。何も起動されませんでした",
+  "apiError.launch.space_unknown": "そのワークスペースは見つかりません。何も起動されませんでした",
   "apiError.launcher.adds_off": "このマシンでは、スマートフォンからのランチャー追加はオフになっています。",
   "apiError.launcher.free_text_off": "このマシンでは、手入力のコマンドはオフになっています。",
   "apiError.launcher.bad_text": "その {field} は使用できません: {problem}。",

@@ -1880,6 +1880,7 @@ export const it: Dictionary = {
   "apiError.launch.bad_folder": "Questa cartella non può essere usata. Il percorso non può contenere .. né caratteri di controllo.",
   "apiError.launch.folder_missing": "Su questa macchina non esiste la cartella {folder}.",
   "apiError.launch.pane_unknown": "Quel riquadro non esiste più, non è stato avviato nulla",
+  "apiError.launch.space_unknown": "Quel workspace non esiste più, non è stato avviato nulla",
   "apiError.launcher.adds_off": "Aggiungere avviatori da un telefono è disattivato su questa macchina.",
   "apiError.launcher.free_text_off": "Un comando digitato a mano è disattivato su questa macchina.",
   "apiError.launcher.bad_text": "Questo {field} non può essere usato: {problem}.",

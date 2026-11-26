@@ -2022,6 +2022,7 @@ export const de: Dictionary = {
   "apiError.launch.bad_folder": "Dieser Ordner kann nicht verwendet werden. Ein Ordnerpfad darf weder .. noch Steuerzeichen enthalten.",
   "apiError.launch.folder_missing": "Auf diesem Rechner gibt es keinen Ordner {folder}.",
   "apiError.launch.pane_unknown": "Dieses Pane ist nicht mehr da, nichts wurde gestartet",
+  "apiError.launch.space_unknown": "Dieser Workspace ist nicht mehr da, nichts wurde gestartet",
   "apiError.launcher.adds_off": "Launcher vom Smartphone aus hinzuzufügen ist auf diesem Rechner ausgeschaltet.",
   "apiError.launcher.free_text_off": "Ein von Hand eingegebener Befehl ist auf diesem Rechner ausgeschaltet.",
   "apiError.launcher.bad_text": "Dieses Feld {field} kann nicht verwendet werden: {problem}.",
