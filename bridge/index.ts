@@ -4544,7 +4544,9 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
       return await child.exited === 0;
     }, activity,
     async (argv, extraEnv = {}) => {
-      const child = Bun.spawn([...argv], { stdin: "ignore", stdout: "pipe", stderr: "pipe", env: { ...process.env, ...extraEnv } });
+      // The service PATH has no ~/.local/bin, where herdr lives; the launcher shells out to it.
+      const path = [join(homedir(), ".local/bin"), process.env.PATH ?? ""].filter(Boolean).join(":");
+      const child = Bun.spawn([...argv], { stdin: "ignore", stdout: "pipe", stderr: "pipe", env: { ...process.env, PATH: path, ...extraEnv } });
       const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
       return { code, stdout, stderr };
     }),

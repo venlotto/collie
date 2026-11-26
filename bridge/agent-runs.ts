@@ -351,8 +351,13 @@ export class AgentRuns {
     if (!this.process) return { code: 1, stdout: "", stderr: "no process" };
     const env: Record<string, string> = {};
     if (envFiles.length) env.AGENT_RUN_ENV_FILES = envFiles.join(":");
-    if (!pane) return this.process(argv, env);
-    return this.process(["herdr", "pane", "run", pane, commandLine(argv, env)]);
+    try {
+      if (!pane) return await this.process(argv, env);
+      return await this.process(["herdr", "pane", "run", pane, commandLine(argv, env)]);
+    } catch (error) {
+      // A missing executable must read as a failed launch (502), never as an unhandled 500.
+      return { code: 127, stdout: "", stderr: error instanceof Error ? error.message : "spawn failed" };
+    }
   }
 
   private async writePrompt(id: string, kind: string, text: string): Promise<string> {
