@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchLaunchers, renamePane } from "@/lib/api";
+import { fetchLaunchers, renamePane, type SpaceTarget } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
 import { cacheBotPrefs, readBotPrefs } from "@/lib/bot-create-prefs";
 import { randomBotName } from "@/lib/bot-default-names";
@@ -14,7 +14,7 @@ const quickColors = [8, 5, 3, 9, 7, 6, 2, 4];
 const unconfirmed = "No se pudo confirmar la creación. Vuelve a intentar.";
 
 /**
- * A bot in one gesture: no sheet, no workspace (the default place a new bot lands), a random name that
+ * A bot in one gesture: no sheet, the default workspace (`space`, Sin asignar), a random name that
  * gives way to the agent's own title for the work, and the agent and reasoning of the last bot created on that machine. `quick` resolves to the error to
  * show, or `undefined` when the bot opened (the phone moves to it) or another create was in flight.
  */
@@ -22,7 +22,7 @@ export function useQuickBot({ canRename }: { canRename: boolean }) {
   const { start, creatingSpace } = useSpaceActions();
   const [preparing, setPreparing] = useState(false);
   const inFlight = useRef(false);
-  const quick = useCallback(async (scope: Scope, taken: ReadonlySet<string>): Promise<string | undefined> => {
+  const quick = useCallback(async (scope: Scope, space: SpaceTarget, taken: ReadonlySet<string>): Promise<string | undefined> => {
     if (inFlight.current) return undefined;
     inFlight.current = true;
     setPreparing(true);
@@ -38,7 +38,7 @@ export function useQuickBot({ canRename }: { canRename: boolean }) {
         what: profile && prefs ? { kind: "harness", id: profile.harness, botCreate: prefs }
           : harness ? { kind: "harness", id: harness.id } : { kind: "shell" },
         legacyShell: catalog.harnesses === undefined,
-        requestId: mintRequestId(),
+        space, requestId: mintRequestId(),
       }, scope);
       if (outcome.kind === "refused") return outcome.message || undefined;
       if (outcome.kind === "unknown") return unconfirmed;

@@ -9,14 +9,31 @@ import { mintRequestId } from "@/lib/worktree-name";
 import { type Scope } from "@/lib/scope";
 import { readBotPrefs, cacheBotPrefs } from "@/lib/bot-create-prefs";
 import { BOT_CREATE_PROFILES } from "@/lib/bot-create-profiles";
-import { type AgentView, type LaunchersResponse } from "@/lib/types";
+import { type AgentView, type LaunchersResponse, type WorkspaceView } from "@/lib/types";
+import { type SpaceTarget } from "@/lib/api";
 import { BlobAvatar } from "./bot-identity";
 import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { setBotDisplay } from "@/lib/bot-display";
 import { randomBotName } from "@/lib/bot-default-names";
 
 function localName() { setStatus("El nombre quedó guardado en este dispositivo.", "info"); }
 
-export function CreateBot({ scope, beside, writable, close }: { scope: Scope; beside?: AgentView; writable: boolean; close: () => void }) {
+/** The workspace a bot lands in when the person picks none. */
+export const UNASSIGNED_SPACE = "Sin asignar";
+const unassignedCopy = /^Sin asignar-\d+$/;
+
+/** Where "none picked" goes: the existing Sin asignar workspace, else a new one by that name. */
+export function unassignedTarget(spaces: readonly WorkspaceView[]): SpaceTarget {
+  const found = spaces.find(w => w.label === UNASSIGNED_SPACE) ?? spaces.find(w => unassignedCopy.test(w.label));
+  return found ? { id: found.workspaceId } : { label: UNASSIGNED_SPACE };
+}
+
+type SpaceMode = "none" | "existing" | "new";
+const NO_SPACES: readonly WorkspaceView[] = [];
+
+export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }: {
+  scope: Scope; beside?: AgentView; spaces?: readonly WorkspaceView[]; writable: boolean; close: () => void;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState("");
   const [fallbackName] = useState(() => randomBotName());
@@ -29,6 +46,13 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
   const [reload, setReload] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryOnly, setRetryOnly] = useState(false);
+  const [spaceMode, setSpaceMode] = useState<SpaceMode>("none");
+  const [spaceId, setSpaceId] = useState("");
+  const [spaceName, setSpaceName] = useState("");
+  const pickedSpace = spaces.find(w => w.workspaceId === spaceId) ?? spaces[0];
+  const target: SpaceTarget | undefined = spaceMode === "existing" ? (pickedSpace && { id: pickedSpace.workspaceId })
+    : spaceMode === "new" ? (spaceName.trim() ? { label: spaceName.trim() } : undefined)
+    : unassignedTarget(spaces);
   const { host, session } = scope;
   useEffect(() => {
     let active = true;
@@ -78,23 +102,26 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
   }, [leaving]);
   const dismiss = () => { if (!busy) setLeaving(true); };
 
+  const ready = writable && !!catalog && (catalog.botCreate === undefined || !!profile) && !!target;
+
   async function create() {
-    if (!writable || !catalog || (catalog.botCreate !== undefined && !profile) || busy || leaving) return;
+    if (!ready || !target || busy || leaving) return;
     setError("");
     setPreparing(true);
-    const installed = catalog.harnesses?.filter(h => h.found);
+    const installed = catalog?.harnesses?.filter(h => h.found);
     const harness = installed?.find(h => h.id === beside?.agent) ?? installed?.[0];
     const outcome = await start({
       what: profile ? { kind: "harness", id: profile.harness, botCreate: prefs }
         : harness ? { kind: "harness", id: harness.id } : { kind: "shell" },
-      legacyShell: catalog.harnesses === undefined,
-      beside, requestId: request.current,
+      legacyShell: catalog?.harnesses === undefined,
+      space: target, requestId: request.current,
     }, scope);
     setPreparing(false);
     if (outcome.kind === "done" && outcome.paneId) {
       if (profile) cacheBotPrefs(host, prefs);
       const typed = name.trim();
       saveBot(scope, outcome.paneId, { name: typed || fallbackName, silhouette, color });
+      setBotDisplay(scope, outcome.paneId, "chat");
       if (rename.capable) {
         void renamePane(outcome.paneId, typed || fallbackName, scope, !typed).then(res => res.ok ? undefined : localName(), localName);
       }
@@ -129,12 +156,24 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
             <button type="button" key={effort} aria-pressed={effort === prefs.effort}
               onClick={() => setPrefs({ ...prefs, effort })}>{effort}</button>)}
         </fieldset>
+        <fieldset disabled={!writable || busy || retryOnly} aria-label="Workspace">
+          <legend>Workspace</legend>
+          <button type="button" aria-pressed={spaceMode === "none"} onClick={() => setSpaceMode("none")}>{UNASSIGNED_SPACE}</button>
+          <button type="button" aria-pressed={spaceMode === "existing"} disabled={!spaces.length} onClick={() => setSpaceMode("existing")}>Existente</button>
+          <button type="button" aria-pressed={spaceMode === "new"} onClick={() => setSpaceMode("new")}>Nuevo</button>
+        </fieldset>
+        {spaceMode === "existing" && pickedSpace && <select className="bot-space-choice" aria-label="Workspace existente" disabled={busy || retryOnly}
+          value={pickedSpace.workspaceId} onChange={e => setSpaceId(e.target.value)}>
+          {spaces.map(w => <option key={w.workspaceId} value={w.workspaceId}>{w.label || w.workspaceId}</option>)}
+        </select>}
+        {spaceMode === "new" && <input className="bot-space-choice" aria-label="Nombre del workspace nuevo" placeholder="Nombre del workspace"
+          maxLength={80} value={spaceName} disabled={busy || retryOnly} onChange={e => setSpaceName(e.target.value)} />}
         {catalog && !catalog.botCreate && <p role="status">Este equipo no ofrece elegir agente.</p>}
         {catalog?.botCreate?.agents.length === 0 && <p role="status">No hay agentes disponibles.</p>}
       </div>
       {loadFailed && <button type="button" onClick={() => setReload(n => n + 1)}>Reintentar</button>}
       {error && <p role="alert">{error}</p>}
-      <button className="bot-create" disabled={!writable || !catalog || (catalog.botCreate !== undefined && !profile) || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
+      <button className="bot-create" disabled={!ready || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
     </form>
   </dialog>;
 }

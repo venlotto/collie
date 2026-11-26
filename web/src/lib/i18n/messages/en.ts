@@ -933,7 +933,10 @@ export const en = {
   // and moves the operator's own screen, which this never does.
   "chat.mode.view.label": "View",
   "chat.mode.option.terminal": "Terminal",
-  "chat.mode.option.chat": "Chat",
+  "chat.mode.option.chat": "Messages",
+  "chat.mode.bot.help": "Messages shows the conversation as chat. Terminal shows the screen as it is.",
+  "chat.mode.bot.unavailable": "Messages can't read this conversation yet. You can keep writing here, or open the terminal without losing the thread.",
+  "chat.mode.bot.showTerminal": "Show terminal",
   "chat.mode.chat": "Chat view",
   "chat.mode.terminal": "Terminal view",
   // The row EXPLAINS rather than hides (M41/11): a control that disappears on some panes is how an
@@ -2176,6 +2179,7 @@ export const en = {
   "apiError.launch.bad_folder": "That folder cannot be used. A folder path may not contain .. or control characters.",
   "apiError.launch.folder_missing": "There is no folder {folder} on this machine.",
   "apiError.launch.pane_unknown": "That pane is gone, nothing was launched",
+  "apiError.launch.space_unknown": "That workspace is gone, nothing was launched",
   // Rows added from a phone (ADR 0094). `{field}` is `command` or `label`; `{problem}` is `empty`,
   // `too_long` or `forbidden_character`. Both stay in English: they are codes, shown as they are.
   "apiError.launcher.adds_off": "Adding launchers from a phone is turned off on this machine.",

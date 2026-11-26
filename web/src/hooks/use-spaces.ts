@@ -69,6 +69,8 @@ export interface StartAsk {
    * plain shell goes through its tab create. Never with `branch`: a worktree is a space of its own.
    */
   beside?: { paneId: string; workspaceId: string };
+  /** The workspace it opens in: an existing one by id, or a new one with this name. Never with `beside` or `branch`. */
+  space?: api.SpaceTarget;
   branch?: { cwd: string; name: string; base: WorktreeBaseChoice; folder: WorktreeFolderChoice };
 }
 
@@ -314,18 +316,20 @@ export function useSpaceActions(canWrite?: () => boolean) {
         // A starter makes no tab by hand and ignores the pane, so it is a space whatever was asked.
         const beside = ask.what.kind === "starter" ? undefined : ask.beside;
         const cwd = ask.cwd === undefined ? { requestId: ask.requestId } : { cwd: ask.cwd, requestId: ask.requestId };
+        const space = ask.what.kind === "starter" || beside !== undefined ? undefined : ask.space;
+        const intoSpaceId = beside?.workspaceId ?? (space !== undefined && "id" in space ? space.id : undefined);
         const res =
           ask.what.kind === "shell" && ask.legacyShell === true
-            ? beside === undefined
-              ? await api.createWorkspace(cwd, scope)
-              : await api.createTab(beside.workspaceId, cwd, scope)
+            ? intoSpaceId === undefined
+              ? await api.createWorkspace(space !== undefined && "label" in space ? { ...cwd, label: space.label } : cwd, scope)
+              : await api.createTab(intoSpaceId, cwd, scope)
             : await api.startLaunch(
                 ask.what,
-                { cwd: ask.cwd, requestId: ask.requestId, besidePaneId: beside?.paneId, account: ask.account, signIn: ask.signIn },
+                { cwd: ask.cwd, requestId: ask.requestId, besidePaneId: beside?.paneId, space, account: ask.account, signIn: ask.signIn },
                 scope,
               );
         if (!res.ok) return { kind: "refused", message: describeApiError(res) };
-        open(res, beside === undefined ? "space" : "tab", scope, startupHarness(ask.what, ask.rowHarness));
+        open(res, intoSpaceId === undefined ? "space" : "tab", scope, startupHarness(ask.what, ask.rowHarness));
         return { kind: "done", paneId: res.pane.paneId };
       } catch (e) {
         if (api.outcomeUnknown(e)) return { kind: "unknown" };

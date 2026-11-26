@@ -103,6 +103,8 @@ export interface ChatGateInput {
   journal: JournalReading;
   history: PaneHistory;
   activity: PaneActivity;
+  /** This bot explicitly chose Messages, but no journal adapter or server can provide them. */
+  chatUnavailable?: boolean;
   /** A journal read started after the turn-end snapshot has answered. Read only at `ended`. */
   settled: boolean;
   /**
@@ -121,6 +123,7 @@ export type PaneBody = "chat" | "start" | "terminal";
 
 export function paneBody(input: ChatGateInput): PaneBody {
   if (input.grid === false) return input.session && input.journal !== "missing" ? "chat" : "start";
+  if (input.chatUnavailable === true) return "start";
   if (!input.chat || input.journal === "off") return "terminal";
   if (input.unreadQuestion === true) return "terminal";
   if (input.session && input.journal !== "missing") return "chat";

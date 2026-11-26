@@ -196,13 +196,14 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   else await input.press("Enter");
   expect((await posted).postDataJSON().text).toBe("Recibido");
   await page.getByRole("button", { name: "Opciones del chat" }).click();
-  await page.getByRole("button", { name: "Ver terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".bot-terminal")).toBeVisible();
   await page.getByRole("button", { name: "Volver a los chats" }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
   const dialog = await settledSheet(page);
-  await expect(dialog.getByRole("button", { name: "Crear", exact: true })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "Crear", exact: true })).toBeEnabled();
   await expect(dialog.getByRole("button", { name: "codexp", pressed: true })).toBeEnabled();
   await expect(dialog.getByRole("button", { name: "high", exact: true, pressed: true })).toBeEnabled();
   await screenshot(page, "crear");
@@ -211,10 +212,24 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await dialog.getByRole("button", { name: "Forma 4", exact: true }).click();
   await dialog.getByRole("button", { name: "Verde", exact: true }).click();
   await dialog.getByRole("textbox").fill("Bitácora");
+  const displayWrites: { row: string; view: string }[] = [];
+  await page.route("**/api/bot-display", async route => {
+    if (route.request().method() === "PUT") displayWrites.push(route.request().postDataJSON());
+    await route.fallback();
+  });
+  await expect(dialog.getByRole("button", { name: "Sin asignar", pressed: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Existente", exact: true }).click();
+  const existing = dialog.getByRole("combobox", { name: "Workspace existente" });
+  await expect(existing.locator("option")).toHaveText(sections);
+  await existing.selectOption({ label: "Viajes" });
+  await screenshot(page, "crear-workspace-existente");
   await dialog.getByRole("button", { name: "Crear", exact: true }).click();
   await expect.poll(() => launch.launches.length).toBe(1);
   await expect(page.locator(".bot-chat-bar strong")).toHaveText("Bitácora");
-  expect(launch.launches[0]?.body.paneId).toBe(panes[0]!.paneId);
+  expect(launch.launches[0]?.body).toMatchObject({ spaceId: "w3" });
+  expect(launch.launches[0]?.body).not.toHaveProperty("paneId");
+  expect(launch.launches[0]?.body).not.toHaveProperty("spaceLabel");
+  await expect.poll(() => displayWrites).toContainEqual({ row: ["", "", fixtureLaunchedTab.pane.paneId].join("\u0000"), view: "chat" });
   await expect(page).toHaveURL(new RegExp(encodeURIComponent(fixtureLaunchedTab.pane.paneId)));
   expect(launch.launches[0]?.body).toMatchObject({ harness: "claude", botCreate: { agent: "claudep", effort: "medium" } });
   const cacheKey = "collie:bot-create:v1:";
@@ -486,6 +501,36 @@ test("a host without bot profiles keeps the remembered selector visible and laun
   await expect.poll(() => launch.launches.length).toBe(1);
   expect(launch.launches[0]?.body.harness).toBe("claude");
   expect(launch.launches[0]?.body).not.toHaveProperty("botCreate");
+  // Nothing picked: the bot goes to a new Sin asignar workspace, since this host has none yet.
+  expect(launch.launches[0]?.body).toMatchObject({ spaceLabel: "Sin asignar" });
+});
+
+test("a new bot goes into Sin asignar when it exists, or into a new workspace it names", async ({ page }) => {
+  const workspaces = [{ ...fixtureSnapshot.workspaces[0]!, workspaceId: "w7", label: "Sin asignar" }, ...fixtureSnapshot.workspaces];
+  await installApiStub(page);
+  await page.route(url => url.pathname === "/api/snapshot", route => route.fulfill({ json: { ...fixtureSnapshot, workspaces } }));
+  const launch = await installLauncherWorld(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
+  let dialog = await settledSheet(page);
+  await dialog.getByRole("textbox").fill("Sin lugar");
+  await dialog.getByRole("button", { name: "Crear", exact: true }).click();
+  await expect.poll(() => launch.launches.length).toBe(1);
+  expect(launch.launches[0]?.body).toMatchObject({ spaceId: "w7" });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
+  dialog = await settledSheet(page);
+  await dialog.getByRole("textbox", { name: "Nombre del bot" }).fill("Con lugar");
+  await dialog.getByRole("button", { name: "Nuevo", exact: true }).click();
+  const create = dialog.getByRole("button", { name: "Crear", exact: true });
+  await expect(create).toBeDisabled();
+  await dialog.getByRole("textbox", { name: "Nombre del workspace nuevo" }).fill("Proyecto X");
+  await screenshot(page, "crear-workspace-nuevo");
+  await create.click();
+  await expect.poll(() => launch.launches.length).toBe(2);
+  expect(launch.launches[1]?.body).toMatchObject({ spaceLabel: "Proyecto X" });
+  expect(launch.launches[1]?.body).not.toHaveProperty("spaceId");
 });
 
 test("reducir transparencia conserva barras opacas sin desenfoque", async ({ page, browserName }) => {
@@ -783,6 +828,8 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
   await other.click();
   await expect(detail.locator(".bot-chat-bar")).toContainText(otherPane.paneLabel, { timeout: 20_000 });
   await expect(other).toHaveAttribute("aria-current", "true");
+  // Back closes that chat; a second chat opened while one is showing would join it on the desk.
+  await page.getByRole("button", { name: "Volver a los chats" }).click();
   await first.click();
   await expect(detail.locator(".bot-chat-bar")).toContainText(pane.paneLabel, { timeout: 20_000 });
   await expect(first).toHaveAttribute("aria-current", "true");
@@ -797,7 +844,8 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
   const menuBox = (await detail.locator(".bot-popup").boundingBox())!;
   expect(menuBox.x).toBeGreaterThanOrEqual((await detail.boundingBox())!.x);
   expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-  await page.getByRole("button", { name: "Ver terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
   const terminal = detail.locator(".bot-terminal");
   await expect(terminal).toContainText("Ruta 120");
   const reader = terminal.locator("..");

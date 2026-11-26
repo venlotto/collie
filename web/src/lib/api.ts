@@ -1,5 +1,6 @@
 import type { AgentView } from "@/lib/types";
 import { parseBotFeaturedPin, type BotFeaturedPin } from "./bot-featured-wire";
+import { parseBotDisplay, parseBotDisplayRow, type BotDisplayRow } from "./bot-display-wire";
 import type { ChatOrder } from "./chat-order";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
@@ -2268,6 +2269,39 @@ export async function requestBotFeatured(account: SectionAccount, signal: AbortS
   return doReq<BotFeaturedPreferences>("/api/bot-featured", init);
 }
 
+export interface BotDisplayPreferences { userId: string; views: BotDisplayRow[] }
+
+/** Read all per-bot views, or change exactly one. SSO's PATCH is a per-row delta too. */
+export async function requestBotDisplays(account: SectionAccount, signal: AbortSignal, change?: BotDisplayRow): Promise<BotDisplayPreferences> {
+  const init: RequestInit = { signal, cache: "no-store" };
+  if (account.sub !== undefined) {
+    const prefix = "bot-display:v1:";
+    init.headers = { "X-Collie-Subject": encodeURIComponent(account.sub), "X-Collie-Role": account.role ?? "" };
+    if (change) {
+      init.method = "PATCH";
+      init.body = JSON.stringify({ set: { [prefix + change.row]: change.view }, remove: [] });
+      init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+    }
+    const settings = await doReq<Record<string, string>>("/api/user-settings", init);
+    const views: BotDisplayRow[] = [];
+    for (const [name, raw] of Object.entries(settings)) {
+      if (!name.startsWith(prefix)) continue;
+      const view = parseBotDisplay(raw);
+      const row = name.slice(prefix.length);
+      const parsed = parseBotDisplayRow({ row, view });
+      if (parsed) views.push(parsed);
+    }
+    return { userId: account.userId, views };
+  }
+  if (change) {
+    init.method = "PUT";
+    init.body = JSON.stringify(change);
+    init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+  }
+  const reply = await doReq<BotDisplayPreferences>("/api/bot-display", init);
+  return { userId: reply.userId, views: Array.isArray(reply.views) ? reply.views.map(row => parseBotDisplayRow({ row: row.row, view: row.view })).filter(row => row !== undefined) : [] };
+}
+
 export function fetchChatOrder(scope: Scope, signal: AbortSignal) {
   return req<ChatOrder[]>(withScope("/api/chat-order", scope), { signal });
 }
@@ -2406,6 +2440,9 @@ export type StartWhat =
 export type BranchableWhat = Exclude<StartWhat, { kind: "run" }>;
 
 /** POST /api/launch's body from the New page. A named contract so `startLaunch` infers against it, and a test reads it. */
+/** Where a start opens: an existing workspace by id, or a new one with this name. */
+export type SpaceTarget = { id: string } | { label: string };
+
 export interface StartLaunchBody {
   botCreate?: BotCreatePrefs;
   command?: string;
@@ -2415,6 +2452,10 @@ export interface StartLaunchBody {
   cwd?: string;
   /** The pane whose space this opens a new tab in (the route's own `paneId` field). Absent: a new space. */
   paneId?: string;
+  /** An existing workspace to open a new tab in, by id. Never with `paneId` or `spaceLabel`. */
+  spaceId?: string;
+  /** The name of the NEW workspace to open. Never with `paneId` or `spaceId`. */
+  spaceLabel?: string;
   /** An added account's id (M101). Sent only with `harness`; absent for Default and for every other start. */
   account?: string;
   /** Type the agent's sign-in line instead of the plain start. Only with `harness`. */
@@ -2430,10 +2471,14 @@ export interface StartLaunchBody {
  */
 export function startLaunch(
   what: BranchableWhat,
-  opts: { cwd?: string; requestId: string; besidePaneId?: string; account?: string; signIn?: boolean },
+  opts: { cwd?: string; requestId: string; besidePaneId?: string; space?: SpaceTarget; account?: string; signIn?: boolean },
   scope?: Scope,
 ): Promise<CreateResponse> {
   const body: StartLaunchBody = { requestId: opts.requestId };
+  if (opts.space !== undefined && what.kind !== "starter") {
+    if ("id" in opts.space) body.spaceId = opts.space.id;
+    else body.spaceLabel = opts.space.label;
+  }
   if (what.kind === "row") body.command = what.command;
   else if (what.kind === "harness") {
     body.harness = what.id;

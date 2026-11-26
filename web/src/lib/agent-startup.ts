@@ -15,11 +15,11 @@ export const STARTUP_GATE_MS = 120_000;
  * or `glm`, never `claude`). The bridge reads them with Claude Code's profile (`identity.agentNames` in
  * profiles/claude.json); this is the same fact for the phone, which launched the harness `claude`.
  */
-const HARNESS_ALIASES: Readonly<Record<string, string>> = { kimi: "claude", glm: "claude" };
+const HARNESS_ALIASES = new Map([["kimi", "claude"], ["glm", "claude"]]);
 
 /** Whether the multiplexer's agent name is the harness the phone launched, or a wrapper that runs it. */
 export function namesHarness(harness: string, agent: string | undefined): boolean {
-  return agent !== undefined && (agent === harness || HARNESS_ALIASES[agent] === harness);
+  return agent !== undefined && (agent === harness || HARNESS_ALIASES.get(agent) === harness);
 }
 
 /** Navigation intent, not pane metadata or a claim about the terminal's current keyboard. */

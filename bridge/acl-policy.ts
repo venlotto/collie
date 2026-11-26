@@ -77,6 +77,7 @@ const KNOWN_NAMES: ReadonlySet<string> = new Set([
   // State folder.
   "activity.json",
   "bot-featured.json",
+  "bot-display.json",
   "audit.log",
   "cache-watch.json",
   "crew-ops.json",

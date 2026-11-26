@@ -79,6 +79,19 @@
         "evidence": "Same binary and session store as agy, routed through agyJournal via AGENT_ALIASES; the PR 619 sweep read ~/.gemini/antigravity-cli/conversations/*.db on Antigravity CLI 1.4.8 (SQLite trajectory databases, 0 unknown rows)."
       }
     },
+    "kimi": {
+      "version": "0.0.0",
+      "verified": "2026-11-26",
+      "how": "unverified",
+      "adapter": false,
+      "evidence": "No separate block grammar: a Kimi pane keeps the generic mirror handling. The bot launch profile declares Claude Code as its harness; its journal therefore resolves through the claude adapter alias.",
+      "journal": {
+        "version": "0.0.0",
+        "verified": "2026-11-26",
+        "how": "unverified",
+        "evidence": "Kimi is a launch profile backed by Claude Code, routed through claudeJournal via AGENT_ALIASES. No independent Kimi log format was claimed or inspected; 0.0.0 is the floor so the first install reads as NEWER."
+      }
+    },
     "muse": {
       "version": "1.4.7",
       "verified": "2026-10-12",

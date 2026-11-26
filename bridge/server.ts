@@ -1,5 +1,6 @@
 import type { AgentRuns } from "./agent-runs.ts";
 import { botFeaturedChange, type BotFeatured } from "./bot-featured.ts";
+import { botDisplayChange, type BotDisplays } from "./bot-display.ts";
 import type { BotAutoName } from "./bot-auto-name.ts";
 import { sectionChanges, type UiSections } from "./ui-sections.ts";
 import type { BotTrash } from "./bot-trash.ts";
@@ -1315,6 +1316,7 @@ export function startServer(opts: {
   agentRuns?: AgentRuns;
   uiSections?: UiSections;
   botFeatured?: BotFeatured;
+  botDisplays?: BotDisplays;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -3444,6 +3446,25 @@ export function startServer(opts: {
         const result = await opts.agentRuns.chat(id, cfg.transcript ? journals : null, live, chatParams(url), marksPaneSeen(req, "chat"));
         if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
         return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
+      }
+
+      if (pathname === "/api/bot-display") {
+        if (req.method !== "GET" && req.method !== "PUT") return text("method not allowed", 405);
+        const denied = guard(req, cfg, req.method === "PUT" ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        const store = opts.botDisplays;
+        // SSO accounts use their subject-scoped /api/user-settings route instead of this private ledger.
+        if (!store || store.sso) return text("unavailable", 404);
+        if (req.method === "GET") return json(store.read("local"), null);
+        const bytes = await readCappedBody(new Response(req.body), 16 * 1024);
+        if (!bytes) return text("body too large", 413);
+        const change = botDisplayChange(new TextDecoder().decode(bytes));
+        if (!change) return text("invalid bot display", 400);
+        try {
+          return json(store.update("local", change), null);
+        } catch {
+          return text("could not save bot display", 503);
+        }
       }
 
       if (pathname === "/api/bot-featured") {
@@ -9154,6 +9175,19 @@ export async function launch(
   // The client never sends a command line, except as a one-off `run`, which met its gates above. It
   // may send the pane it wants the launch to open BESIDE, and the folder the sheet's Where field names.
   const besidePaneId = typeof fields.paneId === "string" ? fields.paneId.trim() : "";
+  // Or the workspace it should open in by id (a new tab there), or the name of a NEW workspace for it.
+  // At most one of the three: each names a different place.
+  const intoSpaceId = typeof fields.spaceId === "string" ? fields.spaceId.trim() : "";
+  if (fields.spaceId !== undefined && intoSpaceId === "") return text("bad spaceId", 400);
+  let newSpaceLabel: string | undefined;
+  if (fields.spaceLabel !== undefined) {
+    const parsed = normalizeTabLabel(fields.spaceLabel);
+    if (!parsed.ok || [...parsed.label].length > 80) return text("bad spaceLabel", 400);
+    newSpaceLabel = parsed.label;
+  }
+  if ([besidePaneId !== "", intoSpaceId !== "", newSpaceLabel !== undefined].filter(Boolean).length > 1) {
+    return text("one place only", 400);
+  }
   const asked = askedFolder(fields.cwd, deps.home ?? homedir());
   if (asked === false) return json({ ok: false, ...apiError("launch.bad_folder") } satisfies CreateResponse, ae, 400);
   // A folder the person named must be a directory on THIS machine's disk (on a crew the member runs
@@ -9179,6 +9213,15 @@ export async function launch(
       );
     }
   }
+  // A workspace named by id must exist now; its first pane's folder stands in for a pane's own.
+  let intoSpace: { workspaceId: string; cwd: string | undefined } | undefined;
+  if (intoSpaceId !== "") {
+    const { workspaces, agents, shellPanes } = engine.current();
+    if (!workspaces.some((w) => w.workspaceId === intoSpaceId)) {
+      return json({ ok: false, ...apiError("launch.space_unknown") } satisfies CreateResponse, ae, 404);
+    }
+    intoSpace = { workspaceId: intoSpaceId, cwd: [...agents, ...shellPanes].find((p) => p.workspaceId === intoSpaceId)?.cwd };
+  }
   const row = picked.row;
   // A sign-in start names no folder of the person's and runs in Collie's own empty one, never home or a
   // neighbour's (M101). An explicit `cwd`, and a row's pinned folder, still win.
@@ -9190,7 +9233,7 @@ export async function launch(
     );
     if (!made) return json({ ok: false, ...apiError("launch.folder_missing", { folder: signInDir }) } satisfies CreateResponse, ae, 400);
   }
-  const resolvedCwd = signInDir !== undefined ? (row?.cwd ?? asked ?? signInDir) : (row?.cwd ?? asked ?? besidePane?.cwd ?? deps.sessionFolder ?? homedir());
+  const resolvedCwd = signInDir !== undefined ? (row?.cwd ?? asked ?? signInDir) : (row?.cwd ?? asked ?? besidePane?.cwd ?? intoSpace?.cwd ?? deps.sessionFolder ?? homedir());
 
   // Checked again with no await between it and `track`, so two requests with one id that both got
   // past the check above cannot both start a launch.
@@ -9203,6 +9246,8 @@ export async function launch(
     kind: picked.kind,
     cwd: resolvedCwd,
     besidePane,
+    intoSpaceId: intoSpace?.workspaceId,
+    spaceLabel: newSpaceLabel,
     requestId,
     audit,
     device,
@@ -9494,12 +9539,21 @@ export function freeSpaceName(name: string, spaces: readonly { label: string }[]
   return `${name}-${n}`;
 }
 
+/** The workspace a launch opens a TAB in: beside a pane, or one named by id. Absent: a new workspace. */
+function tabSpaceOf(job: Pick<RunLaunchJob, "besidePane" | "intoSpaceId">): string | undefined {
+  return job.besidePane?.workspaceId ?? job.intoSpaceId;
+}
+
 /** The half of a launch that touches the multiplexer, run at most once per `requestId`. */
 interface RunLaunchJob {
   row: Launcher | undefined;
   kind: PickedLaunch["kind"];
   cwd: string;
   besidePane: AgentView | undefined;
+  /** A workspace the launch opens a new tab in, named by id rather than by a pane in it. */
+  intoSpaceId?: string | undefined;
+  /** The name the person gave the NEW workspace this launch opens. */
+  spaceLabel?: string | undefined;
   requestId: string | undefined;
   audit: AuditLog;
   device: string | null;
@@ -9517,7 +9571,8 @@ interface RunLaunchJob {
 
 async function runLaunch(herdr: MuxAdapter, engine: StateEngine, job: RunLaunchJob
 ): Promise<LaunchAnswer> {
-  const { row, besidePane, cwd } = job;
+  const { row, cwd } = job;
+  const tabSpaceId = tabSpaceOf(job);
   const label = row?.label;
   // A row or an agent started in a NEW space names the space after its folder, the way Herdr names a
   // space opened by hand, and puts its own name on the tab, as the tab path already does. Named after
@@ -9526,18 +9581,21 @@ async function runLaunch(herdr: MuxAdapter, engine: StateEngine, job: RunLaunchJ
   // The name must also be free: tmux refuses a second session of the same name, so a second launch
   // from one folder would fail there, and on Herdr two equal names cannot be told apart.
   const folder = basename(cwd);
-  const folderNamed = !besidePane && row !== undefined && job.kind !== "run" && folder !== "";
+  const folderNamed = tabSpaceId === undefined && row !== undefined && job.kind !== "run" && folder !== "";
   // The receipt goes down `pending` before the create and settles after it (M100 spec 04); a create that
-  // timed out is looked up in the snapshot, never read as a failure.
-  const spaceLabel = folderNamed ? freeSpaceName(folder, engine.current().workspaces) : label;
+  // timed out is looked up in the snapshot, never read as a failure. A name the person gave wins over
+  // the folder's, and must be free for the same reason.
+  const spaceLabel = job.spaceLabel !== undefined
+    ? freeSpaceName(job.spaceLabel, engine.current().workspaces)
+    : folderNamed ? freeSpaceName(folder, engine.current().workspaces) : label;
   const made = await createRecorded({
     herdr,
     receipts: job.receipts,
     requestId: job.requestId,
-    wanted: besidePane ? { kind: "tab", spaceId: besidePane.workspaceId, cwd, label } : { kind: "space", cwd, label: spaceLabel },
+    wanted: tabSpaceId !== undefined ? { kind: "tab", spaceId: tabSpaceId, cwd, label } : { kind: "space", cwd, label: spaceLabel },
     failed: "workspace.create_failed",
     clock: job.wait,
-    call: () => (besidePane ? herdr.createTab({ spaceId: besidePane.workspaceId, label, cwd }) : herdr.createSpace({ cwd, label: spaceLabel })),
+    call: () => (tabSpaceId !== undefined ? herdr.createTab({ spaceId: tabSpaceId, label, cwd }) : herdr.createSpace({ cwd, label: spaceLabel })),
   });
   if (!made.ok) return made.answer;
   return guardPending(job.receipts, job.requestId, () => finishLaunch(herdr, engine, job, made));
@@ -9551,8 +9609,9 @@ async function finishLaunch(
   made: Extract<CreateMade, { ok: true }>,
 ): Promise<LaunchAnswer> {
   const { row, besidePane, cwd } = job;
+  const tabSpaceId = tabSpaceOf(job);
   const folder = basename(cwd);
-  const folderNamed = !besidePane && row !== undefined && job.kind !== "run" && folder !== "";
+  const folderNamed = tabSpaceId === undefined && row !== undefined && job.kind !== "run" && folder !== "";
   const label = row?.label;
   const created = made.pane;
   if (folderNamed && label !== undefined && supportsCapability(herdr.capabilities, "renameTab")) {
@@ -9613,12 +9672,13 @@ async function finishLaunch(
   // and a history line may hold a secret they typed. Pane input is never kept whole either (a reply is
   // a bounded preview, Type mode keeps no character at all), so a run records its command word and its
   // length, never the line (ADR 0095).
-  const where = besidePane ? "tab" : "workspace";
+  const where = tabSpaceId !== undefined ? "tab" : "workspace";
   let detail: AuditDetail;
   if (row === undefined) detail = { cwd, requestId: job.requestId };
   else if (job.kind === "run") detail = { program: row.label, length: [...row.command].length, cwd, requestId: job.requestId };
   else detail = { command: row.command, label: row.label, cwd, requestId: job.requestId, harness: job.kind === "harness" ? row.command : undefined, source: job.source };
   if (besidePane) detail.besidePaneId = besidePane.paneId;
+  else if (job.intoSpaceId !== undefined) detail.spaceId = job.intoSpaceId;
   job.audit.record({
     action: row === undefined ? `${where}.create` : job.kind === "run" ? `${where}.run` : `${where}.launch`,
     paneId: created.paneId,
@@ -9629,7 +9689,7 @@ async function finishLaunch(
   await settleTopology(herdr, engine);
   // The tab path's create call doesn't answer with the space's own label (mirrors createTab above):
   // the snapshot already knows it, and that lookup is cheaper than a round trip.
-  const workspaceLabel = besidePane
+  const workspaceLabel = tabSpaceId !== undefined
     ? (engine.current().workspaces.find((w) => w.workspaceId === created.spaceId)?.label ?? created.spaceLabel)
     : created.spaceLabel;
   await settleCreate(job.receipts, job.requestId, created, workspaceLabel);

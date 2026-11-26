@@ -20,6 +20,7 @@ import { branchOffOffered } from "@/lib/branch-off";
 import { setStatus } from "@/lib/status";
 import { stampTopology } from "@/lib/poll-intent";
 import { CrossfadeText } from "@/components/ui/crossfade-text";
+import { BotViewControl } from "@/components/bot-view-control";
 import { paneRowKey } from "@/lib/hosts";
 import { paneName } from "@/lib/pane-name";
 import { dropPin, pinMatcher, setPinned, usePins } from "@/lib/pins";
@@ -113,6 +114,8 @@ interface PaneActionsSheetProps {
    * a thing you set, not a thing you flick.
    */
   paneView?: PaneView;
+  /** This bot's shared server-side choice, rather than the device-wide pane default. */
+  botView?: boolean;
   /** Write the standing choice. Required alongside {@link paneView}; both or neither. */
   onPaneViewChange?: (view: PaneView) => void;
   /**
@@ -254,6 +257,7 @@ export function PaneActionsSheet({
   armCloseOnOpen = false,
   onZen,
   paneView,
+  botView = false,
   onPaneViewChange,
   paneViewNote,
   herd = NO_HERD,
@@ -534,7 +538,9 @@ export function PaneActionsSheet({
               you reach for inside one visit and before the two that take the screen over.
               Close-then-act, for the reason the find row states. The label names WHERE IT TAKES
               YOU, the way every row above it does. */}
-          {paneView !== undefined && onPaneViewChange && (
+          {paneView !== undefined && onPaneViewChange && (botView ? (
+            <BotViewControl value={paneView} onChange={onPaneViewChange} />
+          ) : (
             <ActionRow
               icon={
                 bodyRowTarget(paneView, agentViews?.showing === true) === "terminal" ? (
@@ -551,7 +557,7 @@ export function PaneActionsSheet({
                 onPaneViewChange(bodyRowTarget(paneView, agentViews?.showing === true));
               }}
             />
-          )}
+          ))}
           {/* Back to the agent view, while Chat or the terminal stands in for it. Close-then-act. */}
           {agentViews !== undefined && agentViews.on && !agentViews.showing && agentViews.label !== undefined && (
             <ActionRow

@@ -1,5 +1,6 @@
 import { UiSections } from "./ui-sections.ts";
 import { BotFeatured } from "./bot-featured.ts";
+import { BotDisplays } from "./bot-display.ts";
 import { existsSync, readFileSync, readlinkSync, statSync } from "node:fs";
 import { mkdir, readFile as readFileAsync, realpath as realpathAsync, stat as statAsync, statfs as statfsAsync, writeFile } from "node:fs/promises";
 import { cpus, freemem, homedir, hostname, loadavg, totalmem } from "node:os";
@@ -1992,6 +1993,7 @@ const askReminders = new AskRemindBook();
 const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
 const uiSections = new UiSections(cfg.stateDir, !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase()));
 const botFeatured = new BotFeatured(cfg.stateDir, uiSections.sso);
+const botDisplays = new BotDisplays(cfg.stateDir, uiSections.sso);
 const botAutoName = new BotAutoName(cfg.stateDir);
 
 const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
@@ -2065,8 +2067,9 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
     try {
       const panes = [...snapshot.agents, ...snapshot.shellPanes];
       botFeatured.reconcile(name, isPrimary, panes, pane => !!(pane.terminalId && botTrash.lookup(name, pane.terminalId)));
+      botDisplays.reconcile(name, isPrimary, panes, pane => !!(pane.terminalId && botTrash.lookup(name, pane.terminalId)));
     } catch {
-      console.warn("[bot-featured] Could not prune the saved featured chat");
+      console.warn("[bot-preferences] Could not prune the saved chat preferences");
     }
   });
   // A bot created without a name carries a random placeholder until its agent titles the work.
@@ -4542,6 +4545,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
     }, activity),
   uiSections,
   botFeatured,
+  botDisplays,
   walkyInstance: (session, paneId) => walkyInstances.tokenOf(session, paneId),
   // The pane read's `linked` (M99 spec 15): the session half of the send pick, one function.
   paneLinked: paneIsLinked,

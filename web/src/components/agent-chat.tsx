@@ -1,4 +1,6 @@
 import { BotMirrorPending } from "./bot-mirror-pending";
+import { useBotDisplays } from "@/lib/bot-display";
+import { resolvePaneView } from "@/lib/bot-display-wire";
 import { BotChatBar } from "./bot-chat-bar";
 import { botTime, identityOf } from "./bot-identity";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -984,6 +986,7 @@ export function AgentChat({
   // Fold state for the "Switch pane" sheet's two long tails, shared with the dashboard so one
   // "hide the long tail" preference means the same thing in both places.
   const dash = useDashPrefs();
+  const botDisplays = useBotDisplays();
   // The theme on screen: its `zoom` word is the fallback for the Zoom pill (lib/zoom-pill.ts).
   const activeTheme = useActiveTheme();
   // Where the belt's Files button goes. The root of Files is the workspace's folder (ADR 0083), and a
@@ -1355,10 +1358,16 @@ export function AgentChat({
   // closed", the controls locked, and a step back to the list once connected). No ghost row, no
   // history kept on the phone, no recovery verb. A dropped conversation that comes back in a later
   // snapshot is simply a pane again.
-  const chatChosen = gridless || ((agentView.aside ?? dash.prefs.paneView) === "chat" && !screenForced);
-  // Where a pick of Terminal or Chat goes: the device's standing choice, or, with a view on, a look for
-  // this session that leaves the view on (hooks/use-agent-view-pane.ts).
-  const paneViewChange = agentView.on ? agentView.setAside : dash.setPaneView;
+  const botDisplayEnabled = mobileShell && !inStrip && !gridless && agent !== undefined;
+  const botView = botDisplayEnabled && agent ? botDisplays.viewFor(agent) : undefined;
+  const standingPaneView = resolvePaneView(agentView.aside, botView, dash.prefs.paneView);
+  const chatChosen = gridless || (standingPaneView === "chat" && !screenForced);
+  // Agent views keep their own aside. A bot writes its shared choice; every other pane writes this device.
+  const paneViewChange = agentView.on
+    ? agentView.setAside
+    : botDisplayEnabled && agent
+      ? (view: "chat" | "terminal") => botDisplays.setView(agent, view)
+      : dash.setPaneView;
   // The chat route is asked only where a session exists to read: a pane with none has nothing for
   // it to answer. The poll that already exists moves it (ADR 0073); disabled is free.
   const chatFetch = chatChosen && historyAvailable;
@@ -1402,9 +1411,11 @@ export function AgentChat({
   // folds the adapter in), so an older phone that does not know a newer harness still draws it.
   const chatHarness =
     !isShell && sessionLog.capable && (Boolean(agent?.hasSession) || hasJournalAdapter(agent?.agent));
+  const chatUnavailable = botDisplayEnabled && chatChosen && (!chatHarness || journal === "off");
   const body = paneBody({
     grid: !gridless,
     chat: chatChosen && chatHarness,
+    chatUnavailable,
     session: Boolean(agent?.hasSession),
     journal,
     history: paneStart.history,
@@ -2645,6 +2656,7 @@ export function AgentChat({
             80-column mirror, so the pane pair get their own claim. */}
         {mobileShell && bot && agent ? <BotChatBar bot={bot} pane={agent} unread={herd.filter(isUnseen).length}
           pinned={!!botPin && botFeaturedMatches(botPin, agent)} pin={() => setBotPin(agent, !botPin || !botFeaturedMatches(botPin, agent))} back={onBackArrow ?? onBack}
+          view={botDisplayEnabled ? standingPaneView : undefined} onViewChange={botDisplayEnabled ? paneViewChange : undefined}
           terminal={!chatShown} toggleView={transcriptReadable && !gridless ? () => paneViewChange(chatShown ? "terminal" : "chat") : undefined} /> : <RouteHeader
           onHome={onBackArrow ?? onBack}
           width="wide"
@@ -3425,6 +3437,8 @@ export function AgentChat({
                   // A new pane with nothing to read yet: one line that says how to begin, never the
                   // "no transcript file" reading, which is only true of a pane that should have one.
                   starting={body === "start"}
+                  unavailable={chatUnavailable}
+                  onShowTerminal={() => paneViewChange("terminal")}
                   agent={agent?.agent}
                   // The pinned messages (M90): the mark on a pinned block always, the way in to Pin only where a
                   // write is allowed (`pinsWritable`).
@@ -4234,8 +4248,9 @@ export function AgentChat({
             // and `showing` are both passed because they differ on a pane with no journal, and the
             // sheet draws rows for what is on screen, not for what was picked.
             paneView={{
-              chosen: agentView.aside ?? dash.prefs.paneView,
+              chosen: standingPaneView,
               showing: chatShown ? "chat" : "terminal",
+              bot: botDisplayEnabled,
               // With a view on, Terminal and Chat are a look for this session, never a device preference.
               onChange: paneViewChange,
               agentView: agentView.on && agentView.label !== undefined ? { label: agentView.label, selected: agentView.showing, onPick: () => agentView.setAside(null) } : undefined,
@@ -4335,7 +4350,8 @@ export function AgentChat({
           // THE BODY SWITCH. `chatNote` is why this pane keeps the terminal when it does. One
           // standing per-device value, written here and nowhere else.
           // No Terminal row on a pane with no screen: Chat is its only view.
-          paneView={gridless ? undefined : (agentView.aside ?? dash.prefs.paneView)}
+          paneView={gridless ? undefined : standingPaneView}
+          botView={botDisplayEnabled}
           onPaneViewChange={gridless ? undefined : paneViewChange}
           paneViewNote={chatNote}
           // Agent views: the way back to the one on, and a switch per trick, a write behind the gates the

@@ -16,6 +16,7 @@ import { activityStatusOf } from "@/lib/activity-status";
 import { BotActivityPill } from "./bot-activity-avatar";
 import { identityOf } from "./bot-identity";
 import { Composer } from "./composer";
+import { useDeskControls } from "./bot-desk-controls";
 import { SessionStream } from "./session-stream";
 import type { ChatMessageListHandle } from "./ui/chat/chat-message-list";
 
@@ -44,6 +45,7 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
   const [error, setError] = useState(false);
   const { prefs } = useDisplayPrefs();
   const bot = identityOf(agent, scope);
+  const desk = useDeskControls();
   // The journal belongs to the detached run; a reply belongs to its real pane. A virtual run has no
   // send target, and a finished run has no resume route: neither may fall through to a blind shell write.
   const physical = !agent.paneId.startsWith("agent-run:");
@@ -65,7 +67,7 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
   }
   return <div ref={root} className="bot-conversation bot-agent-run">
     <header className="bot-bar bot-chat-bar agent-run-bar">
-      <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>
+      {desk ?? <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>}
       <BotActivityPill bot={bot} status={activityStatusOf(agent)} />
     </header>
     <SessionStream bot={bot} feed={feed} working={run.status === "running"} agent={agent.agent}
