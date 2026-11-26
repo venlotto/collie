@@ -1,3 +1,4 @@
+import { createKopercaSso } from "./koperca-sso.ts";
 import { existsSync, readFileSync, readlinkSync, statSync } from "node:fs";
 import { mkdir, readFile as readFileAsync, realpath as realpathAsync, stat as statAsync, statfs as statfsAsync, writeFile } from "node:fs/promises";
 import { cpus, freemem, homedir, hostname, loadavg, totalmem } from "node:os";
@@ -750,6 +751,10 @@ for (const word of reservedMembers(trustStore.current())) {
   console.warn(`[crew] warn: the member "${word}" has a name Collie's addresses keep for themselves, so this collie refuses it. Remove it with \`collie crew remove ${word}\`, then join that machine again with --label <another name>.`);
 }
 const crew = resolveCrewRuntime(enrollment);
+const sso = createKopercaSso();
+if (sso && (crew.mode !== "solo" || cfg.basePath !== "/" || !process.env.COLLIE_LEGACY_OWNER_SUB?.trim())) {
+  throw new Error("Koperca SSO requires a solo bridge at / and a confirmed COLLIE_LEGACY_OWNER_SUB");
+}
 if (crew.conflict) console.warn(`[crew] ${crew.conflict}`);
 if (crew.mode !== "solo") console.log(`[crew] mode: ${crew.mode}`);
 
@@ -866,7 +871,7 @@ function crewStoreChanged(): void {
 // Clears wait CLEAR_BURST_MS for company, so one retract across many agents is one push per device
 // (bridge/push.ts § the three rules). The CLI's own Push sends at once.
 const push = new Push(cfg, undefined, { clearBurstMs: CLEAR_BURST_MS });
-await push.init();
+if (!sso) await push.init();
 
 const snooze = new Snooze(cfg);
 await snooze.load();
@@ -4463,6 +4468,7 @@ trashTimer.unref();
 
 const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer({
   cfg,
+  sso,
   registry,
   push,
   snooze,

@@ -42,6 +42,7 @@
 // it posts on the `collie-wipe` BroadcastChannel, so another open tab closes its store connection
 // and the database delete is not blocked by it (lib/store.ts listens).
 
+import { accountFetch } from "./koperca-account";
 import { showBadge } from "@/lib/app-badge";
 import { mounted } from "@/lib/base-path";
 import { forgetAllDiffComments } from "@/lib/diff-comment-store";
@@ -450,7 +451,7 @@ async function confirmRefusal(token: string): Promise<"not-paired" | "expired" |
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CONFIRM_TIMEOUT_MS);
   try {
-    const res = await fetch(mounted("/api/devices"), {
+    const res = await accountFetch(mounted("/api/devices"), {
       // The same two headers lib/api.ts sends on every read: the same-origin marker and the token.
       headers: { "x-requested-with": "XMLHttpRequest", authorization: `Bearer ${token}` },
       redirect: "manual",

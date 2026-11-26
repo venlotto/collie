@@ -5,6 +5,7 @@ import { MobileAgentHub } from "@/components/mobile-agent-hub";
 import { mounted } from "@/lib/base-path";
 import { PROXY_AUTH_PATH } from "@/lib/sw-routes";
 import { t } from "@/lib/i18n";
+import { currentAccount } from "@/lib/koperca-account";
 import { stampTopology } from "@/lib/poll-intent";
 import { useNav } from "@/hooks/use-nav";
 import { findPane, paneScope } from "@/lib/hosts";
@@ -29,18 +30,20 @@ export function HomeRoute() {
   const active = paneId ? findPane(panes, paneId, data.scope, data.servers, data.sessions) : undefined;
   const visible = panes.filter(p => !p.trash);
   const featured = visible.find(pinMatcher(pins)) ?? visible.find(p => p.focused) ?? visible[0];
-  const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
-  const accessNotice = refused ? (
+  const account = currentAccount();
+  const viewer = account?.role === "viewer";
+  const writable = !viewer && !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
+  const accessNotice = viewer ? <p className="bot-access" role="status">Acceso de solo lectura</p> : refused ? (
     <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>
   ) : data.authError ? (
     <p className="bot-access" role="status">Acceso restringido <a href={mounted(PROXY_AUTH_PATH)}>{t("connection.auth.signIn")}</a></p>
   ) : isReadOnly(data.device) ? <p className="bot-access" role="status">{t("space.readOnly.deviceUnauthorised")}</p> : null;
   return <>
     <MobileAgentHub onChanged={() => { stampTopology(); void revalidator.revalidate(); }} writable={writable} listScope={data.scope} panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured}
-      deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
+      deviceName={account?.username ?? data.device?.device?.trim()} accessNotice={accessNotice}
       onPress={p => { void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}
-      onNew={writable || accessNotice ? () => setCreate({ beside: featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
+      onNew={!viewer && (writable || accessNotice) ? () => setCreate({ beside: featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
     {create && <CreateBot {...create} writable={writable} close={() => setCreate(null)} />}
   </>;
 }

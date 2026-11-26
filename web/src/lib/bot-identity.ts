@@ -22,8 +22,9 @@ export function forgetBot(scope: Scope, id: string) {
 export function forgetBots() {
   memory.clear();
   try {
-    for (const key of Object.keys(localStorage)) {
-      if (key.startsWith(prefix)) localStorage.removeItem(key);
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(prefix)) localStorage.removeItem(key);
     }
   } catch { /* Nothing persisted in a storage-restricted tab. */ }
 }

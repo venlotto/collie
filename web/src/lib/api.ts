@@ -1,4 +1,5 @@
 import type { AgentView } from "@/lib/types";
+import { accountFetch } from "./koperca-account";
 import type { ChatOrder } from "./chat-order";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
@@ -441,7 +442,7 @@ async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   // Every caller spells a root-absolute `/api/…`; the mount is applied here, once (ADR 0052).
   try {
     const sentAt = Date.now();
-    const res = await fetch(mounted(path), { ...init, redirect: "manual" });
+    const res = await accountFetch(mounted(path), { ...init, redirect: "manual" });
     // The bridge's clock, off the `Date` header every response carries (lib/server-clock.ts).
     noteServerDate(res.headers.get("date"), sentAt, Date.now());
     return normaliseProxyRedirect(res);

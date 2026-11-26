@@ -160,6 +160,26 @@ export type ConfigSetting =
 export const CONFIG_SETTINGS: readonly ConfigSetting[] = [
   // ── bridge ─────────────────────────────────────────────────────────────────
   {
+    key: "koperca_bot_profiles",
+    env: "COLLIE_KOPERCA_BOT_PROFILES",
+    section: "bridge",
+    kind: "bool",
+    default: false,
+    doc: "Offer the installed Koperca agent wrappers and remember the last agent and reasoning effort used to create a bot.",
+  },
+  {
+    key: "sso_enabled", env: "COLLIE_SSO_ENABLED", section: "bridge", kind: "bool", default: false, words: true,
+    doc: "Require the Koperca internal SSO and enforce account ownership on the hosted solo bridge.",
+  },
+  {
+    key: "sso_origin", env: "COLLIE_SSO_ORIGIN", section: "bridge", kind: "string", default: "https://collie.dev1.koperca.com",
+    doc: "The dedicated HTTPS origin for the internal SSO callback and Collie browser requests.",
+  },
+  {
+    key: "legacy_owner_sub", env: "COLLIE_LEGACY_OWNER_SUB", section: "bridge", kind: "string", default: "",
+    doc: "The confirmed internal SSO subject that owns pre-existing workspaces when SSO is first enabled.",
+  },
+  {
     key: "poll_ms",
     env: "COLLIE_POLL_MS",
     section: "bridge",

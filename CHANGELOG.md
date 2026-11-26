@@ -31,6 +31,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The hosted chat list remembers conversation order across devices.** Herdr also accepts workspace renames and position changes from the list.
 
 - **Drag a chat to arrange it within its workspace.** Drop it on another workspace or the trash. Hold a workspace heading to rename, move or trash the group. Restore the group from Trash within seven days.
+- **Internal SSO gives each operator a private workspace list.** Hosted installations can enable Koperca sign-in, with separate settings, read-only access and an administrator who can manage every workspace.
 
 ### Changed
 
