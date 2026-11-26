@@ -1,3 +1,4 @@
+import { BotActivity, botRowKind, groupBotTurns } from "./bot-activity";
 import { BlobAvatar, type BotIdentity, botTime } from "./bot-identity";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type RefObject } from "react";
 import { Icon } from "@/components/icons/icon";
@@ -724,7 +725,7 @@ export function SessionStream({
   const [asksOpen, setAsksOpen] = useState(false);
   const askList = asks === undefined ? undefined : shownAsks(asks.list, asksOpen);
 
-  const blocks = useMemo(() => {
+  const { blocks, latestActivity } = useMemo(() => {
     // READ, not merely listed as a dependency, which is what makes it an honest one: `itemsOf`
     // resolves one sentence through `t()` (a journal picture becomes a notice naming it), so these
     // blocks are in whatever language the dictionary held when this ran. `locale` alone would be
@@ -740,11 +741,13 @@ export function SessionStream({
     //
     // A text the program was still writing (`partial`) keeps its cursor only while the pane works: one that stopped
     // will not grow, and a cursor left blinking on it would be a lie (WIRE.md 7.15).
-    return groupRuns(
-      entries.flatMap((e) => itemsOf(e, showCompactions).map((item) => (working ? item : finished(item)))),
-      showToolCalls ? 3 : 1,
-    );
-  }, [window.entries, showToolCalls, showCompactions, revision, working]);
+    const turns = entries.map(entry => ({
+      user: entry.role === "user",
+      items: itemsOf(entry, showCompactions).map(item => working ? item : finished(item)),
+    }));
+    if (botStyle) return groupBotTurns(turns);
+    return { blocks: groupRuns(turns.flatMap(turn => turn.items), showToolCalls ? 3 : 1), latestActivity: undefined };
+  }, [window.entries, botStyle, showToolCalls, showCompactions, revision, working]);
 
   // THE PERSON'S OWN LINES THE PROGRAM HAS NOT WRITTEN BACK YET (lib/durable-pending.ts). Only a durable pane's composer
   // puts any, so every other pane has none and draws nothing here. A line goes when an item of the program's matches it.
@@ -789,8 +792,9 @@ export function SessionStream({
   const personsNewest = lines.some((line) => line.state !== "notSent") || newest?.kind === "user";
   const growing = newest !== undefined && "partial" in newest && newest.partial === true;
   const accepted = lines.some((line) => line.state === "sent");
-  const dotsRow = durable && ((working && personsNewest) || accepted);
-  const staticRow = working && !(durable && (personsNewest || growing)) && !questionPending;
+  const activeSteps = working && !questionPending && !personsNewest ? latestActivity : undefined;
+  const dotsRow = !activeSteps && durable && ((working && personsNewest) || accepted);
+  const staticRow = !activeSteps && working && !(durable && (personsNewest || growing)) && !questionPending;
 
   // A PANE KEEPS ITS PLACE (ADR 0063). Switching modes unmounts this body and switching panes
   // remounts it, so neither the DOM nor the scroller remembers where the reader was — the same gap
@@ -828,12 +832,14 @@ export function SessionStream({
   // next time this pane opens, so its loading view can draw the same silhouette. Never a word of the thread. Only a live
   // window with rows in it: a saved copy is old and an empty one has no silhouette. A short wait after the last change keeps a
   // streaming reply from measuring at every tick; the unmount writes the last one at once.
+  const drawnSingle = useCallback((group: ChatItem[]) => {
+    const first = group[0]!;
+    if (botStyle) return botRowKind(first) !== "activity";
+    return group.length === 1 && (showToolCalls || first.kind !== "tool" || standsAlone(first));
+  }, [botStyle, showToolCalls]);
   const rowKinds = useMemo(
-    () =>
-      blocks.map((group) =>
-        kindOfBlock(group, group.length === 1 && (showToolCalls || group[0]!.kind !== "tool" || standsAlone(group[0]!))),
-      ),
-    [blocks, showToolCalls],
+    () => blocks.map(group => kindOfBlock(group, drawnSingle(group))),
+    [blocks, drawnSingle],
   );
   const silhouetteReady = window.status.kind === "live" && window.savedAt === null && blocks.length > 0;
   const hasOlder = window.hasOlder;
@@ -1190,13 +1196,17 @@ export function SessionStream({
         // A group of one is an ordinary block, EXCEPT a lone tool call while tool calls are off:
         // that one folds too, or "off" would leave every single-step turn drawn in full. An agent
         // call and a question never fold (`standsAlone`), so they are drawn either way.
-        const drawn = group.length === 1 && (showToolCalls || group[0]!.kind !== "tool" || standsAlone(group[0]!));
+        const botKind = botStyle ? botRowKind(group[0]!) : undefined;
+        const drawn = drawnSingle(group);
         // The block a pin can hang on is a single drawn item; a folded run is several, and has no one text to keep.
         const item = drawn ? group[0]! : null;
         const pinnable = item !== null && isPinnable(item) && item.id !== writing;
         const rhythm = rhythmClass(look.rhythm, blocks, index);
         const first = group[0]!;
         const caption = thread?.captions.get(first.id);
+        const box = botKind
+          ? (botKind === "activity" ? "bot-activity" : `bot-turn bot-turn-${botKind}`)
+          : `${blockBox(index, blocks.length)} ${rhythm}`.trimEnd();
         const opensRun =
           look.agentHead === "icon-time" &&
           (first.kind === "reply" || first.kind === "thinking" || first.kind === "tool") &&
@@ -1213,10 +1223,16 @@ export function SessionStream({
             item={pinnable ? item : null}
             pinned={item !== null && pins?.pinned.has(item.id) === true}
             onActions={pinnable ? pins?.onActions : undefined}
-            className={botStyle ? `bot-turn bot-turn-${first.kind}` : rhythm === "" ? blockBox(index, blocks.length) : `${blockBox(index, blocks.length)} ${rhythm}`}
+            className={box}
           >
             {!botStyle && opensRun && <AgentHead agent={agent} ts={first.ts} />}
-            {drawn ? <ItemView item={group[0]!} simpleUser={botStyle} /> : <ToolGroup items={group} liveOpens={showToolCalls} />}
+            {botKind === "activity" ? (
+              <BotActivity items={group} working={group === activeSteps} />
+            ) : drawn ? (
+              <ItemView item={first} simpleUser={botStyle} />
+            ) : (
+              <ToolGroup items={group} liveOpens={showToolCalls} />
+            )}
             {asks === undefined || askList === undefined ? null : asksAt(blocks, askList.shown, index).map((ask) => <AskCard key={ask.id} ask={ask} {...asks.card} />)}
           </StreamBlock></Fragment>
         );

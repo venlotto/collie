@@ -879,6 +879,7 @@ export const ja: Dictionary = {
   "chat.stream.empty": "メッセージを送信して始めましょう。",
   "chat.empty.sharedFolder":
     "このフォルダーでは {harness} のセッションが 2 つ動いているため、Collie はどちらがこのペインのものか判断できません。再開コマンドとセッション ID を付けてエージェントを起動すると、Collie は正しいセッションを読み込みます。",
+  "chat.stream.stoppedOnError": "エラーによりエージェントが停止しました。",
   "chat.stream.working": "処理中…",
   "chat.stream.questionPending": "ターミナルで質問への回答を待機しています。次のメッセージが回答になります。",
   "chat.stream.queued": "送信待ち",
@@ -948,6 +949,8 @@ export const ja: Dictionary = {
   "chat.run.searches.other": "検索 {count} 件",
   "chat.run.agents.one": "エージェント {count} 件",
   "chat.run.agents.other": "エージェント {count} 件",
+  "chat.run.steps.one": "{count} ステップ",
+  "chat.run.steps.other": "{count} ステップ",
   "chat.run.others.one": "その他の操作 {count} 件",
   "chat.run.others.other": "その他の操作 {count} 件",
   "chat.run.earlier.one": "以前の操作 {count} 件 · {summary}",

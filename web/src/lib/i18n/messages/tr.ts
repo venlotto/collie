@@ -824,6 +824,7 @@ export const tr: Dictionary = {
   "chat.stream.empty": "Başlamak için bir mesaj gönderin.",
   "chat.empty.sharedFolder":
     "Bu klasörü iki {harness} oturumu paylaşıyor, bu yüzden Collie hangisinin bu bölmeye ait olduğunu anlayamıyor. Aracıyı devam komutu ve oturum kimliğiyle başlatın, Collie doğru olanı okusun.",
+  "chat.stream.stoppedOnError": "Ajan bir hata nedeniyle durdu.",
   "chat.stream.working": "Hâlâ çalışıyor…",
   "chat.stream.questionPending": "Uçbirimde bir soru bekliyor. Bir sonraki iletiniz bu soruyu yanıtlar.",
   "chat.stream.queued": "Göndermek için bekleniyor",
@@ -893,6 +894,8 @@ export const tr: Dictionary = {
   "chat.run.searches.other": "{count} arama",
   "chat.run.agents.one": "{count} ajan",
   "chat.run.agents.other": "{count} ajan",
+  "chat.run.steps.one": "{count} adım",
+  "chat.run.steps.other": "{count} adım",
   "chat.run.others.one": "{count} diğer adım",
   "chat.run.others.other": "{count} diğer adım",
   "chat.run.earlier.one": "{count} önceki adım · {summary}",
