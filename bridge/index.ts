@@ -1,4 +1,5 @@
 import { UiSections } from "./ui-sections.ts";
+import { BotFeatured } from "./bot-featured.ts";
 import { existsSync, readFileSync, readlinkSync, statSync } from "node:fs";
 import { mkdir, readFile as readFileAsync, realpath as realpathAsync, stat as statAsync, statfs as statfsAsync, writeFile } from "node:fs/promises";
 import { cpus, freemem, homedir, hostname, loadavg, totalmem } from "node:os";
@@ -1988,7 +1989,9 @@ const eventBus = new EventBus({ machine: () => bridgeId.id });
 const askReminders = new AskRemindBook();
 
 const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
-const uiSections = new UiSections(cfg.stateDir, !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase()));
+const ssoEnabled = !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase());
+const uiSections = new UiSections(cfg.stateDir, ssoEnabled);
+const botFeatured = new BotFeatured(cfg.stateDir, ssoEnabled);
 
 const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   const built = endpoint.kind === "program" ? programAdapter(endpoint.source) : terminalAdapter(endpoint.socketPath);
@@ -2055,6 +2058,14 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
     } catch {
       // A failed preference write is retried on the next census. It must not disconnect the mux.
       console.warn("[ui-sections] Could not prune saved workspace preferences");
+    }
+  });
+  engine.onUpdate(snapshot => {
+    try {
+      const panes = [...snapshot.agents, ...snapshot.shellPanes];
+      botFeatured.reconcile(name, isPrimary, panes, pane => !!(pane.terminalId && botTrash.lookup(name, pane.terminalId)));
+    } catch {
+      console.warn("[bot-featured] Could not prune the saved featured chat");
     }
   });
 
@@ -4518,6 +4529,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
       return await child.exited === 0;
     }, activity),
   uiSections,
+  botFeatured,
   walkyInstance: (session, paneId) => walkyInstances.tokenOf(session, paneId),
   // The pane read's `linked` (M99 spec 15): the session half of the send pick, one function.
   paneLinked: paneIsLinked,

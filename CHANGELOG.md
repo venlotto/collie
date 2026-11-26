@@ -59,6 +59,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Wide windows show the chat list beside the conversation.** The terminal fills the conversation panel, and resizing keeps the current chat and draft in place.
 
 - **Creating a bot fills the phone and always shows agent choices.** The sheet rises from the bottom edge and keeps the last agent and reasoning visible while the catalog loads. A host without profile support explains why the choices are unavailable and still uses its existing launch.
+- **The featured chat choice is ready on every device.** The space above the chat list holds one pinned bot; its choice is saved for each person and restored after a restart.
 
 ### Fixed
 

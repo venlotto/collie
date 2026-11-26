@@ -1,4 +1,5 @@
 import type { AgentRuns } from "./agent-runs.ts";
+import { botFeaturedChange, type BotFeatured } from "./bot-featured.ts";
 import { sectionChanges, type UiSections } from "./ui-sections.ts";
 import type { BotTrash } from "./bot-trash.ts";
 import { chatOrderId } from "../web/src/lib/chat-order.ts";
@@ -1311,6 +1312,7 @@ export function startServer(opts: {
   botTrash?: BotTrash;
   agentRuns?: AgentRuns;
   uiSections?: UiSections;
+  botFeatured?: BotFeatured;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -3440,6 +3442,25 @@ export function startServer(opts: {
         const result = await opts.agentRuns.chat(id, cfg.transcript ? journals : null, live, chatParams(url), marksPaneSeen(req, "chat"));
         if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
         return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
+      }
+
+      if (pathname === "/api/bot-featured") {
+        if (req.method !== "GET" && req.method !== "PUT") return text("method not allowed", 405);
+        const denied = guard(req, cfg, req.method === "PUT" ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        const store = opts.botFeatured;
+        // SSO accounts use their subject-scoped /api/user-settings route instead of this private ledger.
+        if (!store || store.sso) return text("unavailable", 404);
+        if (req.method === "GET") return json(store.read("local"), null);
+        const bytes = await readCappedBody(new Response(req.body), 1024 * 1024);
+        if (!bytes) return text("body too large", 413);
+        const change = botFeaturedChange(new TextDecoder().decode(bytes));
+        if (!change) return text("invalid featured chat", 400);
+        try {
+          return json(store.update("local", change.featured), null);
+        } catch {
+          return text("could not save featured chat", 503);
+        }
       }
 
       if (pathname === "/api/ui-sections") {
