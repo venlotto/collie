@@ -12,8 +12,8 @@ The first time a key that only a hardware keyboard makes reaches the page, a sma
 right, under the header, says "You have a keyboard". It says that Collie takes Herdr's keys, and it
 names the key for the shortcut list, the prefix and then `?`. Such a key is a letter, `Ctrl`, `Alt`,
 `Cmd`, `Esc` or an F key, pressed while the on-screen keyboard is down. A phone's on-screen keyboard
-never counts. The card has a **Show shortcuts** button and a close button. It waits while a sheet,
-the idle lock or the shortcut bar is up, and it is gone for good once you close it, open the
+never counts. The card has a **Show shortcuts** button and a close button. It waits while a sheet
+or the shortcut bar is up, and it is gone for good once you close it, open the
 [shortcut list](terminology.md#shortcut-list) from it, or press the prefix. If you unbind `help`,
 the card leaves out the sentence about the key for the list.
 

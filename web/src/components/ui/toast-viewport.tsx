@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
  * taps over content it is only visiting is worse than the layout shift it replaced.
  *
  * `z-40` is the unclaimed rung of the ladder — above the `z-20` sticky header and everything else
- * in the app's chrome, below the `z-50` sheets and the idle lock. That places a toast where it
+ * in the app's chrome, below the `z-50` sheets. That places a toast where it
  * should be: visible over any chrome, occluded by a modal. A sheet is a focused task; a transient
  * toast may be missed during one, and an error that actually persists is still in the channel and
  * still showing when the sheet closes.

@@ -492,7 +492,6 @@ export const zh: Dictionary = {
   "composer.tap.sending": "这部手机上的另一次发送仍在进行。请等它结束。",
   "composer.tap.noCard": "该问题的卡片不在屏幕上。请打开“屏幕”，在终端中回答。",
   "composer.tap.typeBusy": "发送或上传结束后，“输入”才会开启。",
-  "composer.tap.typeWait": "Collie 正在跟上窗格的状态。请稍后再点按“输入”。",
   "composer.tap.beltOff": "此按钮现在对该窗格没有作用。",
   "composer.tap.fileType": "Collie 无法附加这种文件。",
   "composer.tap.clearBusy": "发送结束后，你才能清除草稿。",
@@ -1790,14 +1789,6 @@ export const zh: Dictionary = {
   "error.root.title": "发生错误",
   "error.root.unknown": "未知错误",
   "error.root.reload": "重新加载",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie 连接已挂起",
-  "idle.catchingUp.title": "同步中",
-  "idle.catchingUp.body": "正在拉取当前集群状态。",
-  "idle.paused.title": "已暂停",
-  "idle.paused.body": "页面闲置已停止实时同步，后台数据暂时冻结。恢复后将自动拉取最新状态。",
-  "idle.resume": "点击恢复连接",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "发现新版本，点击以应用更新",

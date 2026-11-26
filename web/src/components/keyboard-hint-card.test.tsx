@@ -140,13 +140,15 @@ describe("KeyboardHintCard", () => {
     expect(card()).not.toBeNull();
   });
 
-  it("waits under the idle lock", () => {
+  it("keeps the existing hint in place through an idle pause", () => {
     mount();
     seeKeyboard();
+    const hint = card();
+    expect(hint).not.toBeNull();
     act(() => setLocked(true));
-    expect(card()).toBeNull();
+    expect(card()).toBe(hint);
     act(() => setLocked(false));
-    expect(card()).not.toBeNull();
+    expect(card()).toBe(hint);
   });
 
   it("waits while a sheet is open", () => {

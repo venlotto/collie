@@ -12,7 +12,7 @@ import {
   type PollIntent,
   usePolling,
 } from "./use-polling";
-import { isCatchingUp, resetIdleLock, setLocked } from "@/lib/idle";
+import { resetIdleLock, setLocked } from "@/lib/idle";
 import {
   BURST_MIN_POLLS,
   markPollResult,
@@ -327,58 +327,20 @@ describe("usePolling — superseding a wedged revalidation", () => {
     expect(rr.revalidate).toHaveBeenCalled();
   });
 
-  // The idle lock pauses polling rather than unmounting the route tree, so the tick is the only thing
-  // holding the socket off while the cover is up — and releasing it must refetch AT ONCE, since no
-  // loader re-runs on its own with the tree still mounted.
-  it("does not tick while idle-locked", () => {
-    rr.state = "idle";
-    setLocked(true);
-    try {
+  it.each(["pointerdown", "touchstart", "keydown", "focus", "pageshow", "visibilitychange"])(
+    "pauses the interval, reads immediately on %s, and continues polling",
+    (type) => {
       renderHook(() => usePolling(hotData(), HOT_PANE));
-      vi.advanceTimersByTime(HOT_MS * 5); // several HOT intervals behind the cover
+      act(() => setLocked(true));
+      vi.advanceTimersByTime(HOT_MS * 5);
       expect(rr.revalidate).not.toHaveBeenCalled();
-    } finally {
-      resetIdleLock();
-    }
-  });
-
-  it("revalidates immediately when the lock is released", () => {
-    rr.state = "idle";
-    setLocked(true);
-    try {
-      const { rerender } = renderHook(() => usePolling(hotData(), HOT_PANE));
-      expect(rr.revalidate).not.toHaveBeenCalled();
-      act(() => setLocked(false));
-      rerender();
-      expect(rr.revalidate).toHaveBeenCalled(); // no waiting out an interval
-    } finally {
-      resetIdleLock();
-    }
-  });
-
-  // The cover outlives the lock by exactly one refetch: releasing enters the catch-up beat, and only
-  // the revalidator coming to rest ends it. Without this the cover would drop straight back onto the
-  // frozen screen it just warned about.
-  it("holds the catch-up beat from release until the revalidation settles", () => {
-    rr.state = "idle";
-    setLocked(true);
-    try {
-      const { rerender } = renderHook(() => usePolling(hotData(), HOT_PANE));
-      act(() => setLocked(false));
-      rerender();
-      expect(isCatchingUp()).toBe(true);
-
-      rr.state = "loading"; // the refetch is in flight — still covered
-      rerender();
-      expect(isCatchingUp()).toBe(true);
-
-      rr.state = "idle"; // settled — the cover can go
-      rerender();
-      expect(isCatchingUp()).toBe(false);
-    } finally {
-      resetIdleLock();
-    }
-  });
+      const target = type === "visibilitychange" ? document : window;
+      act(() => target.dispatchEvent(new Event(type)));
+      expect(rr.revalidate).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(HOT_MS);
+      expect(rr.revalidate).toHaveBeenCalledTimes(2);
+    },
+  );
 
   // Regression: some phones report navigator.onLine === false even when the network is fine (it stuck
   // false after an airplane-mode toggle). The tick must NOT gate on it — otherwise polling wedges
@@ -663,7 +625,7 @@ describe("startup watch uses the existing bounded poller", () => {
     expect(result.current).toBe(HOT_MS);
   });
 
-  it("startup polling still pauses behind the idle cover", () => {
+  it("startup polling still pauses on an unattended screen", () => {
     renderHook(() => usePolling(makeData([]), "new:p1", undefined, true, "launch"));
     act(() => setLocked(true));
     act(() => vi.advanceTimersByTime(HOT_MS * 3));

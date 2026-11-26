@@ -31,7 +31,7 @@ import type { Surface } from "@/lib/surface/surface";
 import { asJsonObject, asJsonString, parseJsonObject, type JsonObject } from "@/lib/json";
 import { markLive } from "@/lib/liveness";
 import { __forgetSendAgainMemory } from "@/lib/send-again";
-import { beginCatchUp, endCatchUp, setLocked } from "@/lib/idle";
+import { setLocked } from "@/lib/idle";
 import { offersFor, SEND_REASONS, type SendReason } from "@/lib/surface/send";
 import { WAY_OUT_STATES, type WayOutState } from "@/lib/way-out";
 import { wayOutCase } from "@/test/way-out-states";
@@ -1062,7 +1062,7 @@ describe("Composer: password prompt", () => {
 describe("Composer — typing into the terminal", () => {
   /** The entry point: the named "Type" toggle in the Controls row, beside Keys. */
   function startDirectTyping() {
-    fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
+    fireEvent.click(screen.getByLabelText("Type into terminal", { selector: "button" }));
     return screen.getByPlaceholderText(/type into the terminal/i);
   }
 
@@ -1145,29 +1145,17 @@ describe("Composer — typing into the terminal", () => {
     );
   });
 
-  it.each(["idle lock", "catch-up"])("disarms behind the %s cover and never restores automatically", (cover) => {
+  it("disarms when polling pauses and requires a new choice to type into the terminal", () => {
     renderComposer();
     startDirectTyping();
     try {
-      act(() => {
-        if (cover === "idle lock") setLocked(true);
-        else beginCatchUp();
-      });
+      act(() => setLocked(true));
       expect(screen.queryByPlaceholderText(/type into the terminal/i)).toBeNull();
-      // A named choice cannot re-arm while the view is still covered, even if invoked directly.
-      fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
-      expect(screen.queryByPlaceholderText(/type into the terminal/i)).toBeNull();
-      act(() => {
-        setLocked(false);
-        endCatchUp();
-      });
+      act(() => setLocked(false));
       expect(screen.getByPlaceholderText(/type a reply/i)).toBeInTheDocument();
       expect(startDirectTyping()).toBeInTheDocument();
     } finally {
-      act(() => {
-        setLocked(false);
-        endCatchUp();
-      });
+      act(() => setLocked(false));
     }
   });
 

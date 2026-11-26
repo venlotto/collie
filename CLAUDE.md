@@ -583,7 +583,7 @@ lint guard, the crew-wire guard or the `flake.lock` guard.
   a call site first is one that never gets promoted — the alert family cost six components that way.
 - **Check UI states in the design reference** (`web/design.html`, code in `web/src/playground/`,
   `cd web && bun run design`, README → "The design reference") before changing a banner, the mark,
-  the boot splash, the idle lock, or the crew page. It renders every state at once, and its search
+  the boot splash or the crew page. It renders every state at once, and its search
   field finds an entry by title, id or keyword. Never import its code from app code. The old address
   `playground.html` forwards to it; the folder keeps the name `playground/` because the website
   imports `@/playground/harness` and `@/playground/fixtures` by name.
@@ -624,11 +624,9 @@ lint guard, the crew-wire guard or the `flake.lock` guard.
   replaces onto the structural one, never a push. A new route gets its place in `ancestorsOf` and
   `parentChain` (`web/src/lib/nav.ts`). Sheets own no history
   ([ADR 0067](./.adr/0067-back-goes-up-one-level.md), DESIGN.md §12).
-- **The idle lock pauses; it does not gate.** It only appears when Collie is left *open, visible and
-  untouched* — a hidden page never locks, and returning to the foreground auto-resumes. It covers a
-  still-mounted router (unmounting it ate in-progress composer drafts) and pauses polling through
-  `lib/idle.ts`. Don't restore it as a security control or re-describe it as one
-  ([ADR 0007](./.adr/0007-the-idle-lock-is-a-pause-not-a-gate.md)).
+- **A visible, unattended page pauses polling and animations after 30 minutes.** The route tree
+  stays mounted. Foregrounding the page or interacting with it refreshes the current view in place.
+  The first gesture still reaches its control. See [ADR 0007](./.adr/0007-the-idle-lock-is-a-pause-not-a-gate.md).
 - **"Type into terminal" is armed by a named choice and dies with the pane view.** Long-pressing Send
   opens a menu; the hold never arms it alone. It disarms on a pane switch, a composer lock (gone pane,
   read-only, idle pause), a hidden page, and a failed batch — never persisted, never restored. Don't

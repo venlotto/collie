@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { createRef, useRef } from "react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { clearStatus } from "@/lib/status";
@@ -28,7 +28,7 @@ function Harness({ sendKeys, suspended = false, agentKey = "claude", paneKey = "
     paneKey,
     inputRef,
     replyDraft: () => "",
-    canActivate: () => !suspended,
+    refusalWords: () => suspended ? "Typing unavailable" : null,
     suspended,
     sendKeys,
     onActivate: () => {},
@@ -73,6 +73,24 @@ function startTyping() {
   fireEvent.click(screen.getByRole("button", { name: "Start typing" }));
   return screen.getByRole("textbox", { name: "Terminal input" });
 }
+
+it("keeps the draft when a password handoff cannot arm direct typing", () => {
+  const discardDraft = vi.fn();
+  const { result } = renderHook(() => useDirectTyping({
+    paneKey: "pane-1",
+    inputRef: createRef<HTMLTextAreaElement>(),
+    replyDraft: () => "unsent draft",
+    refusalWords: () => "Send in progress",
+    suspended: false,
+    sendKeys: vi.fn(),
+    onActivate: vi.fn(),
+    focusInput: vi.fn(),
+    agentKey: "shell",
+  }));
+
+  expect(result.current.activate({ discardDraft })).toBe(false);
+  expect(discardDraft).not.toHaveBeenCalled();
+});
 
 describe("useDirectTyping: disarming drops unsent keys", () => {
   it.each(["stop", "hidden", "suspended", "agent", "timeout", "pane", "unmount"] as const)(

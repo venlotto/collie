@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,8 @@ import { __resetShortcutRegistry, registerPaneKeySink, registerShortcutHandler }
 import { __resetShortcutState, getShortcutKeymap, useShortcutMode } from "@/lib/shortcuts/state";
 import { server } from "@/test/setup";
 
+import { isLocked, setLocked } from "@/lib/idle";
+import { useIdleLock } from "./use-idle-lock";
 import { useShortcuts, useShortcutKeyboard } from "./use-shortcuts";
 
 // The root listener against fake key events: what it consumes, what it lets through, and what each
@@ -87,6 +89,19 @@ describe("the prefix and an action key", () => {
     expect(tap(body, { key: "b" })).toBe(false);
     expect(toggle).toHaveBeenCalledTimes(1);
     expect(mode()).toBe("normal");
+  });
+
+  it("the first prefix after idle wakes polling and enters shortcut mode", async () => {
+    await renderPage();
+    renderHook(() => useIdleLock(vi.fn()));
+    try {
+      act(() => setLocked(true));
+      expect(tap(document.body, CTRL_B)).toBe(false);
+      expect(isLocked()).toBe(false);
+      expect(mode()).toBe("prefix");
+    } finally {
+      act(() => setLocked(false));
+    }
   });
 
   it("stops the key at the window, so no handler below it sees it", async () => {
