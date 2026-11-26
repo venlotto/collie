@@ -47,6 +47,7 @@ import { mounted } from "@/lib/base-path";
 import { forgetAllDiffComments } from "@/lib/diff-comment-store";
 import { forgetAllCreateIntents } from "@/lib/create-intent";
 import { forgetAllTabPanes } from "@/lib/tab-pane-memory";
+import { forgetSectionCache } from "@/lib/bot-section-cache";
 import { forgetBots } from "@/lib/bot-identity";
 import { forgetRecentPanes } from "@/lib/recent-panes";
 import { forgetAllChatSilhouettes, forgetChatSilhouette } from "@/lib/chat-silhouette";
@@ -222,6 +223,7 @@ const BUILT_IN: readonly (readonly [string, WipeCleaner])[] = [
       forgetAllTabPanes();
     },
   ],
+  ["bot-sections", context => { if (context.reason !== "password") forgetSectionCache(); }],
   ["bot-identities", context => { if (context.reason !== "password") forgetBots(); }],
   [
     // The panes this device opened last, for the Actions palette (lib/recent-panes.ts, localStorage): pane addresses and workspace names.
