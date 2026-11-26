@@ -123,6 +123,7 @@
 .bot-detail [data-slot="pane-reading"], .bot-detail [data-slot="chrome-block"] { border: none; background: #000; }
 .bot-detail [data-slot="composer-box"] { border: 0; border-radius: 24px; background: #272729; box-shadow: none; }
 .bot-detail [data-slot="composer-box"][data-box="rest"] > button { width: 32px; height: 32px; }
+.bot-detail [data-slot="composer-box"][data-box="rest"] > button[data-text-action] { width: auto; }
 .bot-detail [data-slot="composer-box"] textarea { font: 16px/22px -apple-system,BlinkMacSystemFont,"Inter",sans-serif; background: transparent; }
 .bot-detail [data-slot="composer-primary"] { background: #138c4a; color: #fff; opacity: 1; }
 .bot-detail [data-slot="notice"]:has([data-slot="composer-refusal"]) { background: #272729; border: 0; border-radius: 16px; color: #fff; }
@@ -395,7 +396,7 @@
 .bot-chat-bar + div > :not([data-slot="pane-reading"], [data-slot="collapse"]):has(+ [data-slot="collapse"]) {
   margin-bottom: var(--bot-composer-overlap);
 }
-.bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-status {
+.bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-bottom {
   position: absolute; inset: auto 0 0; z-index: 3;
   background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
   box-shadow: var(--glass-edge);
@@ -416,6 +417,8 @@
 .bot-trashed-workspace button { min-height: 40px; padding: 0 12px; border-radius: 999px; background: #262628; font-size: 13px; }
 
 .agent-run-status { display: flex; align-items: center; justify-content: space-between; flex: none; gap: 12px; padding: 6px 16px; min-height: 56px; font-size: 14px; color: var(--muted-foreground); }
+.agent-run-progress { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.agent-run-progress small { font-size: 12px; line-height: 1.35; }
 .agent-run-status button { color: #ff695f; min-height: 44px; padding-inline: 10px; }
 .agent-run-bar.bot-bar > .bot-back:last-of-type { grid-column: 1; }
 .agent-run-bar .bot-pill { grid-column: 2; }

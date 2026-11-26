@@ -1367,6 +1367,8 @@ export const zhTW: Dictionary = {
   "newPage.summary.branch": "在 {folder} 中執行 {what}，新分支 {branch}，基於 {base}",
   "newPage.summary.branchMachine": "在 {machine} 的 {folder} 中執行 {what}，新分支 {branch}，基於 {base}",
   "newPage.start": "啟動",
+  "agentRun.finished.hint": "代理程式已結束。請開啟新聊天以繼續。",
+  "agentRun.finished.newChat": "開啟新聊天",
   "newPage.starting": "正在啟動…",
   "newPage.retry": "重試",
   "newPage.unknown": "Collie 無法確認啟動結果。請先查看儀表板。重試會送出同一個請求，因此不會開啟第二個窗格。",

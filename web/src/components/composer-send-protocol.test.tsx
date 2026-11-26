@@ -437,15 +437,16 @@ describe("the draft offers as a modal", () => {
     expect(sends[2]).toMatchObject({ mode: secondMode, rowsHash: "0bbb22" });
   });
 
-  it("the buttons wait while a launch starts, as the strip's buttons do", async () => {
+  it("the offer buttons stay live while a launch starts", async () => {
     const user = userEvent.setup();
-    const { sends } = bridge([DRAFT]);
+    const { sends } = bridge([DRAFT, { body: { receipt: receipt("sent"), offers: [] } }]);
     renderComposer();
     await refuse(user, "wait");
     setStarting(true);
-    for (const row of [/^Add to it/, /^Replace/, /^Cancel/]) expect(screen.getByRole("button", { name: row })).toBeDisabled();
+    for (const row of [/^Add to it/, /^Replace/, /^Cancel/]) expect(screen.getByRole("button", { name: row })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: /^Replace/ }));
-    expect(sends).toHaveLength(1);
+    await waitFor(() => expect(sends).toHaveLength(2));
+    expect(sends[1]).toMatchObject({ mode: "replace" });
   });
 
   it("another offer set (Submit and Discard) keeps the strip and opens no modal", async () => {
@@ -519,28 +520,27 @@ describe("Steer or queue on the Send button (M69)", () => {
     expect(steer.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("a launch still starting offers neither Send nor its steer menu, and keeps the draft", async () => {
+  it("a launch still starting keeps typing, Send and the steer menu available", async () => {
     const user = userEvent.setup();
-    const { sends } = bridge([]);
+    const { sends } = bridge([{ body: { receipt: receipt("sent"), offers: [] } }]);
     renderSteer({ surface: running, canSteer: true });
-    // The draft is typed before the start. While the launch starts the box is off (Altan, 2026-11-17), so a draft
-    // can only be there already; it stays in the box and nothing offers a send.
     await user.type(field(), "wait for startup");
     field().focus();
     setStarting(true);
-    // Held, not disabled: the box keeps its focus (and the soft keyboard), and takes no input.
     expect(field()).not.toBeDisabled();
-    expect(field()).toHaveAttribute("readonly");
-    expect(field()).toHaveAttribute("aria-disabled", "true");
+    expect(field()).not.toHaveAttribute("readonly");
+    expect(field()).not.toHaveAttribute("aria-disabled");
     expect(field()).toHaveFocus();
-    await user.keyboard("more{Enter}");
-    expect(field()).toHaveAttribute("placeholder", "Starting…");
+    await user.keyboard(" more");
+    expect(field()).toHaveValue("wait for startup more");
+    expect(screen.getByRole("button", { name: "Send" })).not.toHaveAttribute("aria-disabled");
     fireEvent.contextMenu(screen.getByRole("button", { name: "Send" }));
-    expect(screen.getByRole("button", { name: "Send" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.queryByRole("button", { name: STEER })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Send as message" })).toBeNull();
-    expect(field()).toHaveValue("wait for startup");
-    expect(sends).toEqual([]);
+    expect(await screen.findByRole("button", { name: STEER })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send as message" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(sends).toHaveLength(1));
+    expect(sends[0]).toMatchObject({ text: "wait for startup more", mode: "send" });
   });
 
   it("the empty field's placeholder is the hint, smaller than the reply words, while the turn runs on a pane that can steer", () => {

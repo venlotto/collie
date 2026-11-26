@@ -151,7 +151,7 @@ test("a headless run keeps its duration, stop control and live portrait", async 
   const runGeometry = await page.locator(".bot-agent-run").evaluate(root => {
     const reader = root.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
     const bar = root.querySelector(".agent-run-bar")!.getBoundingClientRect();
-    const foot = root.querySelector(".agent-run-status")!;
+    const foot = root.querySelector(".agent-run-bottom")!;
     const footer = foot.getBoundingClientRect();
     const style = getComputedStyle(foot);
     return { top: reader.top - bar.top, bottom: reader.bottom - footer.bottom,

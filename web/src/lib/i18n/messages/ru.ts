@@ -1363,6 +1363,8 @@ export const ru: Dictionary = {
   "newPage.summary.branch": "{what} в {folder}, новая ветка {branch} от {base}",
   "newPage.summary.branchMachine": "{what} в {folder} на {machine}, новая ветка {branch} от {base}",
   "newPage.start": "Запустить",
+  "agentRun.finished.hint": "Агент завершил работу. Откройте новый чат, чтобы продолжить.",
+  "agentRun.finished.newChat": "Открыть новый чат",
   "newPage.starting": "Запуск…",
   "newPage.retry": "Повторить",
   "newPage.unknown": "Collie не смог подтвердить запуск. Сначала посмотрите на панель. «Повторить» отправит тот же запрос, поэтому вторая панель не откроется.",

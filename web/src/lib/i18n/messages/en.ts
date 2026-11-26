@@ -1532,6 +1532,8 @@ export const en = {
   "newPage.summary.branch": "{what} in {folder}, new branch {branch} from {base}",
   "newPage.summary.branchMachine": "{what} in {folder} on {machine}, new branch {branch} from {base}",
   "newPage.start": "Start",
+  "agentRun.finished.hint": "The agent finished. Open a new chat to continue.",
+  "agentRun.finished.newChat": "Open new chat",
   "newPage.starting": "Starting…",
   "newPage.retry": "Try again",
   "newPage.unknown": "Collie could not confirm the start. Look at the dashboard first. Try again sends the same request, so it never starts a second pane.",

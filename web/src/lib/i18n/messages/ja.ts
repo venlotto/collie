@@ -1382,6 +1382,8 @@ export const ja: Dictionary = {
   "newPage.summary.branch": "{folder} で {what}、新しいブランチ {branch}（{base} から）",
   "newPage.summary.branchMachine": "{machine} の {folder} で {what}、新しいブランチ {branch}（{base} から）",
   "newPage.start": "起動",
+  "agentRun.finished.hint": "エージェントは終了しました。続けるには新しいチャットを開いてください。",
+  "agentRun.finished.newChat": "新しいチャットを開く",
   "newPage.starting": "起動中…",
   "newPage.retry": "もう一度試す",
   "newPage.unknown": "Collie は起動を確認できませんでした。まずダッシュボードを見てください。「もう一度試す」は同じリクエストを送るので、ペインが二つ開くことはありません。",

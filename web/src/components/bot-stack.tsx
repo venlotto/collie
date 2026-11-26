@@ -45,13 +45,14 @@ export function BotStack({ paneId, pane }: { paneId?: string; pane?: PaneData })
   const row = screen && (findPane(root.shellPanes, screen.paneId, screen.pane.scope, root.servers, root.sessions) ??
     (!screen.pane.scope.host && screen.paneId.startsWith("agent-run:") ?
       root.shellPanes.find(p => p.agentRun && "agent-run:" + p.agentRun.id === screen.paneId) : undefined));
-  const writable = !root.authError && !root.error && !root.stale && !isReadOnly(root.device);
+  const readOnly = isReadOnly(root.device);
+  const writable = !root.authError && !root.error && !root.stale && !readOnly;
   return <div className="bot-layout" data-detail={open}>
     <aside inert={open && !split} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
     <main inert={!open && !split} className="bot-detail" ref={panel}>
       <Activity mode={open || !parked ? "visible" : "hidden"}>
         {screen && (row?.agentRun ? <AgentRunChat key={row.agentRun.id} run={row.agentRun} agent={row} active={open}
-          scope={screen.pane.scope} writable={writable} /> : <PaneScreen {...screen} active={open} />)}
+          scope={screen.pane.scope} writable={writable} readOnly={readOnly} stale={!writable && !readOnly} /> : <PaneScreen {...screen} active={open} />)}
       </Activity>
       {!open && <div className="bot-detail-empty">
         <MessagesSquare size={36} strokeWidth={1.5} aria-hidden />

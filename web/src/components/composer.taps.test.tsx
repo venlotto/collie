@@ -143,18 +143,17 @@ describe("composer taps: send() from anywhere but the round Send button (fix 1)"
     await waitFor(() => expect(screen.queryByText(/still running/)).toBeNull());
   });
 
-  it("no tap vanishes: a harness pill while the launch starts says Starting", async () => {
+  it("a harness pill sends through the ordinary protocol while the launch starts", async () => {
     const user = userEvent.setup();
     mount({ starting: true });
-    // The header says Starting now; in the composer the box is off and its placeholder says it. No row holds the words.
+    // Starting is header state, not a composer lock or a second send refusal.
     expect(screen.queryByText("Starting…")).toBeNull();
     expect(field()).not.toBeDisabled();
-    expect(field()).toHaveAttribute("readonly");
-    expect(field()).toHaveAttribute("aria-disabled", "true");
-    expect(field()).toHaveAttribute("placeholder", "Starting…");
-    await expectTapAnswers(() => user.click(screen.getByRole("button", { name: "Compact" })));
-    expect(screen.getAllByText("Starting…")).toHaveLength(1);
-    expect(recordedSends()).toEqual([]);
+    expect(field()).not.toHaveAttribute("readonly");
+    expect(field()).not.toHaveAttribute("aria-disabled");
+    await user.click(screen.getByRole("button", { name: "Compact" }));
+    await waitFor(() => expect(recordedSends()).toHaveLength(1));
+    expect(screen.queryByText(/cannot read this screen/i)).toBeNull();
   });
 
   it("no tap vanishes: a send for a locked pane says the lock's own words", async () => {
@@ -175,10 +174,14 @@ describe("composer taps: the sign-in frame (fix 2)", () => {
     expect(screen.getByRole("textbox", { name: "Sign-in code" })).toHaveAttribute("placeholder", "Pane is gone");
   });
 
-  it("no tap vanishes: a frame that waits for the launch says Starting", () => {
+  it("a sign-in frame stays editable while the launch starts", async () => {
+    const user = userEvent.setup();
     mount({ surface: SECRET, starting: true });
-    expect(screen.getAllByText("Starting…").length).toBeGreaterThan(0);
-    expect(screen.getByRole("textbox", { name: "Sign-in code" })).toBeDisabled();
+    expect(screen.queryByText("Starting…")).toBeNull();
+    const code = screen.getByRole("textbox", { name: "Sign-in code" });
+    expect(code).toBeEnabled();
+    await user.type(code, "654321");
+    expect(code).toHaveValue("654321");
   });
 
   it("no tap vanishes: a code the bridge refused stays in the frame to send again", async () => {
@@ -296,19 +299,46 @@ describe("composer taps: the round Send button that cannot act (fix 4)", () => {
     expect(recordedSends()).toEqual([]);
   });
 
-  it("no tap vanishes: while the launch starts, a tap says Starting", async () => {
+  it("while the launch starts, Send uses the ordinary protocol and keeps no refusal", async () => {
     const user = userEvent.setup();
-    // The draft is typed before the start: the box is off while it starts, and the draft stays in it.
     const m = mount();
     await user.type(field(), "hello");
     m.update({ starting: true });
     expect(field()).not.toBeDisabled();
-    expect(field()).toHaveAttribute("readonly");
-    expect(field()).toHaveAttribute("aria-disabled", "true");
+    expect(field()).not.toHaveAttribute("readonly");
+    expect(field()).not.toHaveAttribute("aria-disabled");
     expect(field()).toHaveValue("hello");
-    await expectTapAnswers(() => user.click(screen.getByRole("button", { name: "Send" })));
-    expect(document.querySelector('[data-slot="composer-refusal"]')).toHaveTextContent("Starting…");
-    expect(field()).toHaveValue("hello");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(recordedSends()).toHaveLength(1));
+    expect(document.querySelector('[data-slot="composer-refusal"]')).toBeNull();
+  });
+});
+
+describe("composer taps: a finished run's local action", () => {
+  it("names the action, keeps the draft and never sends to the old shell", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    mount({
+      surface: ASK,
+      sendAction: { label: "Abrir chat nuevo", onSelect },
+    });
+    const box = field();
+    expect(box).toBeEnabled();
+    expect(box).not.toHaveAttribute("readonly");
+    await user.click(box);
+    expect(onSelect).not.toHaveBeenCalled();
+    await user.type(box, "rm -rf /");
+    const action = screen.getByRole("button", { name: "Abrir chat nuevo" });
+    expect(action).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Answer the dialog" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Really send?" })).toBeNull();
+    await user.click(action);
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(box).toHaveValue("rm -rf /");
+    // Other text paths meet the same interception, never a blind text-plus-Enter shell write.
+    await user.click(screen.getByRole("button", { name: "Compact" }));
+    fireEvent.keyDown(box, { key: "Enter", ctrlKey: true });
+    expect(onSelect).toHaveBeenCalledTimes(3);
     expect(recordedSends()).toEqual([]);
   });
 });
@@ -353,17 +383,17 @@ describe("composer taps: held rows while the launch starts (fix 6)", () => {
   const typed: HeldRow = { requestId: "req00001", mode: "send", text: "left in the box", heldAt: NOW, expiresAt: NOW + 30 * 60_000, state: "ended", outcome: "typed_not_submitted" };
   const ended: HeldRow = { ...typed, requestId: "req00002", outcome: "expired" };
 
-  it("no tap vanishes: Submit, Discard and Resend are off while starting, with the box off and saying Starting", () => {
+  it("Submit, Discard and Resend stay live while starting, with an editable box", () => {
     mount({ held: [typed], starting: true });
     expect(field()).not.toBeDisabled();
-    expect(field()).toHaveAttribute("readonly");
-    expect(field()).toHaveAttribute("aria-disabled", "true");
-    expect(field()).toHaveAttribute("placeholder", "Starting…");
-    expect(screen.getByRole("button", { name: "Submit the text in the box" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Discard the text in the box" })).toBeDisabled();
+    expect(field()).not.toHaveAttribute("readonly");
+    expect(field()).not.toHaveAttribute("aria-disabled");
+    expect(field()).not.toHaveAttribute("placeholder", "Starting…");
+    expect(screen.getByRole("button", { name: "Submit the text in the box" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Discard the text in the box" })).toBeEnabled();
     cleanup();
     mount({ held: [ended], starting: true });
-    expect(screen.getByRole("button", { name: "Resend the message" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Resend the message" })).toBeEnabled();
   });
 
   it("no tap vanishes: once the launch is over the same buttons are live", () => {

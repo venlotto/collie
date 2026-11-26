@@ -1311,6 +1311,8 @@ export const tr: Dictionary = {
   "newPage.summary.branch": "{folder} içinde {what}, {base} üzerinden yeni dal {branch}",
   "newPage.summary.branchMachine": "{machine} üzerinde {folder} içinde {what}, {base} üzerinden yeni dal {branch}",
   "newPage.start": "Başlat",
+  "agentRun.finished.hint": "Aracı sona erdi. Devam etmek için yeni bir sohbet açın.",
+  "agentRun.finished.newChat": "Yeni sohbet aç",
   "newPage.starting": "Başlatılıyor…",
   "newPage.retry": "Yeniden dene",
   "newPage.unknown": "Collie başlatmayı doğrulayamadı. Önce panoya bakın. Yeniden dene aynı isteği gönderir, bu yüzden ikinci bir bölme açmaz.",

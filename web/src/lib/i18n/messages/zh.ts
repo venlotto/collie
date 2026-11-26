@@ -1371,6 +1371,8 @@ export const zh: Dictionary = {
   "newPage.summary.branch": "在 {folder} 中运行 {what}，新分支 {branch}，基于 {base}",
   "newPage.summary.branchMachine": "在 {machine} 的 {folder} 中运行 {what}，新分支 {branch}，基于 {base}",
   "newPage.start": "启动",
+  "agentRun.finished.hint": "代理已结束。请打开新聊天以继续。",
+  "agentRun.finished.newChat": "打开新聊天",
   "newPage.starting": "正在启动…",
   "newPage.retry": "重试",
   "newPage.unknown": "Collie 无法确认启动结果。请先查看仪表板。重试会发送同一个请求，因此不会打开第二个窗格。",

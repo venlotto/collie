@@ -83,6 +83,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
 - **Chat bars now show real glass over scrolling messages.** Conversations move beneath translucent, blurred header and reply surfaces on iPhone and desktop, with clearance that follows a growing composer. Reduced Transparency still makes every bar solid.
+- **Bot replies stay open in every agent state.** You can keep writing and sending while an agent is ready, working or starting, and questions keep their protected answer controls. A finished background run offers a clear new-chat action instead of typing into the shell that displays its log.
 
 ## [1.31.0] - 2026-11-24
 

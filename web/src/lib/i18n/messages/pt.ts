@@ -1311,6 +1311,8 @@ export const pt: Dictionary = {
   "newPage.summary.branch": "{what} em {folder}, branch novo {branch} a partir de {base}",
   "newPage.summary.branchMachine": "{what} em {folder} em {machine}, branch novo {branch} a partir de {base}",
   "newPage.start": "Iniciar",
+  "agentRun.finished.hint": "O agente terminou. Abra uma nova conversa para continuar.",
+  "agentRun.finished.newChat": "Abrir nova conversa",
   "newPage.starting": "Iniciando…",
   "newPage.retry": "Tentar de novo",
   "newPage.unknown": "O Collie não conseguiu confirmar o início. Olhe primeiro o painel. Tentar de novo envia o mesmo pedido, então nunca abre um segundo painel.",

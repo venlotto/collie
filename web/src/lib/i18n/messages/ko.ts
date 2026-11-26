@@ -1380,6 +1380,8 @@ export const ko: Dictionary = {
   "newPage.summary.branch": "{folder}에서 {what}, {base}에서 새 브랜치 {branch}",
   "newPage.summary.branchMachine": "{machine}의 {folder}에서 {what}, {base}에서 새 브랜치 {branch}",
   "newPage.start": "시작",
+  "agentRun.finished.hint": "에이전트가 종료되었습니다. 계속하려면 새 채팅을 여세요.",
+  "agentRun.finished.newChat": "새 채팅 열기",
   "newPage.starting": "시작하는 중…",
   "newPage.retry": "다시 시도",
   "newPage.unknown": "Collie가 시작을 확인하지 못했습니다. 먼저 대시보드를 확인하세요. 다시 시도는 같은 요청을 보내므로 두 번째 창을 열지 않습니다.",
