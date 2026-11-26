@@ -29,14 +29,11 @@ const STOP_GRACE_MS = 5000;
 
 export const PHONE_DEVICE_LABEL = "harness-lab-phone";
 
-export interface ScratchBridgeOptions {
+export type ScratchBridgeOptions = ({ tmuxSocket: string; tmuxBinary: string } | { herdrSocket: string; codexHome: string }) & {
   /** This checkout: the bridge runs from `<repoRoot>/bridge/index.ts`. */
   readonly repoRoot: string;
   /** The scratch bridge's own folder. Deleted by `stop()`. */
   readonly root: string;
-  /** The lab tmux server's socket name (`harness-lab-<pid>`). */
-  readonly tmuxSocket: string;
-  readonly tmuxBinary: string;
   /** The folder of the lab's installed agent binary, put first on the bridge's PATH. */
   readonly agentBinDir: string;
   /** The `CLAUDE_CONFIG_DIR` of the phone panes: the bridge's hooks probe and journal read it. */
@@ -44,7 +41,7 @@ export interface ScratchBridgeOptions {
   /** The caller's environment. Only the short list ({@link SERVER_ENV_KEYS}) is passed on. */
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly port?: number;
-}
+};
 
 /** The environment the scratch bridge gets. Pure, so a test pins that no real folder leaks in. */
 export function scratchBridgeEnv(options: ScratchBridgeOptions, port: number): EnvMap {
@@ -64,9 +61,9 @@ export function scratchBridgeEnv(options: ScratchBridgeOptions, port: number): E
     XDG_STATE_HOME: join(options.root, "xdg-state"),
     COLLIE_STATE_DIR: join(options.root, "state"),
     HERDR_PLUGIN_CONFIG_DIR: join(options.root, "config"),
-    COLLIE_MUX: "tmux",
-    COLLIE_MUX_ENDPOINT_TMUX: options.tmuxSocket,
-    COLLIE_TMUX_BIN: options.tmuxBinary,
+    ...("herdrSocket" in options
+      ? { COLLIE_MUX: "herdr", HERDR_SOCKET_PATH: options.herdrSocket, CODEX_HOME: options.codexHome }
+      : { COLLIE_MUX: "tmux", COLLIE_MUX_ENDPOINT_TMUX: options.tmuxSocket, COLLIE_TMUX_BIN: options.tmuxBinary }),
     COLLIE_HOST: "127.0.0.1",
     COLLIE_PORT: String(port),
     COLLIE_SKIP_SERVE: "1",
@@ -137,7 +134,7 @@ export class ScratchBridge {
     while (Date.now() < deadline) {
       if (child.exitCode !== null) break;
       if (await probe.health()) {
-        log(`scratch bridge: pid ${String(child.pid)} on ${url}, tmux socket name ${options.tmuxSocket}`);
+        log(`scratch bridge: pid ${String(child.pid)} on ${url}, private ${env.COLLIE_MUX} socket`);
         return bridge;
       }
       await Bun.sleep(300);

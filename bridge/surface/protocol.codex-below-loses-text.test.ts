@@ -184,6 +184,32 @@ describe("a Codex 0.163.0 footer row whose words change, not only go (#847)", ()
   });
 });
 
+describe("Codex 0.172.0 on a narrow Herdr pane after its first turn", () => {
+  const idle = capture("codex--v0172-agent-hint-idle.txt");
+  const typed = capture("codex--v0172-agent-hint-probe.txt");
+  test("the disappearing agents hint leaves the warning, and Enter submits the proven draft", async () => {
+    const fake = capturedPane(idle, typed);
+    const answer = await rig({ pane: fake, harness: "codex", version: "0.172.0" }).send("second message");
+    expect(answer.receipt).toMatchObject({ outcome: "sent", profileStatus: "provisional", keys: ["probe", "Backspace", "Enter"] });
+    expect(fake.transcript.at(-1)).toBe("› second message");
+  });
+
+  test("the old hint list reproduces the refusal and cleans the probe", async () => {
+    const fake = capturedPane(idle, typed);
+    const edit = withoutHints((hint) => hint.includes("← for agents(?:"));
+    const answer = await rig({ pane: fake, harness: "codex", version: "0.172.0", edit }).send("second message");
+    expect(answer.receipt).toMatchObject({ outcome: "refused", reason: "probe_failed", keys: ["probe", "Backspace"] });
+    expect(fake.box).toBe("");
+  });
+
+  test("the agents hint cannot excuse a dialog that opens at the probe", async () => {
+    const fake = capturedPane(idle, capture("codex--approval-exec.txt"));
+    const answer = await rig({ pane: fake, harness: "codex", version: "0.172.0" }).send("second message");
+    expect(answer.receipt?.outcome).toBe("refused");
+    expect(fake.keysSeen.filter((key) => key === "Enter" || key === "Tab")).toEqual([]);
+  });
+});
+
 describe("the word rule itself", () => {
   test("words left out, in order, at least one kept, is lost text", () => {
     expect(lostWordsOnly("  alpha beta    gamma delta", "        gamma delta")).toBe(true);
