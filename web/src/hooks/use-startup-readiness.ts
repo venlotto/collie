@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { firstScreenRead, STARTUP_GATE_MS, type AgentLaunch } from "@/lib/agent-startup";
+import { firstScreenRead, namesHarness, STARTUP_GATE_MS, type AgentLaunch } from "@/lib/agent-startup";
 import type { Surface } from "@/lib/surface/surface";
 
 interface Latch {
@@ -30,10 +30,10 @@ export function useStartupReadiness(input: {
   else if (latch.current?.id !== launch.id) latch.current = { id: launch.id, at: Date.now(), observed: false, done: false };
   const current = latch.current;
   if (current !== null && launch !== undefined && !current.done && live) {
-    if (agent === launch.harness) current.observed = true;
+    if (namesHarness(launch.harness, agent)) current.observed = true;
     // An agent seen on the pane that is no longer named has left it: nothing is starting there any more.
     // A pane that fell back to a plain shell names no agent at all, so `undefined` counts as gone too.
-    const exited = current.observed && agent !== launch.harness;
+    const exited = current.observed && !namesHarness(launch.harness, agent);
     if (exited || firstScreenRead(launch.harness, agent, surface)) current.done = true;
   }
   // The bound needs a render of its own: a pane whose screen stopped moving may not poll again soon.

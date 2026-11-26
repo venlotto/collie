@@ -3,7 +3,8 @@
   "identity": {
     "binary": "claude",
     "versionCommand": ["claude", "--version"],
-    "versionRegex": "\\d+\\.\\d+\\.\\d+"
+    "versionRegex": "\\d+\\.\\d+\\.\\d+",
+    "agentNames": ["kimi", "glm"]
   },
   "versions": [
     {
