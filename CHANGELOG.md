@@ -32,6 +32,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Drag a chat to arrange it within its workspace.** Drop it on another workspace or the trash. Hold a workspace heading to rename, move or trash the group. Restore the group from Trash within seven days.
 
+- **Detached agent runs stream in their workspace chats.** Open a run to follow its conversation, check its elapsed time or stop it. Runs without a launch pane appear together.
 - **The bridge remembers which workspaces you fold.** Renaming, reordering or restoring a workspace keeps its saved preference. New workspaces open expanded.
 - **The chat list opens as you left it.** Your folded workspaces and Trash follow you between devices. Searching temporarily reveals matching chats.
 

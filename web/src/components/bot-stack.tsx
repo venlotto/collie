@@ -1,3 +1,7 @@
+import { findPane } from "@/lib/hosts";
+import { useRootData } from "@/lib/route-data";
+import { isReadOnly } from "@/lib/types";
+import { AgentRunChat } from "./agent-run-chat";
 import { Activity, useLayoutEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import type { PaneData } from "@/lib/loaders";
@@ -33,11 +37,17 @@ export function BotStack({ paneId, pane }: { paneId?: string; pane?: PaneData })
   }, [open]);
 
   const screen = current || last.current;
+  const root = useRootData();
+  const row = screen && (findPane(root.shellPanes, screen.paneId, screen.pane.scope, root.servers, root.sessions) ??
+    (!screen.pane.scope.host && screen.paneId.startsWith("agent-run:") ?
+      root.shellPanes.find(p => p.agentRun && "agent-run:" + p.agentRun.id === screen.paneId) : undefined));
+  const writable = !root.authError && !root.error && !root.stale && !isReadOnly(root.device);
   return <div className="bot-layout" data-detail={open}>
     <aside inert={open} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
     <main inert={!open} className="bot-detail" ref={panel}>
       <Activity mode={open || !parked ? "visible" : "hidden"}>
-        {screen && <PaneScreen {...screen} active={open} />}
+        {screen && (row?.agentRun ? <AgentRunChat key={row.agentRun.id} run={row.agentRun} agent={row} active={open}
+          scope={screen.pane.scope} writable={writable} /> : <PaneScreen {...screen} active={open} />)}
       </Activity>
     </main>
     <div className="bot-notice"><StatusArea /></div>

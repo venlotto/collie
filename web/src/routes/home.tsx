@@ -38,9 +38,9 @@ export function HomeRoute() {
   return <>
     <MobileAgentHub onChanged={() => { stampTopology(); void revalidator.revalidate(); }} writable={writable} listScope={data.scope} panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured}
       deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
-      onPress={p => { void prefetchPaneData(p.paneId, scopeOf(p)); }}
+      onPress={p => { if (!p.agentRun) void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}
-      onNew={writable || accessNotice ? () => setCreate({ beside: featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
+      onNew={writable || accessNotice ? () => setCreate({ beside: featured?.paneId.startsWith("agent-run:") ? undefined : featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
     {create && <CreateBot {...create} writable={writable} close={() => setCreate(null)} />}
   </>;
 }

@@ -908,6 +908,9 @@ export async function paneLoader({
   const scope = scopeFromRequest(request);
   const key = paneKey(paneId, scope);
   const lines = getRequestedLines(paneId, scope);
+  if (paneId.startsWith("agent-run:")) {
+    return { paneId, scope, text: "", truncated: false, revision: 0, requestedLines: lines, error: false, authError: false };
+  }
   // Nav-vs-revalidate, as in rootLoader. `lastPaneUrl` also flips to undefined whenever rootLoader sees
   // a non-pane URL, so opening a pane (even one just left) reads as a navigation, and polling within it
   // (same URL) reads as a revalidation.
