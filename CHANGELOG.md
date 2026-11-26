@@ -59,6 +59,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Only moving rows need a transform during a drag.** Resting chats keep their ordinary rendering as a sheet opens or closes.
 
+- **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
