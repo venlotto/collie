@@ -262,7 +262,8 @@
   [data-bots], .bot-dialog { --glass-opacity: 1; --glass-filter: none; }
 }
 .bot-bar, .bot-search, .bot-circle, .bot-pill, .bot-user, .bot-sheet,
-.bot-popup, .bot-picker, .bot-drop-trash, .bot-detail [data-slot="composer-box"],
+.bot-popup, .bot-picker, .bot-drop-trash, [data-bots] [role="dialog"] > [data-presentation],
+.bot-detail [data-slot="composer-box"],
 .bot-detail [data-bot-controls] > button, .bot-sheet header .bot-circle {
   background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
   box-shadow: var(--glass-edge);
@@ -311,3 +312,8 @@
   content: ""; display: block; height: var(--bot-composer-overlap, 0px);
 }
 .bot-detail [data-slot="chrome-block"], .bot-detail [data-slot="chrome-block"] > .bg-chrome { background: transparent; }
+
+[data-bots] [role="dialog"] > [data-presentation] {
+  --muted-foreground: #f2f2f5;
+  max-width: min(100%, 390px);
+}
