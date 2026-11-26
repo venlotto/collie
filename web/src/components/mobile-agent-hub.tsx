@@ -34,7 +34,7 @@ interface Props {
   onOpen: (pane: AgentView) => void;
   onPress: (pane: AgentView) => void;
   onNew?: () => void;
-  /** Double-click, right-click or hold "+": a bot with no questions. Resolves to the error to show. */
+  /** Tap "+": a bot with no questions. Resolves to the error to show. */
   onQuickNew?: () => Promise<string | undefined>;
   quickBusy?: boolean;
   deviceName?: string;
@@ -337,23 +337,12 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   </div>;
 }
 
-// How long a mouse click waits for a second one before it opens the sheet. Touch and keyboard open at once.
-const DOUBLE_CLICK_MS = 260;
-
-/** Tap or click: the create sheet. Double-click, right-click or hold: a quick bot, straight away. */
+/** Tap or click: a quick bot. Hold or right-click: the full create sheet. */
 function PlusButton({ onNew, onQuickNew, busy }: { onNew?: () => void; onQuickNew?: () => void; busy: boolean }) {
-  const pointer = useRef("");
-  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancel = () => { if (pending.current !== null) { clearTimeout(pending.current); pending.current = null; } };
-  useEffect(() => cancel, []);
-  const hold = useLongPress(onQuickNew && !busy ? () => { cancel(); onQuickNew(); } : undefined);
-  return <button {...hold} aria-label="Crear nuevo" aria-busy={busy || undefined} className="bot-circle bot-plus" disabled={!onNew || busy}
-    onPointerDown={(e) => { pointer.current = e.pointerType; hold.onPointerDown(e); }}
+  const hold = useLongPress(!busy ? onNew : undefined);
+  return <button {...hold} aria-label="Crear nuevo" aria-busy={busy || undefined} className="bot-circle bot-plus" disabled={(!onQuickNew && !onNew) || busy}
     onClick={(e) => {
-      if (!onNew) return;
-      if (!onQuickNew || pointer.current !== "mouse" || e.detail === 0) { cancel(); onNew(); return; }
-      if (e.detail >= 2) { cancel(); onQuickNew(); return; }
-      cancel();
-      pending.current = setTimeout(() => { pending.current = null; onNew(); }, DOUBLE_CLICK_MS);
+      if (busy || e.detail >= 2) return;
+      (onQuickNew ?? onNew)?.();
     }}><Plus /></button>;
 }
