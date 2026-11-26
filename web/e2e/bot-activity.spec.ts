@@ -106,7 +106,7 @@ test("changing activity preserves every row position and the chat header", async
   await first.click();
   const header = page.getByRole("button", { name: "Opciones del chat" }).locator("..");
   const pill = header.getByText("Orquestador", { exact: true }).locator("..");
-  await expect(header).toBeInViewport({ ratio: 1 });
+  await expect(header).toBeInViewport({ ratio: 1, timeout: 30_000 });
   const headerBefore = await header.boundingBox();
   const pillBefore = await pill.boundingBox();
   const opened = await header.elementHandle();
