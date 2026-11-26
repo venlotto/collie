@@ -1,0 +1,95 @@
+/* THE DESK: several chats at once on a wide screen (components/bot-desk.tsx). It only exists from
+   768px wide, where the chat panel holds at least two windows; the phone never draws any of this.
+   Every surface reuses the hub's own glass and greys (bot-workspaces.css). */
+
+.bot-detail[data-desk] { background: #0b0b0c; padding-bottom: 0; }
+.bot-desk { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 10px; }
+.bot-desk > .bot-detail-empty { flex: 1; }
+.bot-desk-grid { flex: 1; min-height: 0; display: grid; gap: 10px; }
+
+.bot-window {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+  border-radius: 22px;
+  background: #000;
+  box-shadow: 0 0 0 1px #2a2a2d;
+  transition: box-shadow 200ms, opacity 160ms, transform 160ms;
+}
+.bot-window > * { flex: 1; min-width: 0; min-height: 0; }
+/* The window you type into: a quiet blue edge, the hub's own accent. */
+.bot-window[data-focused] { box-shadow: 0 0 0 1px rgb(10 132 255 / .7), 0 12px 40px rgb(0 0 0 / .55); }
+.bot-window[data-leaving] { opacity: 0; transform: translateY(18px) scale(.97); }
+@media (prefers-reduced-motion: no-preference) {
+  .bot-window { animation: bot-window-in 200ms ease-out; }
+}
+@keyframes bot-window-in { from { opacity: 0; transform: scale(.98); } }
+
+/* The bar: window controls where the phone keeps Back, the bot's name centred, its menu at the end. */
+.bot-window .bot-bar { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding-top: 9px; }
+.bot-window .bot-bar > .bot-desk-ctrls { grid-column: 1; justify-self: start; }
+.bot-window .bot-bar > .bot-pill { grid-column: 2; max-width: min(100%, 260px); }
+.bot-window .bot-bar > .bot-circle:last-of-type { grid-column: 3; justify-self: end; }
+
+.bot-desk-ctrls { display: flex; gap: 6px; }
+.bot-desk-ctrl {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #f2f2f5;
+  background: var(--glass-light), rgb(61 61 68 / var(--glass-opacity, 1));
+  box-shadow: var(--glass-edge);
+  transition: background-color 150ms, color 150ms;
+}
+.bot-desk-ctrl:hover { background: #4a4a50; }
+.bot-desk-ctrl:active { background: #343436; transition-duration: 0s; }
+.bot-desk-close:hover { background: #ff453a; color: #fff; }
+.bot-desk-ctrl:focus-visible, .bot-desk-reply:focus-visible, .bot-desk-chip:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+
+/* The chat menu opens under its own button, not at the screen's corner. */
+@supports (anchor-name: --a) {
+  .bot-window .bot-chat-bar > .bot-circle:last-of-type { anchor-name: --bot-desk-menu; }
+  .bot-window .bot-popup { position-anchor: --bot-desk-menu; inset: auto; top: anchor(bottom); right: anchor(right); margin-top: 8px; }
+}
+
+/* A window without the focus reads its chat live; the reply box hands it the focus. */
+.bot-desk-peek .agent-run-bar + div:has(> .bot-desk-mirror) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.bot-desk-mirror { flex: 1; min-height: 0; overflow: auto; padding-inline: 14px; scrollbar-width: thin; }
+.bot-desk-reply-row { justify-content: stretch; padding: 8px 16px 12px; }
+.bot-desk-reply {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 24px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  color: #f2f2f5;
+  background: var(--glass-light), rgb(39 39 41 / var(--glass-opacity, 1));
+  box-shadow: var(--glass-edge);
+}
+.bot-conversation > .bot-desk-reply-row > .bot-desk-reply { color: #f2f2f5; min-height: 44px; padding-inline: 18px; }
+.bot-desk-reply:hover { background: #303033; }
+
+/* The tray: one pill per minimised chat, the same pill as the chat bar's name. */
+.bot-desk-tray {
+  flex: none;
+  height: 46px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bot-desk-chip { flex: none; max-width: 230px; --glass-rgb: 46 46 50; transition: background-color 150ms; }
+.bot-desk-chip:hover { --glass-rgb: 70 70 76; }
+.bot-desk-chip .bot-unread { margin-inline-start: 2px; }

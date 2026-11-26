@@ -783,6 +783,8 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
   await other.click();
   await expect(detail.locator(".bot-chat-bar")).toContainText(otherPane.paneLabel, { timeout: 20_000 });
   await expect(other).toHaveAttribute("aria-current", "true");
+  // Back closes that chat; a second chat opened while one is showing would join it on the desk.
+  await page.getByRole("button", { name: "Volver a los chats" }).click();
   await first.click();
   await expect(detail.locator(".bot-chat-bar")).toContainText(pane.paneLabel, { timeout: 20_000 });
   await expect(first).toHaveAttribute("aria-current", "true");
