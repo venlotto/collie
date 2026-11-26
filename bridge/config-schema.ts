@@ -594,6 +594,14 @@ export const CONFIG_SETTINGS: readonly ConfigSetting[] = [
     configField: "deviceAllowlist",
   },
   {
+    key: "sso_enabled",
+    env: "COLLIE_SSO_ENABLED",
+    section: "access",
+    kind: "bool",
+    default: false,
+    doc: "Scope hosted list preferences to the signed-in person's subject instead of one local user.",
+  },
+  {
     key: "audit_content",
     env: "COLLIE_AUDIT_CONTENT",
     section: "access",

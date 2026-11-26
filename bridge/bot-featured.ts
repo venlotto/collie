@@ -58,7 +58,8 @@ export class BotFeatured {
 
   private save(next: Map<string, BotFeaturedPin>) {
     const users = Object.fromEntries(next);
-    const tmp = join(this.stateDir, `bot-featured.json.${process.pid}.${++serial}.tmp`);
+    const stateDir = this.stateDir;
+    const tmp = join(stateDir, `bot-featured.json.${process.pid}.${++serial}.tmp`);
     const fd = openSync(tmp, "wx", 0o600);
     try {
       try { writeFileSync(fd, JSON.stringify({ version: 1, users })); }

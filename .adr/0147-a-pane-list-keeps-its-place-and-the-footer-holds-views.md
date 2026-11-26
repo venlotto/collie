@@ -47,11 +47,10 @@ terminal. Six records shaped the lists and the footer, and three titles name tab
    before the workspace filter, hide and the needs-you switch. A pinned pane leaves its workspace
    group, its workspace still counts it, and the Pinned heading counts nothing. Pins live on this
    device in their own store, never in the dashboard prefs and never on the wire, keyed by the pane's
-   row key and its workspace name. The hosted chat list's separate featured slot is not one of these
-   pins: its single explicit choice is synchronized per user and never reorders the classic dashboard. A pin whose pane is absent is dormant; only Unpin, Close from
-   Collie, a key reused in another workspace and a bound of 32 records remove one. The Pin row is the
-   last read row of the actions sheet (the first on a row's hold), outside the read-only gates,
-   because a pin writes nothing to a machine. The list has no cap.
+   row key and workspace name. The hosted list's featured slot is a separate per-user choice, never a
+   classic dashboard pin or an ordering. A pin whose pane is absent is dormant; only Unpin, Close from
+   Collie, a key reused in another workspace and a bound of 32 records remove one. The Pin row is last
+   in the actions sheet (first on a row's hold), outside read-only gates: a pin writes nothing to a machine.
 7. **The footer holds views, never a filter.** Crew (only while a crew is configured), Dashboard (the
    default), Files (only on a machine with a screen), then the Hill where the snapshot has a hill, then
    the tricks' `tabbar` items. The Hill opens its own route one level down and is never the selected

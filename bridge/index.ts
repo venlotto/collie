@@ -1989,9 +1989,8 @@ const eventBus = new EventBus({ machine: () => bridgeId.id });
 const askReminders = new AskRemindBook();
 
 const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
-const ssoEnabled = !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase());
-const uiSections = new UiSections(cfg.stateDir, ssoEnabled);
-const botFeatured = new BotFeatured(cfg.stateDir, ssoEnabled);
+const uiSections = new UiSections(cfg.stateDir, !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase()));
+const botFeatured = new BotFeatured(cfg.stateDir, uiSections.sso);
 
 const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   const built = endpoint.kind === "program" ? programAdapter(endpoint.source) : terminalAdapter(endpoint.socketPath);
