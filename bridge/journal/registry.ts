@@ -127,7 +127,7 @@ export function buildJournalRegistry(
  * An alias never adds an adapter, so it is absent from {@link KNOWN_HARNESS_NAMES}: that list
  * answers "which adapters does this build have", and an alias does not change the count.
  */
-export const AGENT_ALIASES = { omp: "pi", antigravity: "agy" } as const;
+export const AGENT_ALIASES = { omp: "pi", antigravity: "agy", kimi: "claude" } as const;
 
 /**
  * Agents that report their session to Herdr on the FIRST PROMPT, not when they start (issue #294).

@@ -33,6 +33,10 @@ describe("mayBeNewWithNothingToRead", () => {
     ["claude", true, false, false],
     ["claude", false, true, false],
     ["claude", false, false, false],
+    // Kimi launches Claude Code under its own process name and follows the same first-prompt log timing.
+    ["kimi", true, true, true],
+    ["kimi", true, false, false],
+    ["kimi", false, true, false],
   ] as const;
 
   it.each(cases)("%s with session %s and noPromptYet %s answers %s", (agent, hasSession, noPromptYet, answer) => {

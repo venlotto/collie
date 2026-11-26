@@ -5,6 +5,7 @@ import type { Page, Route } from "@playwright/test";
 
 import type { StartLaunchBody } from "@/lib/api";
 import type { BotFeaturedPin } from "@/lib/bot-featured-wire";
+import type { BotDisplayRow } from "@/lib/bot-display-wire";
 import { itemsOf, type ChatItem } from "@/lib/chat-items";
 import type { Locale } from "@/lib/i18n/locale";
 import type { MachineAlerts, PaneChatResponse, PaneHistoryResponse, PinFull, SnapshotResponse } from "@/lib/types";
@@ -87,6 +88,15 @@ interface PinStub {
 
 const pinStubs = new WeakMap<Page, PinStub>();
 const featuredStubs = new WeakMap<Page, BotFeaturedPin | null>();
+const displayStubs = new WeakMap<Page, Map<string, BotDisplayRow["view"]>>();
+
+function displayStubOf(page: Page) {
+  const held = displayStubs.get(page);
+  if (held !== undefined) return held;
+  const made = new Map<string, BotDisplayRow["view"]>();
+  displayStubs.set(page, made);
+  return made;
+}
 
 function featuredStubOf(page: Page) {
   return { featured: featuredStubs.get(page) ?? null };
@@ -145,10 +155,19 @@ async function answerPins(route: Route, method: string, stub: PinStub): Promise<
  * unmatched path is a loud 501 rather than a silent fall-through to the static server, which would
  * hand the app `index.html` for a JSON fetch and fail somewhere far away from the cause.
  */
-async function answer(route: Route, path: string, pins: PinStub): Promise<void> {
+async function answer(route: Route, path: string, pins: PinStub, page: Page): Promise<void> {
   const method = route.request().method();
 
   if (path === "/api/snapshot") return fulfillJson(route, fixtureSnapshot);
+  if (path === "/api/bot-display") {
+    const displays = displayStubOf(page);
+    if (method === "PUT") {
+      // SAFETY: the app's requestBotDisplays is the only writer in this isolated browser world.
+      const change = route.request().postDataJSON() as BotDisplayRow;
+      displays.set(change.row, change.view);
+    }
+    return fulfillJson(route, { userId: "local", views: [...displays].map(([row, view]) => ({ row, view })) });
+  }
   if (path === "/api/bot-featured" && method === "GET") {
     return fulfillJson(route, { userId: "local", ...featuredStubOf(route.request().frame().page()) });
   }
@@ -312,7 +331,7 @@ export async function installApiStub(page: Page): Promise<void> {
   await seedTourSeen(page);
   const pins = pinStubOf(page);
   await page.route("**/api/**", async (route) => {
-    await answer(route, new URL(route.request().url()).pathname, pins);
+    await answer(route, new URL(route.request().url()).pathname, pins, page);
   });
   await page.route("**/api/bot-featured", async route => {
     if (route.request().method() !== "PUT") return route.fallback();

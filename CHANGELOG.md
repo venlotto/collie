@@ -87,6 +87,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
 - **Chat bars now show real glass over scrolling messages.** Conversations move beneath translucent, blurred header and reply surfaces on iPhone and desktop, with clearance that follows a growing composer. Reduced Transparency still makes every bar solid.
 - **A successful Codex send no longer says the screen is unreadable.** On a narrow pane, Codex can wrap the session title onto a footer row with no separator. Collie now reads that continuation without mistaking a dialog's key row for it, so the warning appears only when the screen really blocks the reply.
+- **Every bot opens in Messages unless you choose Terminal.** The chat menu's View setting saves that choice for the bot on the server and shares it across your devices, without restarting the pane or losing the conversation. Kimi now opens its Claude-backed conversation correctly, Kimi and GLM leave Starting once their first screen is read, and a conversation that cannot be read yet offers a reversible View terminal action instead of silently leaving Messages.
 
 ## [1.31.0] - 2026-11-24
 

@@ -74,7 +74,8 @@ test("only the latest turn is working and the screen is reached through the menu
   await expect(page.getByRole("button", { name: "Sigue trabajando…" })).toHaveAttribute("aria-expanded", "false");
   await expect(page.locator('[data-slot="stream-live"]')).toHaveCount(0);
   await page.getByRole("button", { name: "Opciones del chat" }).click();
-  await page.getByRole("button", { name: "Ver terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".bot-terminal-label")).toHaveText("Terminal");
   await expect(page.locator(".bot-activity")).toHaveCount(0);
 });

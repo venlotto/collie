@@ -45,6 +45,7 @@ export const JOURNAL_AGENT_NAMES: ReadonlySet<string> = new Set([
   "grok",
   "hermes",
   "kiro",
+  "kimi",
   "mcode",
   "muse",
   "omp",
@@ -70,7 +71,7 @@ const LOG_AFTER_FIRST_REPLY_AGENTS: ReadonlySet<string> = new Set(["omp", "pi"])
  *  appears with the first prompt. Kept apart from the set above because the moment differs (first
  *  prompt, not first reply), and because its excuse needs one more fact: the bridge must KNOW that no
  *  prompt reached the session (`noPromptYet`, set from Collie's hooks). Not on the wire, so named here by hand. */
-const LOG_AFTER_FIRST_PROMPT_AGENTS: ReadonlySet<string> = new Set(["claude"]);
+const LOG_AFTER_FIRST_PROMPT_AGENTS: ReadonlySet<string> = new Set(["claude", "kimi"]);
 
 /** The agents that draw a picture the mirror cannot see, because a direct Kitty placement leaves
  *  nothing on the grid, and whose journal records it. Mirrors `DRAWS_IMAGES_OFF_GRID` in

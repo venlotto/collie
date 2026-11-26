@@ -1,5 +1,6 @@
 import type { AgentView } from "@/lib/types";
 import { parseBotFeaturedPin, type BotFeaturedPin } from "./bot-featured-wire";
+import { parseBotDisplay, parseBotDisplayRow, type BotDisplayRow } from "./bot-display-wire";
 import type { ChatOrder } from "./chat-order";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
@@ -2266,6 +2267,39 @@ export async function requestBotFeatured(account: SectionAccount, signal: AbortS
     init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
   }
   return doReq<BotFeaturedPreferences>("/api/bot-featured", init);
+}
+
+export interface BotDisplayPreferences { userId: string; views: BotDisplayRow[] }
+
+/** Read all per-bot views, or change exactly one. SSO's PATCH is a per-row delta too. */
+export async function requestBotDisplays(account: SectionAccount, signal: AbortSignal, change?: BotDisplayRow): Promise<BotDisplayPreferences> {
+  const init: RequestInit = { signal, cache: "no-store" };
+  if (account.sub !== undefined) {
+    const prefix = "bot-display:v1:";
+    init.headers = { "X-Collie-Subject": encodeURIComponent(account.sub), "X-Collie-Role": account.role ?? "" };
+    if (change) {
+      init.method = "PATCH";
+      init.body = JSON.stringify({ set: { [prefix + change.row]: change.view }, remove: [] });
+      init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+    }
+    const settings = await doReq<Record<string, string>>("/api/user-settings", init);
+    const views: BotDisplayRow[] = [];
+    for (const [name, raw] of Object.entries(settings)) {
+      if (!name.startsWith(prefix)) continue;
+      const view = parseBotDisplay(raw);
+      const row = name.slice(prefix.length);
+      const parsed = parseBotDisplayRow({ row, view });
+      if (parsed) views.push(parsed);
+    }
+    return { userId: account.userId, views };
+  }
+  if (change) {
+    init.method = "PUT";
+    init.body = JSON.stringify(change);
+    init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+  }
+  const reply = await doReq<BotDisplayPreferences>("/api/bot-display", init);
+  return { userId: reply.userId, views: Array.isArray(reply.views) ? reply.views.map(row => parseBotDisplayRow({ row: row.row, view: row.view })).filter(row => row !== undefined) : [] };
 }
 
 export function fetchChatOrder(scope: Scope, signal: AbortSignal) {

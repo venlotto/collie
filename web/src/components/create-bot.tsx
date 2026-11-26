@@ -13,6 +13,7 @@ import { type AgentView, type LaunchersResponse, type WorkspaceView } from "@/li
 import { type SpaceTarget } from "@/lib/api";
 import { BlobAvatar } from "./bot-identity";
 import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { setBotDisplay } from "@/lib/bot-display";
 import { randomBotName } from "@/lib/bot-default-names";
 
 function localName() { setStatus("El nombre quedó guardado en este dispositivo.", "info"); }
@@ -120,6 +121,7 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
       if (profile) cacheBotPrefs(host, prefs);
       const typed = name.trim();
       saveBot(scope, outcome.paneId, { name: typed || fallbackName, silhouette, color });
+      setBotDisplay(scope, outcome.paneId, "chat");
       if (rename.capable) {
         void renamePane(outcome.paneId, typed || fallbackName, scope, !typed).then(res => res.ok ? undefined : localName(), localName);
       }

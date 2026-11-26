@@ -1,5 +1,6 @@
 import type { AgentRuns } from "./agent-runs.ts";
 import { botFeaturedChange, type BotFeatured } from "./bot-featured.ts";
+import { botDisplayChange, type BotDisplays } from "./bot-display.ts";
 import type { BotAutoName } from "./bot-auto-name.ts";
 import { sectionChanges, type UiSections } from "./ui-sections.ts";
 import type { BotTrash } from "./bot-trash.ts";
@@ -1315,6 +1316,7 @@ export function startServer(opts: {
   agentRuns?: AgentRuns;
   uiSections?: UiSections;
   botFeatured?: BotFeatured;
+  botDisplays?: BotDisplays;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -3444,6 +3446,25 @@ export function startServer(opts: {
         const result = await opts.agentRuns.chat(id, cfg.transcript ? journals : null, live, chatParams(url), marksPaneSeen(req, "chat"));
         if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
         return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
+      }
+
+      if (pathname === "/api/bot-display") {
+        if (req.method !== "GET" && req.method !== "PUT") return text("method not allowed", 405);
+        const denied = guard(req, cfg, req.method === "PUT" ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        const store = opts.botDisplays;
+        // SSO accounts use their subject-scoped /api/user-settings route instead of this private ledger.
+        if (!store || store.sso) return text("unavailable", 404);
+        if (req.method === "GET") return json(store.read("local"), null);
+        const bytes = await readCappedBody(new Response(req.body), 16 * 1024);
+        if (!bytes) return text("body too large", 413);
+        const change = botDisplayChange(new TextDecoder().decode(bytes));
+        if (!change) return text("invalid bot display", 400);
+        try {
+          return json(store.update("local", change), null);
+        } catch {
+          return text("could not save bot display", 503);
+        }
       }
 
       if (pathname === "/api/bot-featured") {

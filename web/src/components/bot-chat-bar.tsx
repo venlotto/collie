@@ -4,11 +4,14 @@ import { activityStatusOf } from "@/lib/activity-status";
 import type { AgentView } from "@/lib/types";
 import type { BotIdentity } from "./bot-identity";
 import { BotActivityPill } from "./bot-activity-avatar";
+import { BotViewControl } from "./bot-view-control";
+import type { PaneView } from "@/lib/pane-view";
 import { useDeskControls } from "./bot-desk-controls";
 
-export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, terminal }: {
+export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, terminal, view, onViewChange }: {
   pane: AgentView;
   bot: BotIdentity; unread: number; pinned: boolean; back: () => void; pin: () => void; toggleView?: () => void; terminal: boolean;
+  view?: PaneView; onViewChange?: (view: PaneView) => void;
 }) {
   const menu = useId();
   // On the desk (wide screens) the window controls stand where the phone keeps its Back arrow.
@@ -19,7 +22,8 @@ export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, t
     <button className="bot-circle" aria-label="Opciones del chat" popoverTarget={menu}><Ellipsis size={21} /></button>
     <div id={menu} className="bot-popup" popover="auto">
       <button popoverTarget={menu} popoverTargetAction="hide" onClick={pin}>{pinned ? "Desfijar chat" : "Fijar chat"}</button>
-      {toggleView && <button popoverTarget={menu} popoverTargetAction="hide" onClick={toggleView}>{terminal ? "Ver conversación" : "Ver terminal"}</button>}
+      {view !== undefined && onViewChange ? <BotViewControl value={view} onChange={onViewChange} /> :
+        toggleView && <button popoverTarget={menu} popoverTargetAction="hide" onClick={toggleView}>{terminal ? "Ver conversación" : "Ver terminal"}</button>}
     </div>
   </header>;
 }

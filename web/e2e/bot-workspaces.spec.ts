@@ -196,7 +196,8 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   else await input.press("Enter");
   expect((await posted).postDataJSON().text).toBe("Recibido");
   await page.getByRole("button", { name: "Opciones del chat" }).click();
-  await page.getByRole("button", { name: "Ver terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".bot-terminal")).toBeVisible();
   await page.getByRole("button", { name: "Volver a los chats" }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -211,6 +212,11 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await dialog.getByRole("button", { name: "Forma 4", exact: true }).click();
   await dialog.getByRole("button", { name: "Verde", exact: true }).click();
   await dialog.getByRole("textbox").fill("Bitácora");
+  const displayWrites: { row: string; view: string }[] = [];
+  await page.route("**/api/bot-display", async route => {
+    if (route.request().method() === "PUT") displayWrites.push(route.request().postDataJSON());
+    await route.fallback();
+  });
   await expect(dialog.getByRole("button", { name: "Sin asignar", pressed: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Existente", exact: true }).click();
   const existing = dialog.getByRole("combobox", { name: "Workspace existente" });
@@ -223,6 +229,7 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   expect(launch.launches[0]?.body).toMatchObject({ spaceId: "w3" });
   expect(launch.launches[0]?.body).not.toHaveProperty("paneId");
   expect(launch.launches[0]?.body).not.toHaveProperty("spaceLabel");
+  await expect.poll(() => displayWrites).toContainEqual({ row: ["", "", fixtureLaunchedTab.pane.paneId].join("\u0000"), view: "chat" });
   await expect(page).toHaveURL(new RegExp(encodeURIComponent(fixtureLaunchedTab.pane.paneId)));
   expect(launch.launches[0]?.body).toMatchObject({ harness: "claude", botCreate: { agent: "claudep", effort: "medium" } });
   const cacheKey = "collie:bot-create:v1:";
@@ -837,7 +844,8 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
   const menuBox = (await detail.locator(".bot-popup").boundingBox())!;
   expect(menuBox.x).toBeGreaterThanOrEqual((await detail.boundingBox())!.x);
   expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-  await page.getByRole("button", { name: "Ver terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
   const terminal = detail.locator(".bot-terminal");
   await expect(terminal).toContainText("Ruta 120");
   const reader = terminal.locator("..");
