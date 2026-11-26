@@ -42,7 +42,7 @@ async function settledSheet(page: Page) {
   expect(geometry.faceSize).toBeGreaterThan(0);
   expect(Math.abs(geometry.centerOffset)).toBeLessThan(1);
   expect(geometry.transform).toBe("none");
-  expect(geometry.surface).toBe("rgba(27, 27, 31, 0.7)");
+  expect(geometry.surface).toBe("rgba(27, 27, 31, 0.6)");
   expect(geometry.filter).toContain("blur(24px)");
   if (process.env.BOT_SCREENSHOTS) {
     const dir = process.env.BOT_SCREENSHOTS;
@@ -141,10 +141,10 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
     }));
     expect(covered).toBe(true);
   }
-  const underBars = await page.locator(".bot-detail").evaluate(detail => {
-    const reader = detail.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
-    const header = detail.querySelector(".bot-chat-bar")!.getBoundingClientRect();
-    const box = detail.querySelector('[data-slot="composer-box"]')!.getBoundingClientRect();
+  const underBars = await page.locator(".bot-detail").evaluate(panel => {
+    const reader = panel.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
+    const header = panel.querySelector(".bot-chat-bar")!.getBoundingClientRect();
+    const box = panel.querySelector('[data-slot="composer-box"]')!.getBoundingClientRect();
     return { top: header.bottom - reader.top, bottom: reader.bottom - box.top };
   });
   expect(underBars.top).toBeGreaterThan(0);
@@ -201,6 +201,187 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
 
 });
 
+async function openGlassThread(page: Page) {
+  const pane = { ...fixtureAgents[0]!, paneLabel: "Vidrio", agent: "kiro", hasSession: true };
+  const now = Date.now();
+  const upserts = Array.from({ length: 30 }, (_, i) => ({
+    uuid: "glass-" + i,
+    ts: new Date(now - (30 - i) * 60_000).toISOString(),
+    role: i % 2 === 0 ? "user" as const : "assistant" as const,
+    parts: [{ kind: "text" as const, text: `Mensaje ${i + 1}: una burbuja real debe pasar bajo el vidrio.` }],
+    seq: i + 1,
+  }));
+  await installApiStub(page);
+  if (fixtureKiroChat.page !== "live") throw new Error("Expected a live chat fixture");
+  await installPaneWorld(page, {
+    paneId: pane.paneId,
+    snapshot: { ...fixtureSnapshot, agents: [pane], shellPanes: [], ts: now },
+    chat: { ...fixtureKiroChat, oldest: 1, head: 30, upserts },
+    start: "idle", screens: { idle: paneCapture("kiro--v3-idle-w120") },
+  });
+  await page.goto("/");
+  await page.locator(".bot-row").filter({ hasText: pane.paneLabel }).click();
+  await expect(page.locator(".bot-detail .bot-turn")).toHaveCount(30, { timeout: 20_000 });
+}
+
+async function glassPixel(page: Page, label: string, point: { x: number; y: number }) {
+  const png = await page.screenshot({ scale: "css", animations: "disabled" });
+  if (process.env.BOT_SCREENSHOTS) {
+    const dir = process.env.BOT_SCREENSHOTS;
+    const project = test.info().project.name;
+    const prefix = project.includes("desktop") ? "escritorio" : "iphone-webkit";
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, `${prefix}-${label}.png`), png);
+  }
+  const pixel = await page.evaluate(async ({ encoded, at }) => {
+    const image = new Image();
+    image.src = "data:image/png;base64," + encoded;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d")!;
+    context.drawImage(image, 0, 0);
+    return Array.from(context.getImageData(Math.round(at.x), Math.round(at.y), 1, 1).data);
+  }, { encoded: png.toString("base64"), at: point });
+  if (process.env.BOT_SCREENSHOTS) {
+    await writeFile(join(process.env.BOT_SCREENSHOTS, `${test.info().project.name}-${label}.json`), JSON.stringify({ point, pixel }));
+  }
+  return pixel;
+}
+
+function expectGreenThroughGlass(pixel: number[]) {
+  // Pure green behind the material becomes a darker green, never black or an
+  // unfiltered bright green. This reads the rendered result, not a CSS claim.
+  expect(pixel[0]).toBeLessThan(100);
+  expect(pixel[1]).toBeGreaterThan(60);
+  expect(pixel[1]).toBeLessThan(225);
+  expect(pixel[2]).toBeLessThan(100);
+}
+
+test("las filas se ven atenuadas bajo el vidrio de la lista", async ({ page }) => {
+  await installApiStub(page);
+  const agents = Array.from({ length: 20 }, (_, i) => ({
+    ...fixtureAgents[0]!, paneId: "w1:p" + i, paneLabel: "Conversación " + i,
+  }));
+  await page.route(url => url.pathname === "/api/snapshot", route => route.fulfill({
+    json: { ...fixtureSnapshot, agents, shellPanes: [] },
+  }));
+  await page.goto("/");
+  const rows = page.locator(".bot-row");
+  await expect(rows).toHaveCount(agents.length);
+  const probe = rows.nth(5);
+  await probe.evaluate(el => {
+    el.style.background = "#00ff00";
+    el.style.color = "transparent";
+    el.style.minHeight = "112px";
+  });
+  const header = page.locator(".bot-list-surface > .bot-bar");
+  const search = page.locator(".bot-search");
+
+  await probe.evaluate(el => {
+    const list = el.closest(".bot-scroll")!;
+    list.scrollTop += el.getBoundingClientRect().top - document.querySelector(".bot-list-surface > .bot-bar")!.getBoundingClientRect().top + 12;
+  });
+  let point = await header.evaluate((bar, row) => ({
+    x: row.left + row.width / 2,
+    y: bar.getBoundingClientRect().bottom - 4,
+  }), await probe.evaluate(el => {
+    const { left, width } = el.getBoundingClientRect();
+    return { left, width };
+  }));
+  expectGreenThroughGlass(await glassPixel(page, "lista-vidrio-arriba", point));
+
+  const bottomProbe = rows.nth(15);
+  await bottomProbe.evaluate(el => {
+    el.style.background = "#00ff00";
+    el.style.color = "transparent";
+    el.style.minHeight = "112px";
+  });
+  await bottomProbe.evaluate(el => {
+    const list = el.closest(".bot-scroll")!;
+    const bottom = document.querySelector(".bot-search")!.getBoundingClientRect().top;
+    list.scrollTop += el.getBoundingClientRect().top - bottom + 40;
+  });
+  point = await search.evaluate(bar => ({
+    x: bar.getBoundingClientRect().right - 16,
+    y: bar.getBoundingClientRect().top + bar.getBoundingClientRect().height / 2,
+  }));
+  expectGreenThroughGlass(await glassPixel(page, "lista-vidrio-abajo", point));
+
+  for (const surface of [header, search]) {
+    const filters = await surface.evaluate(el => {
+      const style = getComputedStyle(el);
+      return [style.getPropertyValue("backdrop-filter"), style.getPropertyValue("-webkit-backdrop-filter")];
+    });
+    expect(filters[0]).toContain("blur(24px)");
+    expect(filters[1] || filters[0]).toContain("blur(24px)");
+  }
+});
+
+test("las burbujas se ven atenuadas bajo el vidrio de ambas barras", async ({ page }) => {
+  await openGlassThread(page);
+  await expect.poll(() => page.locator(".bot-detail").evaluate(el => getComputedStyle(el).transform)).toBe("none");
+  const probe = page.locator(".bot-detail .bot-turn").nth(7);
+  await probe.evaluate(el => {
+    el.style.background = "#00ff00";
+    el.style.color = "transparent";
+    el.style.minHeight = "112px";
+  });
+  const header = page.locator(".bot-chat-bar");
+  const footer = page.locator('[data-slot="pane-bottom"]');
+
+  await probe.evaluate(el => {
+    const stream = el.closest('[data-slot="session-stream"]')!;
+    stream.scrollTop += el.getBoundingClientRect().top - document.querySelector(".bot-chat-bar")!.getBoundingClientRect().top + 12;
+  });
+  await expect.poll(() => probe.evaluate(el => el.getBoundingClientRect().top)).toBeLessThan(0);
+  let point = await header.evaluate((bar, bubble) => ({
+    x: bubble.left + bubble.width / 2,
+    y: bar.getBoundingClientRect().bottom - 4,
+  }), await probe.evaluate(el => {
+    const { left, width } = el.getBoundingClientRect();
+    return { left, width };
+  }));
+  expectGreenThroughGlass(await glassPixel(page, "vidrio-arriba", point));
+
+  const bottomProbe = page.locator(".bot-detail .bot-turn").nth(19);
+  await bottomProbe.evaluate(el => {
+    el.style.background = "#00ff00";
+    el.style.color = "transparent";
+    el.style.minHeight = "112px";
+  });
+  await bottomProbe.evaluate(el => {
+    const stream = el.closest('[data-slot="session-stream"]')!;
+    const bottom = document.querySelector('[data-slot="pane-bottom"]')!.getBoundingClientRect().top;
+    stream.scrollTop += el.getBoundingClientRect().top - bottom + 40;
+  });
+  await expect.poll(() => bottomProbe.evaluate(el => el.getBoundingClientRect().bottom)).toBeGreaterThan(
+    await footer.evaluate(el => el.getBoundingClientRect().top),
+  );
+  point = await footer.evaluate((bar, bubble) => ({
+    x: bubble.left + 4,
+    y: bar.getBoundingClientRect().top + 24,
+  }), await bottomProbe.evaluate(el => ({ left: el.getBoundingClientRect().left })));
+  expectGreenThroughGlass(await glassPixel(page, "vidrio-abajo", point));
+
+  for (const surface of [header, footer]) {
+    const css = await surface.evaluate(el => {
+      const style = getComputedStyle(el);
+      return {
+        background: style.backgroundColor,
+        standard: style.getPropertyValue("backdrop-filter"),
+        webkit: style.getPropertyValue("-webkit-backdrop-filter"),
+      };
+    });
+    expect(css.standard).toContain("blur(24px)");
+    // Chromium does not expose the prefixed alias through computed style.
+    expect(css.webkit || css.standard).toContain("blur(24px)");
+    expect(Number(css.background.match(/[\d.]+\)$/)?.[0].slice(0, -1))).toBeGreaterThanOrEqual(0.55);
+    expect(Number(css.background.match(/[\d.]+\)$/)?.[0].slice(0, -1))).toBeLessThanOrEqual(0.7);
+  }
+});
+
 test("reducir transparencia conserva barras opacas sin desenfoque", async ({ page, browserName }) => {
   if (browserName === "chromium") {
     const client = await page.context().newCDPSession(page);
@@ -220,6 +401,16 @@ test("reducir transparencia conserva barras opacas sin desenfoque", async ({ pag
     const css = getComputedStyle(el);
     return css.getPropertyValue("backdrop-filter") || css.getPropertyValue("-webkit-backdrop-filter");
   })).toBe("none");
+  await openGlassThread(page);
+  for (const surface of [page.locator(".bot-chat-bar"), page.locator('[data-slot="pane-bottom"]')]) {
+    await expect(surface).toHaveCSS("background-color", "rgb(27, 27, 31)");
+    const filters = await surface.evaluate(el => {
+      const css = getComputedStyle(el);
+      return [css.getPropertyValue("backdrop-filter"), css.getPropertyValue("-webkit-backdrop-filter")];
+    });
+    expect(filters.map(filter => filter || "none")).toEqual(["none", "none"]);
+  }
+  await screenshot(page, "transparencia-reducida");
 });
 
 test("scroll de una lista larga bajo el vidrio", async ({ page }) => {

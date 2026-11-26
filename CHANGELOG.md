@@ -76,6 +76,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Messages reach idle Codex chats with the agents hint.** On Codex 0.172.0 the phone checks the input box and submits the message when the shortcut hint disappears. A refused queued message shows the reason and keeps its resend action.
 
 - **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
+- **Chat bars now show real glass over scrolling messages.** Conversations move beneath translucent, blurred header and reply surfaces on iPhone and desktop, with clearance that follows a growing composer. Reduced Transparency still makes every bar solid.
 
 ## [1.31.0] - 2026-11-24
 

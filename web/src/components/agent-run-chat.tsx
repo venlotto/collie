@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { useRevalidator } from "react-router";
 import { useChatWindow } from "@/hooks/use-chat-window";
 import { useNav } from "@/hooks/use-nav";
+import { useBotChromeOverlap } from "@/hooks/use-bot-chrome-overlap";
 import { stopAgentRun } from "@/lib/api";
 import { homePath } from "@/lib/nav";
 import { paneScopeKey, type Scope } from "@/lib/scope";
@@ -30,6 +31,8 @@ export function AgentRunChat({ run, agent, scope, active, writable }: {
   const refresh = useRevalidator();
   const id = "agent-run:" + run.id;
   const feed = useChatWindow({ paneId: id, scope, enabled: active });
+  const root = useRef<HTMLDivElement>(null);
+  const setBottom = useBotChromeOverlap(root);
   const list = useRef<ChatMessageListHandle>(null);
   const [stopping, setStopping] = useState(false);
   const [error, setError] = useState(false);
@@ -46,16 +49,16 @@ export function AgentRunChat({ run, agent, scope, active, writable }: {
       void refresh.revalidate();
     }
   }
-  return <>
+  return <div ref={root} className="bot-conversation bot-agent-run">
     <header className="bot-bar bot-chat-bar agent-run-bar">
       <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>
       <BotActivityPill bot={bot} status={activityStatusOf(agent)} />
     </header>
     <SessionStream bot={bot} feed={feed} working={run.status === "running"} agent={agent.agent}
       address={paneScopeKey(scope, id)} showToolCalls={false} showCompactions={false} fontSize={15} listRef={list} />
-    <footer className="agent-run-status"><span>{runProgress(run)}</span>
+    <footer ref={setBottom} className="agent-run-status"><span>{runProgress(run)}</span>
       {run.status === "running" && writable && <button disabled={stopping} onClick={stop}>{stopping ? "Deteniendo…" : "Detener"}</button>}
       {error && <span role="alert">No se pudo detener el run.</span>}
     </footer>
-  </>;
+  </div>;
 }

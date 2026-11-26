@@ -36,7 +36,7 @@
   transform: translateX(100%);
   transition: transform 300ms ease-out;
 }
-.bot-layout[data-detail=true] .bot-detail { transform: translateX(0); }
+.bot-layout[data-detail=true] .bot-detail { transform: none; }
 .bot-detail > * { min-width: 0; }
 .bot-index { position: relative; }
 /* The search footer stays in the untransformed shell throughout the sheet transition. */
@@ -94,12 +94,12 @@
 .bot-unread { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #0a84ff; }
 .bot-new-line span { background: #0a74dc; color: white; border-radius: 99px; padding: 2px 8px; font-size: 12px; line-height: 17px; }
 .bot-search-foot { position: absolute; bottom: 0; width: 100%; padding: 12px 18px 0; background: linear-gradient(transparent,#000 90%); pointer-events: none; }
-.bot-search { pointer-events: auto; justify-content: flex-start; gap: 9px; width: 100%; height: 44px; padding: 0 15px; background: rgb(42 42 44 / 94%); backdrop-filter: blur(18px); }
+.bot-search { pointer-events: auto; justify-content: flex-start; gap: 9px; width: 100%; height: 44px; padding: 0 15px; }
 .bot-search input { width: 100%; min-width: 0; outline: none; font-size: 16px; background: transparent; }
 .bot-search:focus-within { outline: 2px solid #0a84ff; }
 .bot-empty,.bot-placeholder { margin: auto; text-align: center; color: #8e8e93; font-size: 15px; }
 .bot-empty { padding: 54px 16px; }
-.bot-chat-bar { background: rgb(0 0 0 / 84%); backdrop-filter: blur(18px); z-index: 2; }
+.bot-chat-bar { z-index: 2; }
 .bot-back { width: auto; min-width: 40px; padding-inline: 7px; gap: 2px; }
 .bot-back b { font-size: 13px; }
 .bot-popup { position: fixed; inset: calc(58px + env(safe-area-inset-top)) 14px auto auto; margin: 0; padding: 6px; border-radius: 16px; background: #222224; color: white; box-shadow: 0 8px 30px #0009; }
@@ -317,7 +317,7 @@
 /* The inset hairline and reflection paint inside the existing boxes. */
 [data-bots], .bot-dialog {
   --glass-rgb: 27 27 31;
-  --glass-opacity: .70;
+  --glass-opacity: .60;
   --glass-filter: blur(24px) saturate(170%);
   --glass-edge: inset 0 0 0 .5px rgb(255 255 255 / .11), inset 0 1px 0 rgb(255 255 255 / .09);
   --glass-light: linear-gradient(168deg, rgb(255 255 255 / .065), transparent 48%);
@@ -360,24 +360,41 @@
 .bot-scroll { padding-top: calc(var(--bot-head) + 8px); scroll-padding-block: var(--bot-head) 58px; }
 .bot-row, .bot-index [data-drag-space] .bot-row { transition-property: transform, opacity; }
 
-/* Extend the scrollport behind the bars. The padding returns the space at
-   either end. A docked question still gets its own row above the composer. */
-.bot-chat-bar { position: relative; }
-.bot-chat-bar + div { --bot-head-overlap: var(--bot-head); }
-.bot-chat-bar + div:has(> [data-slot="collapse"] [data-slot="notice"]) { --bot-head-overlap: 0px; }
-.bot-chat-bar + div [data-slot="pane-reading"] { margin-top: calc(-1 * var(--bot-head-overlap)); }
-.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto {
-  scroll-padding-top: var(--bot-head-overlap);
+/* Both chat bars float over a full-height reader. Measured bottom clearance
+   follows the composer as it grows, rather than assuming a fixed height. */
+.bot-conversation { position: relative; }
+.bot-agent-run { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.bot-chat-bar { position: absolute; inset: 0 0 auto; z-index: 4; }
+.bot-chat-bar + div {
+  --bot-head-overlap: var(--bot-head);
+  --bot-composer-overlap: var(--bot-bottom-overlap, 0px);
 }
-.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::before {
+.bot-chat-bar + div:has(> [data-slot="collapse"] [data-slot="notice"]) {
+  --bot-head-overlap: 0px;
+  padding-top: var(--bot-head);
+}
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto,
+.agent-run-bar + div > [data-slot="session-stream"] {
+  scroll-padding-block: var(--bot-head-overlap) calc(var(--bot-composer-overlap) + 12px);
+}
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::before,
+.agent-run-bar + div > [data-slot="session-stream"]::before {
   content: ""; display: block; height: var(--bot-head-overlap);
 }
-.bot-chat-bar + div:has([data-slot="composer-box"]):not(:has([data-slot="card-dock"])) {
-  --bot-composer-overlap: 40px;
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::after,
+.agent-run-bar + div > [data-slot="session-stream"]::after {
+  content: ""; display: block; height: var(--bot-composer-overlap);
 }
-.bot-detail [data-slot="pane-reading"] { margin-bottom: calc(-1 * var(--bot-composer-overlap, 0px)); }
-.bot-detail [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::after {
-  content: ""; display: block; height: var(--bot-composer-overlap, 0px);
+/* A docked card keeps its own row above the floating composer. */
+.bot-chat-bar + div > :not([data-slot="pane-reading"], [data-slot="collapse"]):has(+ [data-slot="collapse"]) {
+  margin-bottom: var(--bot-composer-overlap);
+}
+.bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-status {
+  position: absolute; inset: auto 0 0; z-index: 3;
+  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
 }
 .bot-detail [data-slot="chrome-block"], .bot-detail [data-slot="chrome-block"] > .bg-chrome { background: transparent; }
 

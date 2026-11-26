@@ -7,6 +7,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import { useRevalidator } from "react-router";
 import { useReadingReleasesKeyboard } from "@/hooks/use-reading-releases-keyboard";
 import { useKeyboardOpen } from "@/hooks/use-keyboard";
+import { useBotChromeOverlap } from "@/hooks/use-bot-chrome-overlap";
 import { useWidthClass } from "@/hooks/use-width-class";
 import { useSheetPull } from "@/hooks/use-sheet-pull";
 import { usePaneNavigation } from "@/components/pane-nav";
@@ -1221,6 +1222,7 @@ export function AgentChat({
   const cardDockRef = useRef<HTMLDivElement>(null);
   // This chat's own root: the way to a program's question card looks inside it and nowhere else.
   const chatRootRef = useRef<HTMLDivElement>(null);
+  const setBotBottom = useBotChromeOverlap(chatRootRef);
   /** Why the docked card's buttons are off, in the composer placeholder's own words; undefined when they are on. */
   function cardOffWords(): string | undefined {
     if (gone) return t("composer.placeholder.gone");
@@ -2622,7 +2624,7 @@ export function AgentChat({
           right edge. app-header.tsx's `wide` claim carries the identical ladder, or the header and
           the mirror stop sharing that edge. */}
       {/* In a large screen's column the column is the bound (ADR 0120), so the ladder stands down there. */}
-      <div ref={chatRootRef} className={cn("flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden", !inStrip && !mobileShell && "mx-auto max-w-[100dvw] md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-[1400px]")}>
+      <div ref={chatRootRef} className={cn("flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden", mobileShell && "bot-conversation relative", !inStrip && !mobileShell && "mx-auto max-w-[100dvw] md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-[1400px]")}>
         {/* Header — this route's contribution to the ONE header shell, which is mounted above the
             outlet in RootLayout and is the same element on every screen (so the Collie mark is not
             only identical, it is literally the same drawing, still turning). The pane's own bits are
@@ -3795,7 +3797,7 @@ export function AgentChat({
               rather than the element for exactly this reason (agent-chat.test.tsx says so at the
               docking test). */}
           <Collapse open={!zen}>
-            <div data-slot="pane-bottom" className="relative shrink-0">
+            <div ref={setBotBottom} data-slot="pane-bottom" className="relative shrink-0">
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode
                   would otherwise vanish with the stripped input box). It is the LAST ROW OF THE MIRROR,

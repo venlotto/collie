@@ -147,6 +147,21 @@ test("a headless run keeps its duration, stop control and live portrait", async 
   await expect(stop).toBeEnabled();
   await expect(stop.locator("..")).toContainText(/Corriendo · \d+ min/);
   await expect(page.getByText(progress, { exact: true })).toBeVisible();
+  await expect.poll(() => page.locator(".bot-detail").evaluate(el => getComputedStyle(el).transform)).toBe("none");
+  const runGeometry = await page.locator(".bot-agent-run").evaluate(root => {
+    const reader = root.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
+    const bar = root.querySelector(".agent-run-bar")!.getBoundingClientRect();
+    const foot = root.querySelector(".agent-run-status")!;
+    const footer = foot.getBoundingClientRect();
+    const style = getComputedStyle(foot);
+    return { top: reader.top - bar.top, bottom: reader.bottom - footer.bottom,
+      standard: style.getPropertyValue("backdrop-filter"), webkit: style.getPropertyValue("-webkit-backdrop-filter") };
+  });
+  expect(runGeometry.top).toBeLessThanOrEqual(0);
+  expect(runGeometry.bottom).toBeGreaterThanOrEqual(0);
+  expect(runGeometry.standard).toContain("blur(24px)");
+  // Chromium keeps only the standard property in computed style.
+  expect(runGeometry.webkit || runGeometry.standard).toContain("blur(24px)");
   await capture(page, "header-run");
 
   run.agentRun.status = "done";
