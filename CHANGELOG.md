@@ -42,6 +42,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Background runs show their activity on the same portraits.** The list keeps their elapsed time while they work and returns to the last message after you read their result.
 - **Double-click, right-click or hold the + to start a quick bot.** It opens at once, with no form, with the agent and reasoning of the last bot you created, for a quick task. Its random name changes to a short title once the bot knows its task. A plain tap still opens the full form.
 
+- **Wide screens keep several chats open side by side.** Open a second bot from the list and it joins the first instead of replacing it. Each window can be minimised to a tray under the chats, maximised to fill the space, or closed without stopping its bot, and the set of open chats is remembered on that device. One chat, a narrow window and the phone look as before.
+
 ### Changed
 
 - **Chat controls float over the conversation in dark glass.** Headers, search, reply controls and action sheets share a translucent surface. Reducing transparency gives them an opaque background.
