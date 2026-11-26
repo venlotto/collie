@@ -40,6 +40,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Working bots pulse gently in the chat list and header.** A short status replaces the message preview while a bot works, needs an answer, or has a new result to read.
 - **Background runs show their activity on the same portraits.** The list keeps their elapsed time while they work and returns to the last message after you read their result.
+- **Double-click, right-click or hold the + to start a quick bot.** It opens at once, with no form, with a random name and the agent and reasoning of the last bot you created, for a quick task. A plain tap still opens the full form.
 
 ### Changed
 
