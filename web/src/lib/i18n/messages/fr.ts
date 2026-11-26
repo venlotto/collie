@@ -826,6 +826,7 @@ export const fr: Dictionary = {
   "chat.stream.empty": "Envoyez un message pour commencer.",
   "chat.empty.sharedFolder":
     "Deux sessions {harness} partagent ce dossier, Collie ne peut donc pas savoir laquelle appartient à ce volet. Démarrez l'agent avec sa commande de reprise et l'ID de session, et Collie lira la bonne.",
+  "chat.stream.stoppedOnError": "L’agent s’est arrêté à la suite d’une erreur.",
   "chat.stream.working": "Toujours en cours…",
   "chat.stream.questionPending": "Une question est en attente dans le terminal. Votre prochain message y répond.",
   "chat.stream.queued": "En attente d'envoi",
@@ -895,6 +896,8 @@ export const fr: Dictionary = {
   "chat.run.searches.other": "{count} recherches",
   "chat.run.agents.one": "{count} agent",
   "chat.run.agents.other": "{count} agents",
+  "chat.run.steps.one": "{count} étape",
+  "chat.run.steps.other": "{count} étapes",
   "chat.run.others.one": "{count} autre étape",
   "chat.run.others.other": "{count} autres étapes",
   "chat.run.earlier.one": "{count} étape précédente · {summary}",

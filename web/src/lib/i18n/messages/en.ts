@@ -997,6 +997,7 @@ export const en = {
   "chat.stream.empty": "Send a message to start.",
   "chat.empty.sharedFolder":
     "Two {harness} sessions share this folder, so Collie cannot tell which one is this pane's. Start the agent with the flag that names its session id, then Collie reads the right one.",
+  "chat.stream.stoppedOnError": "The agent stopped after an error.",
   "chat.stream.working": "Still working…",
   "chat.stream.questionPending": "A question is waiting in the terminal. Your next message answers it.",
   "chat.stream.queued": "Waiting to send",
@@ -1092,6 +1093,8 @@ export const en = {
   "chat.run.searches.other": "{count} searches",
   "chat.run.agents.one": "{count} agent",
   "chat.run.agents.other": "{count} agents",
+  "chat.run.steps.one": "{count} step",
+  "chat.run.steps.other": "{count} steps",
   "chat.run.others.one": "{count} other step",
   "chat.run.others.other": "{count} other steps",
   "chat.run.earlier.one": "{count} earlier step · {summary}",
