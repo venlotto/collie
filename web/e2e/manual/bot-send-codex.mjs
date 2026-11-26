@@ -118,6 +118,7 @@ try {
   writeFileSync(join(config, "config.toml"), [
     'model_provider = "lab"', 'model = "gpt-5"', '[model_providers.lab]', 'name = "Local fixture"',
     'base_url = "http://127.0.0.1:' + model.port + '/v1"', 'wire_api = "responses"',
+    '[features]', 'daemon_auto_start = false',
     '[projects.' + JSON.stringify(cwd) + ']', 'trust_level = "trusted"',
   ].join("\n"));
   server = Bun.spawn([herdr, "server"], { cwd, env, stdout: "ignore", stderr: "ignore" });
