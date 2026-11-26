@@ -2,9 +2,12 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
+import type { AgentRunActivity } from "@/lib/activity-status";
 import type { AgentView } from "@/lib/types";
 import { fixtureAgents, fixtureKiroChat, fixtureShellPanes, fixtureSnapshot } from "@/test/handlers";
 import { installApiStub, installPaneWorld, paneCapture, pinLocale } from "./fixtures/api";
+
+type SnapshotRun = Extract<AgentRunActivity, { end: number | null }> & { id: string; start: number };
 
 async function openActivityFixture(page: Page) {
   await pinLocale(page, "es");
@@ -18,12 +21,12 @@ async function openActivityFixture(page: Page) {
     { paneLabel: "Importación", status: "blocked", blockedBy: "error" },
     { paneLabel: "Bitácora", status: "done" },
   ] satisfies Partial<AgentView>[];
-  const agents: AgentView[] = portraits.map((portrait, i) => ({
-    ...fixtureAgents[0]!, agent: "kiro", ...portrait, workspaceLabel: workspace.label,
+  const agents: AgentView[] = portraits.map((portrait, i) => Object.assign({}, fixtureAgents[0]!, portrait, {
+    agent: "kiro", workspaceLabel: workspace.label,
     paneId: workspace.workspaceId + ":p" + (i + 1), terminalId: "fixture-activity-" + i,
     lastActiveAt: now - (i + 1) * 60_000, lastSeenAt: now - 3_600_000,
   }));
-  const agentRun: { id: string; status: "running" | "done"; start: number; end: number | null } = {
+  const agentRun: SnapshotRun = {
     id: "fixture-export", status: "running", start: now - 60_000, end: null,
   };
   const run = {
