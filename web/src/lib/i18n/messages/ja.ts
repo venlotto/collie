@@ -570,6 +570,7 @@ export const ja: Dictionary = {
   "composer.steer.steered": "指示完了: エージェントは現在のステップの終了後にこれを受け取ります。",
   "composer.steer.unsupported": "このペインでは方向修正を使えないため、何も送信されていません。もう一度送信すると、ターンの終了までキューに入ります。",
   "composer.steer.notAllowed": "方向修正できるのは、スマートフォンを操作している人だけです。方向修正なしで、もう一度送信してください。",
+  "composer.startup.queued": "送信待ちです。エージェントの準備ができ次第送信します。",
   "composer.protocol.held": "キューに追加されました。ターンが終了すると送信されます。",
   "composer.protocol.expired": "送信されませんでした。30分以内にターンが終了しませんでした。",
   "composer.protocol.cancelled": "キャンセルされました。エージェントには何も送信されていません。",

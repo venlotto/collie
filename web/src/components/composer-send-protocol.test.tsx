@@ -520,27 +520,34 @@ describe("Steer or queue on the Send button (M69)", () => {
     expect(steer.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("a launch still starting keeps typing, Send and the steer menu available", async () => {
+  it("accepts startup messages and delivers their snapshots in order when ready", async () => {
     const user = userEvent.setup();
-    const { sends } = bridge([{ body: { receipt: receipt("sent"), offers: [] } }]);
-    renderSteer({ surface: running, canSteer: true });
-    await user.type(field(), "wait for startup");
-    field().focus();
-    setStarting(true);
-    expect(field()).not.toBeDisabled();
+    const { sends } = bridge([{ body: { receipt: receipt("sent"), offers: [] } }, { body: { receipt: receipt("sent"), offers: [] } }]);
+    renderSteer({ surface: running, canSteer: true, starting: true });
     expect(field()).not.toHaveAttribute("readonly");
-    expect(field()).not.toHaveAttribute("aria-disabled");
-    expect(field()).toHaveFocus();
-    await user.keyboard(" more");
-    expect(field()).toHaveValue("wait for startup more");
-    expect(screen.getByRole("button", { name: "Send" })).not.toHaveAttribute("aria-disabled");
-    fireEvent.contextMenu(screen.getByRole("button", { name: "Send" }));
-    expect(await screen.findByRole("button", { name: STEER })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Send as message" })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
+    await user.type(field(), "first message");
     await user.click(screen.getByRole("button", { name: "Send" }));
-    await waitFor(() => expect(sends).toHaveLength(1));
-    expect(sends[0]).toMatchObject({ text: "wait for startup more", mode: "send" });
+    expect(field()).toHaveValue("");
+    await user.type(field(), "second message");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await user.type(field(), "next draft");
+    expect(sends).toEqual([]);
+    setStarting(false);
+    await waitFor(() => expect(sends.map((row) => row.text)).toEqual(["first message", "second message"]));
+    expect(field()).toHaveValue("next draft");
+  });
+  it("returns a failed startup send to the draft without retrying it", async () => {
+    const user = userEvent.setup();
+    const { sends } = bridge([{ status: 500 }]);
+    renderComposer({ starting: true });
+    const field = () => screen.getByRole("textbox");
+    await user.type(field(), "keep these words");
+    fireEvent.keyDown(field(), { key: "Enter", ctrlKey: true });
+    expect(field()).toHaveValue("");
+    expect(sends).toHaveLength(0);
+    setStarting(false);
+    await waitFor(() => expect(field()).toHaveValue("keep these words"));
+    expect(sends).toHaveLength(1);
   });
 
   it("the empty field's placeholder is the hint, smaller than the reply words, while the turn runs on a pane that can steer", () => {

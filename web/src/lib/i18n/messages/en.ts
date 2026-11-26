@@ -631,6 +631,7 @@ export const en = {
   "composer.steer.unsupported": "Steer is not available on this pane, so nothing was sent. Send again to queue it for the end of the turn.",
   "composer.steer.notAllowed": "Only a person at the phone can steer. Send again without Steer.",
   // A send the harness could not take mid-turn waits in the bridge and goes out when the pane reads free (M56 spec 15).
+  "composer.startup.queued": "Queued. Sends when the agent is ready.",
   "composer.protocol.held": "Queued. Sends when the turn ends.",
   "composer.protocol.expired": "Not sent. The turn did not end within 30 minutes.",
   "composer.protocol.cancelled": "Cancelled. Nothing went to the agent.",

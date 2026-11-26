@@ -137,7 +137,7 @@ is written `prefix+<key>`. A key inside a mode is a bare key.
 | `zen_mode` | `prefix+z` | View | Turns zen mode on or off, where the pane's menu offers it. | - |
 | `toggle_sidebar` | `prefix+b` | View | Folds the sidebar to its rail, or opens it. | - |
 | `toggle_chat_terminal` | `prefix+t` | View | Switches the pane between Chat and Terminal. | - |
-| `focus_composer` | `prefix+i` | View | Puts the cursor in the composer. | - |
+| `focus_composer` | `prefix+i`, `ctrl+m` | View | Puts the cursor in the composer. | - |
 | `find` | `prefix+/` | View | Opens the find bar of the terminal view. | - |
 | `copy_output` | - | View | Copies the pane's output. | - |
 | `conversation_history` | - | View | Opens the agent's conversation history. | - |

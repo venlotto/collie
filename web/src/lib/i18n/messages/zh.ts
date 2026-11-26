@@ -559,6 +559,7 @@ export const zh: Dictionary = {
   "composer.steer.steered": "已引导：代理将在当前步骤结束后处理。",
   "composer.steer.unsupported": "此窗格不支持“引导”，所以没有发送任何内容。再次发送，即可排队到本轮结束时发出。",
   "composer.steer.notAllowed": "只有在手机旁的人才能引导。请不使用“引导”再次发送。",
+  "composer.startup.queued": "已加入队列。代理准备好后将自动发送。",
   "composer.protocol.held": "已排队。本轮结束时发送。",
   "composer.protocol.expired": "未发送。本轮未在 30 分钟内结束。",
   "composer.protocol.cancelled": "已取消。未向代理发送任何内容。",

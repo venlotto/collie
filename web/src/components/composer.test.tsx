@@ -6220,78 +6220,12 @@ describe("Composer command suggestions (#458)", () => {
 
 
 describe("Composer — known launch startup send-lock", () => {
-  it("turns the box off for the start, in the look of a locked one, and has no notice row", async () => {
-    const props = renderComposer({ starting: true });
-    // The placeholder says why, inside the box: the reply words are gone, and no row of its own holds "Starting…".
-    const box = screen.getByPlaceholderText("Starting…");
-    expect(box).not.toBeDisabled();
-    expect(box).toHaveAttribute("readonly");
-    expect(box).toHaveAttribute("aria-disabled", "true");
-    expect(box).toHaveClass("opacity-50", "cursor-not-allowed");
-    expect(screen.queryByText("Starting…")).toBeNull();
-    expect(box.closest("[class*='bg-muted/40']")).not.toBeNull();
-    expect(screen.queryByRole("status")).toBeNull();
-    expect(screen.getByRole("button", { name: /^Send$/ })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Attach file" })).toBeDisabled();
-    expect(props.onSent).not.toHaveBeenCalled();
-    // The terminal's own doors stay: Type mode and Keys are not held.
-    expect(screen.getByRole("button", { name: "Type into terminal" })).not.toBeDisabled();
-    await userEvent.setup().click(screen.getByRole("button", { name: "Keys" }));
-    expect(screen.getByRole("button", { name: "Esc" })).not.toBeDisabled();
-  });
-
-  it("keeps a draft typed before the start, sends nothing during it, and gives the box back editable", async () => {
-    const user = userEvent.setup();
-    const typed = vi.fn();
-    server.use(...replyHandler(typed));
-    let start = (_on: boolean) => {};
-    function View() {
-      const [starting, setStarting] = useState(false);
-      start = setStarting;
-      return <Composer paneId="start:p1" agent="kiro" isShell={false} gone={false} readOnly={false} surface={FREE} starting={starting}
-        text="pane output" terminalDraft={null} rawTerminalDraft={null}
-        prefs={{ wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system", rawTerminal: false, tapToFocus: true, expandClippedReply: true, stretchText: false }}
-        display={{ open: false, onToggle: vi.fn() }} onSent={vi.fn()} />;
-    }
-    const router = createMemoryRouter([{ path: "/", element: <View /> }]);
-    render(<RouterProvider router={router} />);
-    const box = screen.getByPlaceholderText(/type a reply/i);
-    expect(box).not.toBeDisabled();
-    await user.type(box, "keep this draft");
-    box.focus();
-    act(() => start(true));
-    // Held: not disabled (a disabled field drops focus and the keyboard with it), read only and aria-disabled.
-    expect(box).not.toBeDisabled();
-    expect(box).toHaveAttribute("readonly");
-    expect(box).toHaveAttribute("aria-disabled", "true");
-    expect(box).toHaveFocus();
-    expect(box).toHaveAttribute("placeholder", "Starting…");
-    expect(box).toHaveValue("keep this draft");
-    // Keys, Enter, Ctrl+Enter, paste, cut, drop, composition and a change event that got through change nothing and send nothing.
-    await user.keyboard("more{Enter}");
-    fireEvent.keyDown(box, { key: "Enter" });
-    fireEvent.keyDown(box, { key: "Enter", ctrlKey: true });
-    fireEvent.keyDown(box, { key: "Enter", metaKey: true });
-    await user.paste("pasted words");
-    fireEvent.paste(box, { clipboardData: { items: [], getData: () => "fire pasted" } });
-    expect(fireEvent.cut(box)).toBe(false);
-    expect(fireEvent.drop(box)).toBe(false);
-    fireEvent.compositionStart(box);
-    fireEvent.change(box, { target: { value: "keep this draft, composed" } });
-    fireEvent.compositionEnd(box, { data: "composed" });
-    expect(box).toHaveValue("keep this draft");
-    expect(box).toHaveFocus();
-    await user.click(screen.getByRole("button", { name: /^Send$/ }));
-    expect(typed).not.toHaveBeenCalled();
-    expect(loadDraft(undefined, "start:p1")).toBe("keep this draft");
-    act(() => start(false));
+  it("keeps the startup field editable with attachments available", () => {
+    renderComposer({ starting: true });
+    const box = screen.getByRole("textbox");
     expect(box).not.toBeDisabled();
     expect(box).not.toHaveAttribute("readonly");
-    expect(box).not.toHaveAttribute("aria-disabled");
-    expect(box).toHaveFocus();
-    expect(box).toHaveValue("keep this draft");
-    await user.type(box, "!");
-    expect(box).toHaveValue("keep this draft!");
+    expect(screen.getByRole("button", { name: "Attach file" })).not.toBeDisabled();
   });
 
   it("every error ends the hold: a stale or lost read frees the box for the offline rules, a gone pane locks it", async () => {
@@ -6337,7 +6271,7 @@ describe("Composer — known launch startup send-lock", () => {
     expect(screen.getByPlaceholderText("Sending is off")).toBeDisabled();
   });
 
-  it("startup also blocks an already-offered protocol commit without losing its draft", async () => {
+  it("startup leaves an already-offered protocol commit to the person who offered it", async () => {
     const user = userEvent.setup();
     const typed = vi.fn();
     server.use(...replyHandler(typed, undefined, (request) => sendAnswer(request.id, "refused", "unconfirmed", { offers: ["commit"], rowsHash: "abc", surface: { ...FREE, composer: "unknown", modal: "unknown", reason: "no-match" } })));
@@ -6357,11 +6291,11 @@ describe("Composer — known launch startup send-lock", () => {
     await user.click(screen.getByRole("button", { name: /^Send$/ }));
     await screen.findByRole("button", { name: "Send anyway" });
     act(lock);
+    // Only a fresh Send waits in the startup queue; a commit the person already chose goes out.
     const commit = screen.getByRole("button", { name: "Send anyway" });
-    expect(commit).toBeDisabled();
+    expect(commit).toBeEnabled();
     await user.click(commit);
-    expect(typed).toHaveBeenCalledOnce();
-    expect(box).toHaveValue("offered draft");
+    await waitFor(() => expect(typed).toHaveBeenCalledTimes(2));
   });
 });
 

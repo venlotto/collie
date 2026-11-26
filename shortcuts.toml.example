@@ -93,7 +93,7 @@
 
 # Chat or Terminal for this pane, the composer, the find bar.
 # toggle_chat_terminal = "prefix+t"
-# focus_composer = "prefix+i"
+# focus_composer = ["prefix+i", "ctrl+m"]
 # find = "prefix+/"
 
 # Actions with no key of their own. Each is a row of Actions, so you can run it by its name there,
