@@ -168,7 +168,7 @@ export function readSendReply(body: JsonValue | undefined): SendReply | null {
     rowsHash: asJsonString(node.rowsHash) ?? null,
     replayed: asJsonBoolean(node.replayed) === true,
     surface: readSurface(node.surface),
-    detail: asJsonString(node.detail) ?? null,
+    detail: asJsonString(node.detail) ?? asJsonString(receipt?.detail) ?? null,
     cap: readSendCap(node.cap),
     queued: receipt?.queued === true,
     cause: pick(node.cause, SEND_CAUSES),

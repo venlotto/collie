@@ -966,9 +966,9 @@ edge, and the screen read after it decides whether the pane is free. The limits:
 - Codex also runs a short hidden turn to name a new task. That turn sends one more stop edge, so
   the pane gets one more screen read.
 
-Collie presses Tab for a Codex message. During a turn, Codex queues it. In Codex, Tab sends a
+On Codex 0.172.0 Collie presses Enter for a message when the box reads idle before and after typing and the transcript stays still. Otherwise Collie presses Tab for a Codex message. During a turn, Codex queues it. In Codex, Tab sends a
 message on an idle box and queues it during a turn. So Tab is right in both states. Enter steers a
-running turn, so Collie never presses Enter for a message. A text that starts with `/` or `!` is a command.
+running turn, so Collie uses Tab when it sees a turn. A text that starts with `/` or `!` is a command.
 It takes Enter on an idle box, because Tab would complete a `/` command there. During a turn it
 takes Tab, and Codex queues it like a message. Codex runs a `!` text as a shell command. The receipt
 says queued only when Codex shows the queued row with the text.

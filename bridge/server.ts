@@ -2087,7 +2087,10 @@ export function startServer(opts: {
       // The pane's held sends (M56 spec 15), only when there is one; the text takes the mirror's mask.
       // A held send is the send queue's, a hold is a permission's (spec 12): both may stand at once.
       const held = from.send?.heldOf(from.name, wire.paneId) ?? [];
-      const shown = cfg.redact ? held.map((row) => ({ ...row, text: redactText(row.text) })) : held;
+      const shown = cfg.redact ? held.map((row) => {
+        const safeRow = { ...row, text: redactText(row.text) };
+        return row.detail === undefined ? safeRow : { ...safeRow, detail: redactText(row.detail) };
+      }) : held;
       // M69: a pane the phone may steer says so (paneCanSteer).
       const steered: PaneWire = paneCanSteer(from, wire.paneId) ? { ...withHold, sendProtocol: true as const, canSteer: true as const } : { ...withHold, sendProtocol: true as const };
       // M102 spec 14: a terminal pane whose ask book answers a screen card's tap by id says so, so a lead

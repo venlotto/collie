@@ -56,6 +56,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Only moving rows need a transform during a drag.** Resting chats keep their ordinary rendering as a sheet opens or closes.
 - **Collie refreshes in place when you return.** After half an hour unattended, the app pauses polling and animations. Your first tap or keystroke works immediately and refreshes the screen.
 
+- **Messages reach idle Codex chats with the agents hint.** On Codex 0.172.0 the phone checks the input box and submits the message when the shortcut hint disappears. A refused queued message shows the reason and keeps its resend action.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

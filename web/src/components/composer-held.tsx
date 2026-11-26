@@ -30,6 +30,7 @@ import type { StyledLine } from "@/lib/blocks";
 import { t, tn, type MessageKey } from "@/lib/i18n";
 import { holdsMask } from "@/lib/masked-text";
 import type { Scope } from "@/lib/scope";
+import { noteKey, sendNote } from "@/lib/send-protocol";
 import { setStatus } from "@/lib/status";
 import type { HeldRow } from "@/lib/surface/send";
 import { cn } from "@/lib/utils";
@@ -67,7 +68,12 @@ function labelKey(row: HeldRow): MessageKey {
   if (row.outcome === "typed_not_submitted") return "composer.held.typed";
   if (row.outcome === "expired") return "composer.held.expired";
   if (row.outcome === "refused" && row.reason === "pane_gone") return "composer.held.paneGone";
+  if (row.outcome === "refused" && row.reason !== undefined) return noteKey(sendNote(row.outcome, row.reason));
   return "composer.held.failed";
+}
+
+function rowLabel(row: HeldRow): string {
+  return row.state === "ended" && row.outcome === "refused" && row.detail ? row.detail : t(labelKey(row));
 }
 
 /**
@@ -254,7 +260,7 @@ export function HeldCard({ paneId, scope, rows, canAct, canSend = true, sending,
     return (
       <div key={row.requestId} data-slot="held-row" data-state={row.state} className={cn("flex min-w-0 flex-col gap-1", className)}>
         <div className={QUEUED_HEAD}>
-          <p className={QUEUED_LABEL}>{t(labelKey(row))}</p>
+          <p className={QUEUED_LABEL}>{rowLabel(row)}</p>
           {actions(row)}
         </div>
         <p className={cn(QUEUED_FLOAT_TEXT, CLAMP_ONE)}>{row.text}</p>
@@ -277,7 +283,7 @@ export function HeldCard({ paneId, scope, rows, canAct, canSend = true, sending,
   // Every row waiting for the turn: one count says it. Else the first row's own label, which is the
   // one the next send is about to act on.
   const allHeld = rows.every((row) => row.state === "held");
-  const headLabel = firstLong !== undefined ? t("composer.held.long") : allHeld ? tn("composer.held.count", rows.length) : t(labelKey(first));
+  const headLabel = firstLong !== undefined ? t("composer.held.long") : allHeld ? tn("composer.held.count", rows.length) : rowLabel(first);
   const head = (
     <div data-slot="held-head" className={QUEUED_HEAD}>
       <p className={QUEUED_LABEL}>{headLabel}</p>

@@ -69,6 +69,7 @@ export interface HeldEntry {
   readonly tries: number;
   readonly outcome?: SendOutcome;
   readonly reason?: SendReason;
+  readonly detail?: string;
   readonly endedAt?: number;
   /**
    * A command whose keys could steer a turn (its Enter steers on this harness, or the version was not
@@ -144,6 +145,8 @@ export function parseHeldEntry(raw: JsonValue | undefined): HeldEntry | null {
   const endedAt = asJsonNumber(node.endedAt);
   if (outcome !== undefined) entry = { ...entry, outcome };
   if (reason !== undefined) entry = { ...entry, reason };
+  const detail = asJsonString(node.detail);
+  if (state === "ended" && detail !== undefined) entry = { ...entry, detail };
   if (endedAt !== undefined) entry = { ...entry, endedAt };
   if (node.waitsForTurn === true) entry = { ...entry, waitsForTurn: true };
   if (node.draftHolds === true) entry = { ...entry, draftHolds: true };
@@ -164,6 +167,7 @@ export function heldRow(entry: HeldEntry, now?: number): HeldRow {
   let row: HeldRow = { requestId: entry.id, mode: entry.mode, text: entry.text, heldAt: entry.heldAt, expiresAt: entry.expiresAt, state: entry.state };
   if (entry.outcome !== undefined) row = { ...row, outcome: entry.outcome };
   if (entry.reason !== undefined) row = { ...row, reason: entry.reason };
+  if (entry.detail !== undefined) row = { ...row, detail: entry.detail };
   if (entry.cause !== undefined) row = { ...row, cause: entry.cause };
   if (entry.versionUnread === true) row = { ...row, versionUnread: true };
   if (entry.walky !== undefined) row = { ...row, walky: entry.walky };
@@ -303,11 +307,12 @@ export class HoldStore {
    * end time when it is not now: a budget that ran out while the bridge was down ended at its own
    * `expiresAt` (protocol.ts `expireHoldsOnStart`), so the keep window counts from there.
    */
-  end(id: string, outcome: SendOutcome, reason?: SendReason, at?: number): HeldEntry | null {
+  end(id: string, outcome: SendOutcome, reason?: SendReason, at?: number, detail?: string): HeldEntry | null {
     const known = this.get(id);
     if (known === null) return null;
-    const { reason: _old, ...rest } = known;
-    const ended: HeldEntry = { ...rest, state: "ended", outcome, endedAt: at ?? this.now() };
+    const { reason: _old, detail: _previousDetail, ...rest } = known;
+    let ended: HeldEntry = { ...rest, state: "ended", outcome, endedAt: at ?? this.now() };
+    if (detail !== undefined) ended = { ...ended, detail };
     return this.write(reason === undefined ? ended : { ...ended, reason });
   }
 

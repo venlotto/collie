@@ -28,6 +28,12 @@ describe("readSendReply", () => {
     expect(long?.draftCut).toBe(true);
   });
 
+  it("reads a replayed probe refusal when its detail is only in the receipt", () => {
+    const detail = "One Backspace removed the probe character, so the box is clean again.";
+    const reply = readSendReply({ receipt: { outcome: "refused", reason: "probe_failed", detail }, offers: [] });
+    expect(readSend(reply!)).toMatchObject({ clear: false, note: "probeFailed", detail });
+  });
+
   it("reads the outcome, reason, offers, rows hash, surface and detail, and drops an offer it does not know", () => {
     expect(
       readSendReply({

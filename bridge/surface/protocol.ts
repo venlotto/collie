@@ -1987,6 +1987,14 @@ function commitKeys(state: RunState): readonly string[] {
     return [keys.queueKey];
   }
   if (state.command || state.request.mode === "command") return keys.commandSubmit ?? keys.submit;
+  const { s0, s1 } = state.marks;
+  const version = state.match?.version;
+  if (
+    version && keys.idleEnterVersions?.includes(version) && state.request.mode === "send" && !state.manual &&
+    state.probed && s0?.frame && s1?.frame &&
+    s0.surface.turn === "idle" && s1.surface.turn === "idle" &&
+    s0.surface.modal === "none" && s1.surface.modal === "none" && aboveUnchanged(s0, s1)
+  ) return ["Enter"];
   return keys.submit;
 }
 
@@ -4095,7 +4103,7 @@ export class SendProtocol {
       return answer;
     }
     if (outcome === "sent" || outcome === "effective") holds.remove(id);
-    else holds.end(id, outcome ?? "unknown", answer.receipt?.reason);
+    else holds.end(id, outcome ?? "unknown", answer.receipt?.reason, undefined, answer.receipt?.detail);
     return answer;
   }
 
@@ -4332,7 +4340,7 @@ export class SendProtocol {
       this.deps.store.settle(entry.id, receipt);
     }
     if (outcome === "cancelled") holds.remove(entry.id);
-    else holds.end(entry.id, outcome, reason);
+    else holds.end(entry.id, outcome, reason, undefined, receipt?.detail);
     if (receipt === null || held === undefined) return null;
     const ledger = this.deps.ledger;
     try {
@@ -4471,7 +4479,7 @@ export class SendProtocol {
       // The request settled and the bridge stopped before the row followed ({@link endHeld} settles
       // first): the row ends with the request's own word. "crash" is the reason only for a request that
       // has none, as when the run itself died.
-      else holds.end(entry.id, outcome ?? "unknown", record.receipt?.reason ?? (outcome === undefined || outcome === "unknown" ? "crash" : undefined));
+      else holds.end(entry.id, outcome ?? "unknown", record.receipt?.reason ?? (outcome === undefined || outcome === "unknown" ? "crash" : undefined), undefined, record.receipt?.detail);
       changed++;
     }
     return changed;
