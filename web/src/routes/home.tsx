@@ -46,7 +46,7 @@ export function HomeRoute() {
       deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
       onPress={p => { if (!p.agentRun) void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}
-      onQuickNew={writable ? () => quickBot.quick(data.scope, visible.map(p => identityOf(p, scopeOf(p)).name)) : undefined} quickBusy={quickBot.busy}
+      onQuickNew={writable ? () => quickBot.quick(data.scope, new Set(visible.map(p => identityOf(p, scopeOf(p)).name))) : undefined} quickBusy={quickBot.busy}
       onNew={writable || accessNotice ? () => setCreate({ beside: featured?.paneId.startsWith("agent-run:") ? undefined : featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
     {create && <CreateBot {...create} writable={writable} close={() => setCreate(null)} />}
   </>;
