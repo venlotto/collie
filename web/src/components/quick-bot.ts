@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { fetchLaunchers, renamePane } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
 import { cacheBotPrefs, readBotPrefs } from "@/lib/bot-create-prefs";
-import { defaultBotName } from "@/lib/bot-default-name";
+import { randomBotName } from "@/lib/bot-default-names";
 import { saveBot, silhouetteCount } from "@/lib/bot-identity";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { mintRequestId } from "@/lib/worktree-name";
@@ -14,15 +14,15 @@ const quickColors = [8, 5, 3, 9, 7, 6, 2, 4];
 const unconfirmed = "No se pudo confirmar la creación. Vuelve a intentar.";
 
 /**
- * A bot in one gesture: no sheet, no workspace (the default place a new bot lands), a random name and
- * the agent and reasoning of the last bot created on that machine. `quick` resolves to the error to
+ * A bot in one gesture: no sheet, no workspace (the default place a new bot lands), a random name that
+ * gives way to the agent's own title for the work, and the agent and reasoning of the last bot created on that machine. `quick` resolves to the error to
  * show, or `undefined` when the bot opened (the phone moves to it) or another create was in flight.
  */
 export function useQuickBot({ canRename }: { canRename: boolean }) {
   const { start, creatingSpace } = useSpaceActions();
   const [preparing, setPreparing] = useState(false);
   const inFlight = useRef(false);
-  const quick = useCallback(async (scope: Scope, taken: Iterable<string>): Promise<string | undefined> => {
+  const quick = useCallback(async (scope: Scope, taken: ReadonlySet<string>): Promise<string | undefined> => {
     if (inFlight.current) return undefined;
     inFlight.current = true;
     setPreparing(true);
@@ -44,13 +44,14 @@ export function useQuickBot({ canRename }: { canRename: boolean }) {
       if (outcome.kind === "unknown") return unconfirmed;
       if (!outcome.paneId) return undefined;
       if (prefs) cacheBotPrefs(scope.host, prefs);
-      const name = defaultBotName(taken);
+      const name = randomBotName(taken);
       saveBot(scope, outcome.paneId, {
         name,
         silhouette: Math.floor(Math.random() * silhouetteCount),
         color: quickColors[Math.floor(Math.random() * quickColors.length)]!,
       });
-      if (canRename) void renamePane(outcome.paneId, name, scope).catch(() => undefined);
+      // `auto`: a placeholder, so the bridge renames the bot once its agent titles the work.
+      if (canRename) void renamePane(outcome.paneId, name, scope, true).catch(() => undefined);
       return undefined;
     } catch (err) {
       return describeThrownError(err);
