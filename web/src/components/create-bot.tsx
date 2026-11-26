@@ -12,12 +12,14 @@ import { BOT_CREATE_PROFILES } from "@/lib/bot-create-profiles";
 import { type AgentView, type LaunchersResponse } from "@/lib/types";
 import { BlobAvatar } from "./bot-identity";
 import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { randomBotName } from "@/lib/bot-default-names";
 
 function localName() { setStatus("El nombre quedó guardado en este dispositivo.", "info"); }
 
 export function CreateBot({ scope, beside, writable, close }: { scope: Scope; beside?: AgentView; writable: boolean; close: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState("");
+  const [fallbackName] = useState(() => randomBotName());
   const [silhouette, setSilhouette] = useState(12);
   const [color, setColor] = useState(8);
   const [error, setError] = useState("");
@@ -77,7 +79,7 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
   const dismiss = () => { if (!busy) setLeaving(true); };
 
   async function create() {
-    if (!writable || !catalog || (catalog.botCreate !== undefined && !profile) || !name.trim() || busy || leaving) return;
+    if (!writable || !catalog || (catalog.botCreate !== undefined && !profile) || busy || leaving) return;
     setError("");
     setPreparing(true);
     const installed = catalog.harnesses?.filter(h => h.found);
@@ -91,9 +93,10 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
     setPreparing(false);
     if (outcome.kind === "done" && outcome.paneId) {
       if (profile) cacheBotPrefs(host, prefs);
-      saveBot(scope, outcome.paneId, { name: name.trim(), silhouette, color });
+      const typed = name.trim();
+      saveBot(scope, outcome.paneId, { name: typed || fallbackName, silhouette, color });
       if (rename.capable) {
-        void renamePane(outcome.paneId, name.trim(), scope).then(res => res.ok ? undefined : localName(), localName);
+        void renamePane(outcome.paneId, typed || fallbackName, scope, !typed).then(res => res.ok ? undefined : localName(), localName);
       }
       setLeaving(true);
     } else {
@@ -108,7 +111,7 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
     <form className="bot-sheet" onSubmit={(e) => { e.preventDefault(); void create(); }}>
       <header><button type="button" className="bot-circle" onClick={dismiss} aria-label="Cerrar"><X /></button><h2 id="create-bot-title">Crear nuevo Bot</h2></header>
       <div className="bot-preview"><BlobAvatar silhouette={silhouette} color={color} large /></div>
-      <input aria-label="Nombre del bot" placeholder="Ponle nombre a tu Bot" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+      <input aria-label="Nombre del bot" placeholder={fallbackName} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
       <fieldset className="bot-shapes" aria-label="Forma">{Array.from({ length: silhouetteCount }, (_, i) =>
         <button key={i} type="button" aria-label={`Forma ${i + 1}`} aria-pressed={silhouette === i} onClick={() => setSilhouette(i)}><BlobAvatar silhouette={i} color={color} /></button>)}</fieldset>
       <fieldset className="bot-colors" aria-label="Color">{colors.map((hex, i) =>
@@ -131,7 +134,7 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
       </div>
       {loadFailed && <button type="button" onClick={() => setReload(n => n + 1)}>Reintentar</button>}
       {error && <p role="alert">{error}</p>}
-      <button className="bot-create" disabled={!writable || !catalog || (catalog.botCreate !== undefined && !profile) || !name.trim() || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
+      <button className="bot-create" disabled={!writable || !catalog || (catalog.botCreate !== undefined && !profile) || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
     </form>
   </dialog>;
 }

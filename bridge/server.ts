@@ -1,5 +1,6 @@
 import type { AgentRuns } from "./agent-runs.ts";
 import { botFeaturedChange, type BotFeatured } from "./bot-featured.ts";
+import type { BotAutoName } from "./bot-auto-name.ts";
 import { sectionChanges, type UiSections } from "./ui-sections.ts";
 import type { BotTrash } from "./bot-trash.ts";
 import { chatOrderId } from "../web/src/lib/chat-order.ts";
@@ -1310,6 +1311,7 @@ export type TelemetryDeps = Pick<Telemetry, "view" | "choose" | "trouble">;
 
 export function startServer(opts: {
   botTrash?: BotTrash;
+  botAutoName?: BotAutoName;
   agentRuns?: AgentRuns;
   uiSections?: UiSections;
   botFeatured?: BotFeatured;
@@ -2889,7 +2891,7 @@ export function startServer(opts: {
         opts.accounts?.keep(rt.name, [...now.agents, ...now.shellPanes].map((p) => p.paneId));
         return closed;
       }
-      if (action === "rename" && req.method === "POST") return renamePane(herdr, rt.engine, paneId, req, audit_, device, session);
+      if (action === "rename" && req.method === "POST") return renamePane(herdr, rt.engine, paneId, req, audit_, device, session, opts.botAutoName && { store: opts.botAutoName, session: rt.name });
       if (action === "focus" && req.method === "POST") return focusPane(herdr, rt.engine, paneId, req, audit_, device, session);
       // An answer to an ask, by id, from a person's tap (ADR 0100). The receipt is written before
       // the answer leaves; on a crew it lives on the member that owns the pane.
@@ -7461,6 +7463,7 @@ export async function renamePane(
   audit: Pick<AuditLog, "record">,
   device: string | null,
   session: string,
+  autoName?: { store: Pick<BotAutoName, "mark" | "forget">; session: string },
 ): Promise<Response> {
   const ae = req.headers.get("accept-encoding");
   let body: JsonValue;
@@ -7484,6 +7487,13 @@ export async function renamePane(
     );
   }
   const tabRenamed = label !== null && (await renameSoleTab(herdr, engine, paneId, label));
+  // `auto: true` marks a placeholder the phone picked at random for a bot created without a name;
+  // the bridge swaps it for the agent's own title later (bot-auto-name.ts). Any other rename is a
+  // person's choice, which the placeholder never overrides.
+  if (autoName) {
+    if (fields.auto === true && label !== null) autoName.store.mark(autoName.session, paneId, label);
+    else autoName.store.forget(autoName.session, paneId);
+  }
   audit.record({ action: "pane.rename", paneId, session, device, detail: { label, tabRenamed } });
   await settleTopology(herdr, engine);
   return json({ ok: true } satisfies ActionResponse, ae);
@@ -7495,7 +7505,7 @@ export async function renamePane(
  * pane renamed on the phone would keep showing the row's label there. With one pane the tab and the pane are
  * one thing to the person; a tab with two or more panes keeps its name. Returns whether the tab was renamed.
  */
-async function renameSoleTab(
+export async function renameSoleTab(
   herdr: Pick<MuxAdapter, "renameTab" | "capabilities">,
   engine: Pick<StateEngine, "current">,
   paneId: string,
