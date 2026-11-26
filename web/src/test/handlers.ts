@@ -1165,6 +1165,7 @@ export const handlers = [
     walkyTakeBacks.push(`drop ${String(params.pane)} ${id}`);
     return HttpResponse.json({ results: [{ target: "local/w1:p1", result: "taken", receipt: { ...walkyReceipt(id, "local/w1:p1"), state: "inbox-only", reason: "dropped by the pane's owner" } }] });
   }),
+  http.get("/api/ui-sections", () => HttpResponse.json({ userId: "local", folded: [] })),
   http.get("/api/snapshot", () => HttpResponse.json(fixtureSnapshot)),
   http.get(/\/api\/pane\/[^/]+$/, () =>
     HttpResponse.json({ paneId: "w1:p1", text: paneTextWithDraft(), truncated: false, revision: 1 }),

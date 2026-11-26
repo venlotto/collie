@@ -1,4 +1,5 @@
 import type { AgentRuns } from "./agent-runs.ts";
+import { sectionChanges, type UiSections } from "./ui-sections.ts";
 import type { BotTrash } from "./bot-trash.ts";
 import { chatOrderId } from "../web/src/lib/chat-order.ts";
 import { ChatOrderStore } from "./chat-order.ts";
@@ -1307,6 +1308,7 @@ export type TelemetryDeps = Pick<Telemetry, "view" | "choose" | "trouble">;
 export function startServer(opts: {
   botTrash?: BotTrash;
   agentRuns?: AgentRuns;
+  uiSections?: UiSections;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -3432,6 +3434,25 @@ export function startServer(opts: {
         const result = live && journals && cfg.transcript && await opts.agentRuns.chat(id, journals, live, chatParams(url));
         if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
         return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
+      }
+
+      if (pathname === "/api/ui-sections") {
+        if (req.method !== "GET" && req.method !== "PUT") return text("method not allowed", 405);
+        const denied = guard(req, cfg, req.method === "PUT" ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        const store = opts.uiSections;
+        // Authenticated accounts use their own /api/user-settings route. The legacy ledger is private.
+        if (!store || store.sso) return text("unavailable", 404);
+        if (req.method === "GET") return json(store.read("local"), null);
+        const bytes = await readCappedBody(new Response(req.body), 1024 * 1024);
+        if (!bytes) return text("body too large", 413);
+        const changes = sectionChanges(new TextDecoder().decode(bytes));
+        if (!changes) return text("invalid section changes", 400);
+        try {
+          return json(store.update("local", changes), null);
+        } catch {
+          return text("could not save section preferences", 503);
+        }
       }
 
       if (pathname === "/api/bot-action") {

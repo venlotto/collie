@@ -1,3 +1,4 @@
+import { UiSections } from "./ui-sections.ts";
 import { existsSync, readFileSync, readlinkSync, statSync } from "node:fs";
 import { mkdir, readFile as readFileAsync, realpath as realpathAsync, stat as statAsync, statfs as statfsAsync, writeFile } from "node:fs/promises";
 import { cpus, freemem, homedir, hostname, loadavg, totalmem } from "node:os";
@@ -1986,6 +1987,9 @@ const eventBus = new EventBus({ machine: () => bridgeId.id });
 // forgets the turns, and the next prompt starts again.
 const askReminders = new AskRemindBook();
 
+const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
+const uiSections = new UiSections(cfg.stateDir, !["", "0", "false"].includes((process.env.COLLIE_SSO_ENABLED ?? "").trim().toLowerCase()));
+
 const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   const built = endpoint.kind === "program" ? programAdapter(endpoint.source) : terminalAdapter(endpoint.socketPath);
   const target = built.target;
@@ -2045,6 +2049,14 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   // seeds first sightings as already-seen and reaps closed ones. Reconciling covers bare shells too,
   // which the engine's agent-derived removal event never reports.
   trackActivity(engine, activity, name);
+  engine.onUpdate(snapshot => {
+    try {
+      uiSections.reconcile(name, isPrimary, new Set(snapshot.workspaces.map(w => w.workspaceId)), id => botTrash.hasWorkspaceEntries(name, id));
+    } catch {
+      // A failed preference write is retried on the next census. It must not disconnect the mux.
+      console.warn("[ui-sections] Could not prune saved workspace preferences");
+    }
+  });
 
   // The branch of every pane's folder rides the same poll, fired and not awaited, for the cache
   // probe's reason below: a poll never waits on a disk read. The reader keeps its own clocks, so a
@@ -4457,7 +4469,6 @@ const repoTricks =
 void officialTricks?.sweep();
 void repoTricks?.sweep();
 
-const botTrash = new BotTrash(cfg.stateDir, session => registry.get(session));
 void botTrash.sweep();
 const trashTimer = setInterval(() => void botTrash.sweep(), TRASH_INTERVAL);
 trashTimer.unref();
@@ -4506,6 +4517,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
       const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });
       return await child.exited === 0;
     }),
+  uiSections,
   walkyInstance: (session, paneId) => walkyInstances.tokenOf(session, paneId),
   // The pane read's `linked` (M99 spec 15): the session half of the send pick, one function.
   paneLinked: paneIsLinked,
