@@ -8,6 +8,9 @@ function build(user?: UserShortcuts, mac = false) {
   return buildKeymap({ defaults: ACTIONS, user, mac });
 }
 
+/** The one default that skips the prefix: Ctrl+M puts the cursor in the composer. */
+const DEFAULT_DIRECT = 1;
+
 function codes(diagnostics: readonly Diagnostic[]): DiagnosticCode[] {
   return diagnostics.map((diagnostic) => diagnostic.code);
 }
@@ -33,7 +36,8 @@ describe("the defaults", () => {
     expect(keymap.prefixed.get("shift+n")).toEqual({ action: "new_space" });
     expect(keymap.prefixed.get("n")).toEqual({ action: "next_tab" });
     expect(keymap.prefixed.get("b")).toEqual({ action: "toggle_sidebar" });
-    expect(keymap.direct.size).toBe(0);
+    expect(keymap.direct.size).toBe(DEFAULT_DIRECT);
+    expect(keymap.direct.get("ctrl+m")).toEqual({ action: "focus_composer" });
   });
 
   it("number the tabs", () => {
@@ -236,7 +240,7 @@ describe("direct bindings", () => {
     for (const binding of ["x", "shift+x", "X", "?", "space", "enter", "tab", "left", "esc", "shift+tab"]) {
       const keymap = build({ switch_pane: [binding] });
       expect(codes(keymap.diagnostics), binding).toEqual(["unsafe-direct"]);
-      expect(keymap.direct.size, binding).toBe(0);
+      expect(keymap.direct.size, binding).toBe(DEFAULT_DIRECT);
     }
   });
 
@@ -244,7 +248,7 @@ describe("direct bindings", () => {
     for (const binding of ["ctrl+k", "alt+x", "cmd+k", "ctrl+shift+k", "f5", "shift+f5", "alt+left"]) {
       const keymap = build({ switch_pane: [binding] });
       expect(keymap.diagnostics, binding).toEqual([]);
-      expect(keymap.direct.size, binding).toBe(1);
+      expect(keymap.direct.size, binding).toBe(DEFAULT_DIRECT + 1);
     }
   });
 
@@ -252,7 +256,7 @@ describe("direct bindings", () => {
     for (const binding of ["ctrl+w", "ctrl+t", "ctrl+n", "ctrl+tab", "ctrl+shift+n", "ctrl+l", "ctrl+shift+tab", "ctrl+shift+t", "ctrl+shift+w", "cmd+w", "cmd+t", "cmd+shift+n", "cmd+shift+t", "CTRL+w"]) {
       const keymap = build({ switch_pane: [binding] });
       expect(codes(keymap.diagnostics), binding).toEqual(["browser-reserved"]);
-      expect(keymap.direct.size, binding).toBe(0);
+      expect(keymap.direct.size, binding).toBe(DEFAULT_DIRECT);
     }
   });
 
@@ -265,7 +269,7 @@ describe("direct bindings", () => {
   it("run mod as Cmd on a Mac and Ctrl elsewhere", () => {
     expect(build({ switch_pane: ["mod+k"] }, true).direct.has("meta+k")).toBe(true);
     expect(build({ switch_pane: ["mod+k"] }, false).direct.has("ctrl+k")).toBe(true);
-    expect(build({ switch_pane: ["mod+w"] }, true).direct.size).toBe(0);
+    expect(build({ switch_pane: ["mod+w"] }, true).direct.size).toBe(DEFAULT_DIRECT);
     expect(build({ prefix: ["mod+j"] }, true).prefix).toEqual([chord("j", { meta: true })]);
     expect(build({}, true).mac).toBe(true);
   });

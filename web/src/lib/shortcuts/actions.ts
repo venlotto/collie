@@ -126,7 +126,7 @@ export const ACTIONS = [
   { id: "zen_mode", group: "view", defaults: ["prefix+z"], labelKey: "shortcuts.action.zen_mode" },
   { id: "toggle_sidebar", group: "view", defaults: ["prefix+b"], labelKey: "shortcuts.action.toggle_sidebar" },
   { id: "toggle_chat_terminal", group: "view", defaults: ["prefix+t"], labelKey: "shortcuts.action.toggle_chat_terminal" },
-  { id: "focus_composer", group: "view", defaults: ["prefix+i"], labelKey: "shortcuts.action.focus_composer" },
+  { id: "focus_composer", group: "view", defaults: ["prefix+i", "ctrl+m"], labelKey: "shortcuts.action.focus_composer" },
   { id: "find", group: "view", defaults: ["prefix+/"], labelKey: "shortcuts.action.find" },
   { id: "copy_output", group: "view", defaults: [], labelKey: "shortcuts.action.copy_output" },
   { id: "conversation_history", group: "view", defaults: [], labelKey: "shortcuts.action.conversation_history" },

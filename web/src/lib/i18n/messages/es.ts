@@ -585,6 +585,7 @@ export const es: Dictionary = {
   "composer.steer.steered": "Dirigido: el agente lo toma después de su paso actual.",
   "composer.steer.unsupported": "Redirigir no está disponible en este panel, así que no se envió nada. Envía de nuevo para ponerlo en cola hasta el final del turno.",
   "composer.steer.notAllowed": "Solo una persona con el teléfono puede redirigir. Envía de nuevo sin Redirigir.",
+  "composer.startup.queued": "En cola. Se enviará cuando el agente esté listo.",
   "composer.protocol.held": "En cola. Se enviará cuando termine el turno.",
   "composer.protocol.expired": "No enviado. El turno no terminó en 30 minutos.",
   "composer.protocol.cancelled": "Cancelado. No se envió nada al agente.",
