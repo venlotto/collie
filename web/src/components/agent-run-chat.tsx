@@ -11,6 +11,7 @@ import type { AgentView } from "@/lib/types";
 import { activityStatusOf } from "@/lib/activity-status";
 import { BotActivityPill } from "./bot-activity-avatar";
 import { identityOf } from "./bot-identity";
+import { useDeskControls } from "./bot-desk-controls";
 import { SessionStream } from "./session-stream";
 import type { ChatMessageListHandle } from "./ui/chat/chat-message-list";
 
@@ -37,6 +38,7 @@ export function AgentRunChat({ run, agent, scope, active, writable }: {
   const [stopping, setStopping] = useState(false);
   const [error, setError] = useState(false);
   const bot = identityOf(agent, scope);
+  const desk = useDeskControls();
   async function stop() {
     setStopping(true);
     setError(false);
@@ -51,7 +53,7 @@ export function AgentRunChat({ run, agent, scope, active, writable }: {
   }
   return <div ref={root} className="bot-conversation bot-agent-run">
     <header className="bot-bar bot-chat-bar agent-run-bar">
-      <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>
+      {desk ?? <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>}
       <BotActivityPill bot={bot} status={activityStatusOf(agent)} />
     </header>
     <SessionStream bot={bot} feed={feed} working={run.status === "running"} agent={agent.agent}
