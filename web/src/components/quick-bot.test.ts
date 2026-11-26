@@ -21,15 +21,16 @@ beforeEach(() => {
   fetchLaunchers.mockReset().mockResolvedValue({ harnesses: [], botCreate: { agents, last: { agent: "claudep", effort: "max" } } });
 });
 
-it("starts the last agent with no workspace, a free random name the bridge may replace", async () => {
+it("starts the last agent in the given workspace, a free random name the bridge may replace", async () => {
   const { result } = renderHook(() => useQuickBot({ canRename: true }));
   const taken = new Set(BOT_DEFAULT_NAMES.slice(1));
   let error: string | undefined = "unset";
-  await act(async () => { error = await result.current.quick({}, taken); });
+  await act(async () => { error = await result.current.quick({}, { label: "Sin asignar" }, taken); });
   expect(error).toBeUndefined();
   const [ask] = start.mock.calls[0]!;
   expect(ask.what).toEqual({ kind: "harness", id: "claude", botCreate: { agent: "claudep", effort: "max" } });
   expect(ask.beside).toBeUndefined();
+  expect(ask.space).toEqual({ label: "Sin asignar" });
   expect(renamePane).toHaveBeenCalledWith("p9", BOT_DEFAULT_NAMES[0], {}, true);
   expect(savedBot({}, "p9")?.name).toBe(BOT_DEFAULT_NAMES[0]);
 });
@@ -38,7 +39,7 @@ it("says why when the machine offers no agent, and starts nothing", async () => 
   fetchLaunchers.mockResolvedValue({ harnesses: [], botCreate: { agents: [] } });
   const { result } = renderHook(() => useQuickBot({ canRename: true }));
   let error: string | undefined;
-  await act(async () => { error = await result.current.quick({}, new Set()); });
+  await act(async () => { error = await result.current.quick({}, { id: "w7" }, new Set()); });
   expect(error).toBe("No hay agentes disponibles.");
   expect(start).not.toHaveBeenCalled();
 });

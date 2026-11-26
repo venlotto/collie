@@ -2174,6 +2174,7 @@ export const en = {
   "apiError.launch.bad_folder": "That folder cannot be used. A folder path may not contain .. or control characters.",
   "apiError.launch.folder_missing": "There is no folder {folder} on this machine.",
   "apiError.launch.pane_unknown": "That pane is gone, nothing was launched",
+  "apiError.launch.space_unknown": "That workspace is gone, nothing was launched",
   // Rows added from a phone (ADR 0094). `{field}` is `command` or `label`; `{problem}` is `empty`,
   // `too_long` or `forbidden_character`. Both stay in English: they are codes, shown as they are.
   "apiError.launcher.adds_off": "Adding launchers from a phone is turned off on this machine.",

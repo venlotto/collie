@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams, useRevalidator } from "react-router";
-import { CreateBot } from "@/components/create-bot";
+import { CreateBot, unassignedTarget } from "@/components/create-bot";
 import { MobileAgentHub } from "@/components/mobile-agent-hub";
 import { useQuickBot } from "@/components/quick-bot";
 import { identityOf } from "@/components/bot-identity";
@@ -35,6 +35,11 @@ export function HomeRoute() {
   const featured = featuredBotPane(visible, pinnedTop);
   const rename = useMuxCapability("renamePane", data.scope);
   const quickBot = useQuickBot({ canRename: rename.capable });
+  // The workspaces a new bot can go into: this machine's, minus one sent whole to the Papelera
+  // (a chat created there later brings it back, as in the list).
+  const trashedSpaces = new Set(panes.flatMap(p => p.trash?.workspaceLabel !== undefined ? [p.trash.originalWorkspaceId] : []));
+  for (const p of visible) trashedSpaces.delete(p.workspaceId);
+  const createSpaces = data.workspaces.filter(w => !w.host && !trashedSpaces.has(w.workspaceId));
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (
     <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>
@@ -46,8 +51,8 @@ export function HomeRoute() {
       deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
       onPress={p => { if (!p.agentRun) void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}
-      onQuickNew={writable ? () => quickBot.quick(data.scope, new Set(visible.map(p => identityOf(p, scopeOf(p)).name))) : undefined} quickBusy={quickBot.busy}
-      onNew={writable || accessNotice ? () => setCreate({ beside: featured?.paneId.startsWith("agent-run:") ? undefined : featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
-    {create && <CreateBot {...create} writable={writable} close={() => setCreate(null)} />}
+      onQuickNew={writable ? () => quickBot.quick(data.scope, unassignedTarget(createSpaces), new Set(visible.map(p => identityOf(p, scopeOf(p)).name))) : undefined} quickBusy={quickBot.busy}
+      onNew={writable || accessNotice ? () => setCreate({ beside: featured?.paneId.startsWith("agent-run:") ? undefined : featured, scope: data.scope }) : undefined} />
+    {create && <CreateBot {...create} spaces={createSpaces} writable={writable} close={() => setCreate(null)} />}
   </>;
 }

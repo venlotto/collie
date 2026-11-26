@@ -59,6 +59,7 @@ export const API_ERROR_CODES = [
   // Launchers — /api/launch
   "launch.not_allowlisted",
   "launch.pane_unknown",
+  "launch.space_unknown",
   "launch.unknown_harness",
   "launch.row_not_from_lead",
   "launch.bad_folder",

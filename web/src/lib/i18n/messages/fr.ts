@@ -1874,6 +1874,7 @@ export const fr: Dictionary = {
   "apiError.launch.bad_folder": "Ce dossier ne peut pas être utilisé. Le chemin ne peut contenir ni .. ni caractère de contrôle.",
   "apiError.launch.folder_missing": "Il n'y a pas de dossier {folder} sur cette machine.",
   "apiError.launch.pane_unknown": "Ce volet a disparu, rien n'a été lancé",
+  "apiError.launch.space_unknown": "Cet espace de travail a disparu, rien n'a été lancé",
   "apiError.launcher.adds_off": "L'ajout de lanceurs depuis un téléphone est désactivé sur cette machine.",
   "apiError.launcher.free_text_off": "Une commande saisie à la main est désactivée sur cette machine.",
   "apiError.launcher.bad_text": "Ce {field} ne peut pas être utilisé : {problem}.",
