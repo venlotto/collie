@@ -1,0 +1,9 @@
+[0m[1m[38;2;242;242;242m•[0m [0m[2mWorking[0m [0m[2m(8m 54s • [0m[1mesc[0m[2m to interrupt) · 3 background …[0m
+ 
+ 
+ 
+[0m[1m› [0m[2mAsk Codex to do anything[0m
+ 
+  [0m[38;2;246;226;183mGPT-6-Astra medium [0m· [0m[38;2;171;223;167m~/repos [0m· [0m[38;2;245;194;231mCaptura input durante[0m
+  [0m[38;2;245;194;231minicio[0m
+  [0m[1m←[0m for agents              ⚠ [0m[38;2;196;167;103m3 warnings [0m· [0m[1mf2 [0mto view

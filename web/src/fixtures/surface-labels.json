@@ -2590,6 +2590,11 @@
    "version": "0.167.0",
    "state": "running"
   },
+  "codex--astra-working-status-title-wrap--w56.txt": {
+   "harness": "codex",
+   "version": "unversioned",
+   "state": "running"
+  },
   "codex--working.txt": {
    "harness": "codex",
    "version": "unversioned",
