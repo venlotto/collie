@@ -1,4 +1,5 @@
 import type { AgentView } from "@/lib/types";
+import { parseBotFeaturedPin, type BotFeaturedPin } from "./bot-featured-wire";
 import type { ChatOrder } from "./chat-order";
 // Thin REST client for the bridge. Everything is same-origin, so credentials/headers are
 // minimal. Each call throws on a non-2xx so callers (route loaders / action handlers) surface errors.
@@ -2237,6 +2238,32 @@ export async function requestBotSections(account: SectionAccount, signal: AbortS
     init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
   }
   return doReq<SectionPreferences>("/api/ui-sections", init);
+}
+
+export interface BotFeaturedPreferences { userId: string; featured: BotFeaturedPin | null }
+
+/** Read or replace the single Grok-list pin. One whole value gives last-write-wins across devices. */
+export async function requestBotFeatured(account: SectionAccount, signal: AbortSignal, change?: { value: BotFeaturedPin | null }): Promise<BotFeaturedPreferences> {
+  const init: RequestInit = { signal, cache: "no-store" };
+  if (account.sub !== undefined) {
+    const name = "bot-featured:v1";
+    init.headers = { "X-Collie-Subject": encodeURIComponent(account.sub), "X-Collie-Role": account.role ?? "" };
+    if (change) {
+      init.method = "PATCH";
+      init.body = JSON.stringify(change.value
+        ? { set: { [name]: JSON.stringify(change.value) }, remove: [] }
+        : { set: {}, remove: [name] });
+      init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+    }
+    const settings = await doReq<Record<string, string>>("/api/user-settings", init);
+    return { userId: account.userId, featured: parseBotFeaturedPin(parseJson(settings[name] ?? "")) ?? null };
+  }
+  if (change) {
+    init.method = "PUT";
+    init.body = JSON.stringify({ featured: change.value });
+    init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+  }
+  return doReq<BotFeaturedPreferences>("/api/bot-featured", init);
 }
 
 export function fetchChatOrder(scope: Scope, signal: AbortSignal) {

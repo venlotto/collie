@@ -8,6 +8,7 @@ import { __resetPairing } from "@/lib/pairing";
 import { __resetDraftPrune } from "@/lib/drafts";
 import { __resetHeldChat } from "@/lib/chat-held";
 import { __resetPins } from "@/lib/pins";
+import { __resetBotFeatured } from "@/lib/bot-featured";
 import { __resetPinHint } from "@/lib/pin-hint";
 import { __resetHiddenMachines } from "@/lib/hidden-machines";
 import { __resetAuthedUrls } from "@/lib/authed-url";
@@ -46,6 +47,8 @@ beforeEach(() => {
   // The pins store keeps its list in module scope (lib/pins.ts), which the storage clear above
   // cannot reach: one case's pin would otherwise lead the next case's dashboard.
   __resetPins();
+  // The featured chat is another module-scoped store, with an in-flight server read to cancel too.
+  __resetBotFeatured();
   // And the pin hint's flag beside it (lib/pin-hint.ts): one case's pin or dismissal would otherwise
   // hide the next case's hint.
   __resetPinHint();
