@@ -24,6 +24,35 @@ async function screenshot(page: Page, label: string) {
   await page.screenshot({ path: join(dir, prefix + "-" + label + ".png"), scale: "css", animations: "disabled" });
 }
 
+async function sheetAnimationMidpoint(page: Page, name: "bot-up" | "bot-down") {
+  const probe = await page.evaluateHandle(animationName => {
+    // SAFETY: the observer replaces null with the measured bottom before it disconnects.
+    const sample = { value: null as number | null };
+    const observer = new MutationObserver(() => {
+      const sheet = document.querySelector(".bot-sheet");
+      const animation = sheet?.getAnimations().find(candidate =>
+        candidate instanceof CSSAnimation && candidate.animationName === animationName);
+      if (!sheet || !animation?.effect) return;
+      animation.pause();
+      animation.currentTime = Number(animation.effect.getTiming().duration) / 2;
+      sample.value = sheet.getBoundingClientRect().bottom;
+      observer.disconnect();
+      animation.play();
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true,
+      attributeFilter: ["open", "data-leaving"] });
+    return sample;
+  }, name);
+  return {
+    finish: async () => {
+      await expect.poll(() => probe.evaluate(sample => sample.value)).not.toBeNull();
+      const bottom = await probe.evaluate(sample => sample.value!);
+      await probe.dispose();
+      return bottom;
+    },
+  };
+}
+
 async function settledSheet(page: Page) {
   const dialog = page.getByRole("dialog", { name: "Crear nuevo Bot" });
   await expect(dialog).toBeVisible();
@@ -141,10 +170,10 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
     }));
     expect(covered).toBe(true);
   }
-  const underBars = await page.locator(".bot-detail").evaluate(detail => {
-    const reader = detail.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
-    const header = detail.querySelector(".bot-chat-bar")!.getBoundingClientRect();
-    const box = detail.querySelector('[data-slot="composer-box"]')!.getBoundingClientRect();
+  const underBars = await page.locator(".bot-detail").evaluate(panelDetail => {
+    const reader = panelDetail.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
+    const header = panelDetail.querySelector(".bot-chat-bar")!.getBoundingClientRect();
+    const box = panelDetail.querySelector('[data-slot="composer-box"]')!.getBoundingClientRect();
     return { top: header.bottom - reader.top, bottom: reader.bottom - box.top };
   });
   expect(underBars.top).toBeGreaterThan(0);
@@ -199,6 +228,80 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await expect(page.getByRole("button", { name: "medium", pressed: true })).toBeEnabled();
   await screenshot(page, "crear-recordado");
 
+});
+
+test("create sheet fills the phone, slides both ways and stays centered on desktop", async ({ page }, info) => {
+  await installApiStub(page);
+  await installLauncherWorld(page);
+  await page.route(url => url.pathname === "/api/launchers", route => route.fulfill({
+    json: { ...fixtureLaunchersWithAgents, botCreate: { agents: [
+      { id: "codexp", harness: "codex", efforts: ["low", "medium", "high", "xhigh"] },
+      { id: "claudep", harness: "claude", efforts: ["low", "medium", "high", "xhigh", "max"] },
+      { id: "kimi", harness: "claude", efforts: ["low", "medium", "high"] },
+    ], last: null } },
+  }));
+  await page.goto("/");
+  const phone = info.project.name.includes("phone");
+  const opening = phone ? await sheetAnimationMidpoint(page, "bot-up") : null;
+  await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
+  const dialog = await settledSheet(page);
+  const sheet = dialog.locator(".bot-sheet");
+  const box = (await sheet.boundingBox())!;
+  const viewport = page.viewportSize()!;
+  if (phone) {
+    expect(box.x).toBe(0);
+    expect(box.width).toBe(viewport.width);
+    expect(box.y + box.height).toBeCloseTo(viewport.height, 1);
+    await expect(sheet).toHaveCSS("border-top-left-radius", "30px");
+    await expect(sheet).toHaveCSS("border-top-right-radius", "30px");
+    await expect(sheet).toHaveCSS("border-bottom-left-radius", "0px");
+    await expect(sheet).toHaveCSS("border-bottom-right-radius", "0px");
+    expect(await opening!.finish()).toBeGreaterThan(viewport.height);
+    for (const name of ["codexp", "high"]) {
+      expect((await dialog.getByRole("button", { name, exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+  } else {
+    expect(box.width).toBe(440);
+    expect(Math.abs(box.y + box.height / 2 - viewport.height / 2)).toBeLessThan(1);
+    await expect(sheet).toHaveCSS("border-bottom-left-radius", "32px");
+    await expect(sheet).toHaveCSS("border-bottom-right-radius", "32px");
+  }
+  await screenshot(page, "crear-geometria");
+  if (!phone) return;
+  for (const method of ["X", "backdrop", "Escape"] as const) {
+    const closing = await sheetAnimationMidpoint(page, "bot-down");
+    if (method === "X") await dialog.getByRole("button", { name: "Cerrar", exact: true }).click();
+    else if (method === "backdrop") await dialog.locator(".bot-backdrop").click({ position: { x: 8, y: 8 } });
+    else await page.keyboard.press("Escape");
+    expect(await closing.finish()).toBeGreaterThan(viewport.height);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    if (method !== "Escape") {
+      await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
+      await settledSheet(page);
+    }
+  }
+});
+
+test("a host without bot profiles keeps the remembered selector visible and launches legacy", async ({ page }) => {
+  await installApiStub(page);
+  const launch = await installLauncherWorld(page);
+  await page.addInitScript(() => localStorage.setItem("collie:bot-create:v1:", JSON.stringify({ agent: "kimi", effort: "low" })));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
+  const dialog = await settledSheet(page);
+  for (const id of ["codexp", "claudep", "kimi"]) {
+    await expect(dialog.getByRole("button", { name: id, exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: id, exact: true })).toBeDisabled();
+  }
+  await expect(dialog.getByRole("button", { name: "kimi", pressed: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "low", pressed: true })).toBeVisible();
+  await expect(dialog.getByRole("status")).toHaveText("Este equipo no ofrece elegir agente.");
+  await screenshot(page, "crear-sin-perfiles");
+  await dialog.getByRole("textbox").fill("Bot compatible");
+  await dialog.getByRole("button", { name: "Crear", exact: true }).click();
+  await expect.poll(() => launch.launches.length).toBe(1);
+  expect(launch.launches[0]?.body.harness).toBe("claude");
+  expect(launch.launches[0]?.body).not.toHaveProperty("botCreate");
 });
 
 test("reducir transparencia conserva barras opacas sin desenfoque", async ({ page, browserName }) => {

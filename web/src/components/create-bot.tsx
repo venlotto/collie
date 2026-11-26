@@ -8,6 +8,7 @@ import { describeThrownError } from "@/lib/api-error-message";
 import { mintRequestId } from "@/lib/worktree-name";
 import { type Scope } from "@/lib/scope";
 import { readBotPrefs, cacheBotPrefs } from "@/lib/bot-create-prefs";
+import { BOT_CREATE_PROFILES } from "@/lib/bot-create-profiles";
 import { type AgentView, type LaunchersResponse } from "@/lib/types";
 import { BlobAvatar } from "./bot-identity";
 import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
@@ -51,13 +52,16 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
     });
     return () => { active = false; };
   }, [host, session, writable, reload]);
-  const profiles = catalog?.botCreate?.agents;
-  const profile = profiles?.find(agent => agent.id === prefs.agent);
+  const serverProfiles = catalog?.botCreate?.agents;
+  const profiles = serverProfiles?.length ? serverProfiles : BOT_CREATE_PROFILES;
+  const shownProfile = profiles.find(agent => agent.id === prefs.agent);
+  const profile = serverProfiles?.find(agent => agent.id === prefs.agent);
   const request = useRef(mintRequestId());
   const { start, creatingSpace } = useSpaceActions();
   const rename = useMuxCapability("renamePane", scope);
   const [preparing, setPreparing] = useState(false);
   const busy = creatingSpace || preparing;
+  const canChoose = !!serverProfiles?.length && !busy && !retryOnly;
   const closeRef = useRef(close);
   closeRef.current = close;
   useEffect(() => {
@@ -73,7 +77,7 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
   const dismiss = () => { if (!busy) setLeaving(true); };
 
   async function create() {
-    if (!writable || !catalog || (profiles && !profile) || !name.trim() || busy || leaving) return;
+    if (!writable || !catalog || (catalog.botCreate !== undefined && !profile) || !name.trim() || busy || leaving) return;
     setError("");
     setPreparing(true);
     const installed = catalog.harnesses?.filter(h => h.found);
@@ -109,26 +113,25 @@ export function CreateBot({ scope, beside, writable, close }: { scope: Scope; be
         <button key={i} type="button" aria-label={`Forma ${i + 1}`} aria-pressed={silhouette === i} onClick={() => setSilhouette(i)}><BlobAvatar silhouette={i} color={color} /></button>)}</fieldset>
       <fieldset className="bot-colors" aria-label="Color">{colors.map((hex, i) =>
         <button key={hex} type="button" aria-label={colorNames[i]} aria-pressed={color === i} onClick={() => setColor(i)}><span style={{ background: hex }} /></button>)}</fieldset>
-      {(!catalog || profiles) && <div className="bot-launch-fields">
-        <fieldset disabled={!catalog || busy || retryOnly} aria-label="Agente">
+      <div className="bot-launch-fields">
+        <fieldset disabled={!canChoose} aria-label="Agente">
           <legend>Agente</legend>
-          {(profiles?.map(agent => agent.id) ?? [prefs.agent]).map(id =>
-            <button type="button" key={id} aria-pressed={id === prefs.agent} onClick={() => {
-              const target = profiles?.find(a => a.id === id);
-              setPrefs({ agent: id, effort: target?.efforts.includes(prefs.effort) ? prefs.effort : "high" });
-            }}>{id}</button>)}
+          {profiles.map(agent => <button type="button" key={agent.id} aria-pressed={agent.id === prefs.agent} onClick={() => {
+            setPrefs({ agent: agent.id, effort: agent.efforts.includes(prefs.effort) ? prefs.effort : "high" });
+          }}>{agent.id}</button>)}
         </fieldset>
-        {(profile || !catalog) && <fieldset disabled={!catalog || busy || retryOnly} aria-label="Reasoning">
+        <fieldset disabled={!canChoose} aria-label="Reasoning">
           <legend>Reasoning</legend>
-          {(profile?.efforts ?? [prefs.effort]).map(effort =>
+          {(shownProfile?.efforts ?? [prefs.effort]).map(effort =>
             <button type="button" key={effort} aria-pressed={effort === prefs.effort}
               onClick={() => setPrefs({ ...prefs, effort })}>{effort}</button>)}
-        </fieldset>}
-        {profiles?.length === 0 && <p role="status">No hay agentes disponibles.</p>}
-      </div>}
+        </fieldset>
+        {catalog && !catalog.botCreate && <p role="status">Este equipo no ofrece elegir agente.</p>}
+        {catalog?.botCreate?.agents.length === 0 && <p role="status">No hay agentes disponibles.</p>}
+      </div>
       {loadFailed && <button type="button" onClick={() => setReload(n => n + 1)}>Reintentar</button>}
       {error && <p role="alert">{error}</p>}
-      <button className="bot-create" disabled={!writable || !catalog || (!!profiles && !profile) || !name.trim() || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
+      <button className="bot-create" disabled={!writable || !catalog || (catalog.botCreate !== undefined && !profile) || !name.trim() || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
     </form>
   </dialog>;
 }
