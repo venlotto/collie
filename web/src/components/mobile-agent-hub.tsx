@@ -1,5 +1,6 @@
 import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useLongPress } from "@/hooks/use-long-press";
 import { useBotSections } from "@/lib/bot-sections";
 import { useBotFeatured } from "@/lib/bot-featured";
 import { chatOrderId } from "@/lib/chat-order";
@@ -33,6 +34,9 @@ interface Props {
   onOpen: (pane: AgentView) => void;
   onPress: (pane: AgentView) => void;
   onNew?: () => void;
+  /** Double-click, right-click or hold "+": a bot with no questions. Resolves to the error to show. */
+  onQuickNew?: () => Promise<string | undefined>;
+  quickBusy?: boolean;
   deviceName?: string;
   accessNotice?: ReactNode;
 }
@@ -81,7 +85,7 @@ function Preview({ pane, scope, active, status, label }: { pane: AgentView; scop
 
 const segmenter = graphemeSegmenter();
 
-export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
+export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, onQuickNew, quickBusy = false, deviceName = "", accessNotice }: Props) {
   useLocale();
   const [query, setQuery] = useState("");
   const { folded, toggle, setClosed } = useBotSections();
@@ -269,7 +273,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         <button disabled={busy} onClick={() => setSelection(new Set(choices.map(rowId)))}>Seleccionar todo</button>
       </header> : <header className="bot-bar">
         <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
-        <button aria-label="Crear nuevo" className="bot-circle bot-plus" disabled={!onNew} onClick={onNew}><Plus /></button>
+        <PlusButton onNew={onNew} onQuickNew={onQuickNew && (() => void onQuickNew().then(message => setError(message ?? "")))} busy={quickBusy} />
       </header>}
       <div className="bot-scroll" ref={scroll} onScroll={countUnread}>
         {accessNotice}
@@ -331,4 +335,25 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       {error && <p role="alert">{error}</p>}
     </BotActionSheet>}
   </div>;
+}
+
+// How long a mouse click waits for a second one before it opens the sheet. Touch and keyboard open at once.
+const DOUBLE_CLICK_MS = 260;
+
+/** Tap or click: the create sheet. Double-click, right-click or hold: a quick bot, straight away. */
+function PlusButton({ onNew, onQuickNew, busy }: { onNew?: () => void; onQuickNew?: () => void; busy: boolean }) {
+  const pointer = useRef("");
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = () => { if (pending.current !== null) { clearTimeout(pending.current); pending.current = null; } };
+  useEffect(() => cancel, []);
+  const hold = useLongPress(onQuickNew && !busy ? () => { cancel(); onQuickNew(); } : undefined);
+  return <button {...hold} aria-label="Crear nuevo" aria-busy={busy || undefined} className="bot-circle bot-plus" disabled={!onNew || busy}
+    onPointerDown={(e) => { pointer.current = e.pointerType; hold.onPointerDown(e); }}
+    onClick={(e) => {
+      if (!onNew) return;
+      if (!onQuickNew || pointer.current !== "mouse" || e.detail === 0) { cancel(); onNew(); return; }
+      if (e.detail >= 2) { cancel(); onQuickNew(); return; }
+      cancel();
+      pending.current = setTimeout(() => { pending.current = null; onNew(); }, DOUBLE_CLICK_MS);
+    }}><Plus /></button>;
 }

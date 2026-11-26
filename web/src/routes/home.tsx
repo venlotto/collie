@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link, useParams, useRevalidator } from "react-router";
 import { CreateBot } from "@/components/create-bot";
 import { MobileAgentHub } from "@/components/mobile-agent-hub";
+import { useQuickBot } from "@/components/quick-bot";
+import { identityOf } from "@/components/bot-identity";
+import { useMuxCapability } from "@/lib/mux-capability";
 import { mounted } from "@/lib/base-path";
 import { PROXY_AUTH_PATH } from "@/lib/sw-routes";
 import { t } from "@/lib/i18n";
@@ -30,6 +33,8 @@ export function HomeRoute() {
   const visible = panes.filter(p => !p.trash);
   useLegacyPinMigration(visible);
   const featured = featuredBotPane(visible, pinnedTop);
+  const rename = useMuxCapability("renamePane", data.scope);
+  const quickBot = useQuickBot({ canRename: rename.capable });
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (
     <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>
@@ -41,6 +46,7 @@ export function HomeRoute() {
       deviceName={data.device?.device?.trim()} accessNotice={accessNotice}
       onPress={p => { if (!p.agentRun) void prefetchPaneData(p.paneId, scopeOf(p)); }}
       onOpen={p => nav.open(panePath(p.paneId, scopeOf(p)), { freshPane: p })}
+      onQuickNew={writable ? () => quickBot.quick(data.scope, visible.map(p => identityOf(p, scopeOf(p)).name)) : undefined} quickBusy={quickBot.busy}
       onNew={writable || accessNotice ? () => setCreate({ beside: featured?.paneId.startsWith("agent-run:") ? undefined : featured, scope: featured ? scopeOf(featured) : data.scope }) : undefined} />
     {create && <CreateBot {...create} writable={writable} close={() => setCreate(null)} />}
   </>;
