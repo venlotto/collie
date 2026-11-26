@@ -431,11 +431,13 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
     expect(box.height).toBeGreaterThan(height - 48);
     const controls = (await footer.boundingBox())!;
     expect(controls.x + controls.width).toBeLessThanOrEqual(side.width);
-    for (const el of [terminal, detail.locator('[data-slot="composer-box"]')]) {
-      const rect = (await el.boundingBox())!;
-      expect(rect.width).toBeGreaterThan(box.width - 90);
-      expect(rect.x).toBeGreaterThanOrEqual(box.x);
-      expect(rect.x + rect.width).toBeLessThanOrEqual(width);
-    }
+    const terminalBox = (await terminal.boundingBox())!;
+    const scrollbar = await reader.evaluate(el => el.offsetWidth - el.clientWidth);
+    expect(terminalBox.x).toBeCloseTo(box.x, 0);
+    expect(terminalBox.width + scrollbar).toBeCloseTo(box.width, 0);
+    const composer = (await detail.locator('[data-slot="composer-box"]').boundingBox())!;
+    expect(composer.width).toBeGreaterThan(box.width - 90);
+    expect(composer.x).toBeGreaterThanOrEqual(box.x);
+    expect(composer.x + composer.width).toBeLessThanOrEqual(width);
   }
 });
