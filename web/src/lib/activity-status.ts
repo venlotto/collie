@@ -11,7 +11,7 @@ export type AgentRunActivity = {
 } | { status: string; end: number | null };
 
 export function activityStatusFromAgentRun(run: AgentRunActivity): ActivityStatus {
-  if ("exit_code" in run && typeof run.exit_code === "number") return run.exit_code === 0 ? "done" : "error";
+  if ("exit_code" in run && run.exit_code != null) return run.exit_code === 0 ? "done" : "error";
   if ("end" in run) {
     if (run.status === "done") return "done";
     if (["failed", "timeout", "orphaned"].includes(run.status)) return "error";
@@ -38,7 +38,7 @@ export function activityStatusOf(pane: ActivityPane): ActivityStatus {
     source = { kind: "agent", status: status === "error" ? "blocked" : status,
       blockedBy: status === "error" ? "error" : undefined,
       lastSeenAt: pane.lastSeenAt,
-      lastActiveAt: typeof ended === "number" && Number.isFinite(ended) ? ended : pane.lastActiveAt };
+      lastActiveAt: ended !== null && Number.isFinite(ended) ? ended : pane.lastActiveAt };
   }
   const shown = shownStatus(source);
   if (shown === "blocked" && isErrorBlocked(source)) return "error";
