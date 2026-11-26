@@ -233,12 +233,6 @@
 .bot-workspace-fields .danger { color: #ff716b; }
 @media (prefers-reduced-motion: reduce) { .bot-index [data-drag-space] .bot-row,.bot-drop-trash { transition: none; } }
 
-.bot-trashed-workspace { min-height: 70px; display: flex; gap: 10px; align-items: center; padding: 8px 10px; }
-.bot-trashed-workspace > span { flex: 1; min-width: 0; }
-.bot-trashed-workspace strong,.bot-trashed-workspace small { display: block; overflow: hidden; text-overflow: ellipsis; }
-.bot-trashed-workspace small { color: #8e8e93; }
-.bot-trashed-workspace button { min-height: 40px; padding: 0 12px; border-radius: 999px; background: #262628; font-size: 13px; }
-
 .bot-launch-fields { flex: none; width: 94%; margin-top: 6px; display: grid; gap: 6px; }
 .bot-launch-fields fieldset { display: flex; align-items: center; min-width: 0; gap: 2px; background: #202023; border-radius: 16px; padding: 3px 5px; }
 .bot-launch-fields legend { float: left; width: 68px; padding-left: 5px; color: #c9c9d0; font-size: 12px; }
@@ -317,3 +311,9 @@
   --muted-foreground: #f2f2f5;
   max-width: min(100%, 390px);
 }
+
+.bot-trashed-workspace { min-height: 70px; display: flex; gap: 10px; align-items: center; padding: 8px 10px; }
+.bot-trashed-workspace > span { flex: 1; min-width: 0; }
+.bot-trashed-workspace strong,.bot-trashed-workspace small { display: block; overflow: hidden; text-overflow: ellipsis; }
+.bot-trashed-workspace small { color: #8e8e93; }
+.bot-trashed-workspace button { min-height: 40px; padding: 0 12px; border-radius: 999px; background: #262628; font-size: 13px; }
