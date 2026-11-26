@@ -2201,10 +2201,12 @@ export function renamePane(
   paneId: string,
   label: string,
   scope?: Scope,
+  auto = false,
 ): Promise<ActionResponse> {
   return req<ActionResponse>(withScope(`/api/pane/${encodeURIComponent(paneId)}/rename`, scope), {
     method: "POST",
-    body: JSON.stringify({ label }),
+    // `auto` marks a placeholder name the bridge may replace once the agent titles the work.
+    body: JSON.stringify(auto ? { label, auto: true } : { label }),
   });
 }
 
