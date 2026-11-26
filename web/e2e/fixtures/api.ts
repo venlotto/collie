@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Page, Route } from "@playwright/test";
 
 import type { StartLaunchBody } from "@/lib/api";
+import type { BotFeaturedPin } from "@/lib/bot-featured-wire";
 import { itemsOf, type ChatItem } from "@/lib/chat-items";
 import type { Locale } from "@/lib/i18n/locale";
 import type { MachineAlerts, PaneChatResponse, PaneHistoryResponse, PinFull, SnapshotResponse } from "@/lib/types";
@@ -85,6 +86,11 @@ interface PinStub {
 }
 
 const pinStubs = new WeakMap<Page, PinStub>();
+const featuredStubs = new WeakMap<Page, BotFeaturedPin | null>();
+
+function featuredStubOf(page: Page) {
+  return { featured: featuredStubs.get(page) ?? null };
+}
 
 function pinStubOf(page: Page): PinStub {
   const held = pinStubs.get(page);
@@ -143,6 +149,9 @@ async function answer(route: Route, path: string, pins: PinStub): Promise<void> 
   const method = route.request().method();
 
   if (path === "/api/snapshot") return fulfillJson(route, fixtureSnapshot);
+  if (path === "/api/bot-featured" && method === "GET") {
+    return fulfillJson(route, { userId: "local", ...featuredStubOf(route.request().frame().page()) });
+  }
 
   // The Changes view (ADR 0065): the list, or with `?repo=&path=` one file's diff. Asked by pane or
   // by workspace, the answer is the same list.
@@ -304,6 +313,13 @@ export async function installApiStub(page: Page): Promise<void> {
   const pins = pinStubOf(page);
   await page.route("**/api/**", async (route) => {
     await answer(route, new URL(route.request().url()).pathname, pins);
+  });
+  await page.route("**/api/bot-featured", async route => {
+    if (route.request().method() !== "PUT") return route.fallback();
+    // SAFETY: the app's requestBotFeatured is the only writer in this isolated browser world.
+    const { featured } = route.request().postDataJSON() as { featured: BotFeaturedPin | null };
+    featuredStubs.set(page, featured);
+    await fulfillJson(route, { userId: "local", featured });
   });
 }
 
