@@ -35,6 +35,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The bridge remembers which workspaces you fold.** Renaming, reordering or restoring a workspace keeps its saved preference. New workspaces open expanded.
 - **The chat list opens as you left it.** Your folded workspaces and Trash follow you between devices. Searching temporarily reveals matching chats.
 
+- **Working bots pulse gently in the chat list and header.** A short status replaces the message preview while a bot works, needs an answer, or has a new result to read.
+
 ### Changed
 
 - **The hosted app groups chats under their workspaces.** Search or fold the list on your phone, and use the plus button to start a named chat with a colour and avatar.

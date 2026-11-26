@@ -1462,6 +1462,10 @@ export const zh: Dictionary = {
   // --- status (triage sections, status labels, counts) ---
   "status.section.needsYou": "待处理",
   "status.section.readyUnseen": "已完成 · 未读",
+  "bot.activity.working": "工作中…",
+  "bot.activity.blocked": "需要你回应",
+  "bot.activity.error": "已停止",
+  "bot.activity.done": "已完成",
   "status.section.working": "运行中",
   "status.section.recent": "最近",
   "status.label.blocked": "待处理",

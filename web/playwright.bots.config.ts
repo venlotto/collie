@@ -5,7 +5,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: "./e2e",
   testMatch: [
-    "bot-thread.spec.ts", "bot-workspaces.spec.ts", "bot-multiselect.spec.ts",
+    "bot-activity.spec.ts", "bot-thread.spec.ts", "bot-workspaces.spec.ts", "bot-multiselect.spec.ts",
     "bot-drag.spec.ts", "bot-idle-resume.spec.ts", "bot-remember-sections.spec.ts",
   ],
   workers: 2, timeout: 60_000, use: { baseURL, serviceWorkers: "block" },
