@@ -35,7 +35,7 @@ test("join shell panes without hooks, follow the main rollout and stop only the 
     const source = new AgentRuns(dir, async (...args) => { stop.push(args); return true; }, new ActivityLedger({ stateDir: root }));
     // SAFETY: attach reads only the workspace identity and shell pane fields populated here.
     const body = { workspaces: [{ workspaceId: "w1", label: "Collie" }],
-      shellPanes: [{ paneId: "w1:p1", cwd: status.cwd, kind: "shell", workspaceId: "w1" }] } as unknown as SnapshotResponse;
+      shellPanes: [{ paneId: "w1:p1", cwd: status.cwd, kind: "shell", workspaceId: "w1" }] } as SnapshotResponse;
     await source.attach(body, "default");
     expect(body.shellPanes.map(p => [p.paneId,p.workspaceId,p.agentRun?.status])).toEqual([
       ["w1:p1","w1","running"],["agent-run:" + other,"agent-runs","failed"]]);
@@ -81,9 +81,10 @@ test("a settled run shares its read receipt across pane reassignment, polls and 
     await writeFile(file, JSON.stringify(run));
     const source = new AgentRuns(dir, async () => false, ledger);
     async function snapshot(runs: AgentRuns, bound: boolean) {
-      // SAFETY: attach only reads workspace and shell pane fields.
-      const body = { workspaces: [], shellPanes: bound ? [{ paneId: "w1:p1", cwd: run.cwd,
-        kind: "shell", workspaceId: "w1", lastSeenAt: now }] : [] } as unknown as SnapshotResponse;
+      const body = { bridge: "connected", agents: [], tabs: [], sessions: [], ts: 0, workspaces: [],
+        shellPanes: bound ? [{ paneId: "w1:p1", cwd: run.cwd, workspaceLabel: "Collie", workspaceNumber: 1,
+          tabId: "w1:t1", agent: "shell", status: "unknown", focused: false, sendProtocol: true,
+          kind: "shell", workspaceId: "w1", lastSeenAt: now }] : [] } satisfies SnapshotResponse;
       await runs.attach(body, "default");
       return body.shellPanes[0];
     }

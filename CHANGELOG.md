@@ -59,6 +59,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Wide windows show the chat list beside the conversation.** The terminal fills the conversation panel, and resizing keeps the current chat and draft in place.
 
 - **Creating a bot fills the phone and always shows agent choices.** The sheet rises from the bottom edge and keeps the last agent and reasoning visible while the catalog loads. A host without profile support explains why the choices are unavailable and still uses its existing launch.
+- **The featured chat choice is ready on every device.** The space above the chat list holds one pinned bot; its choice is saved for each person and restored after a restart.
+- **Only your pinned chat fills the featured slot.** Pinning another chat replaces the previous one on every device, and unpinning or deleting it removes the slot; focus and list order no longer choose a chat for you.
+- **Hosted sign-in joins the declared access settings.** The existing SSO switch can also be set in the generated configuration, keeping each person's saved chat preferences on the same account.
 
 ### Fixed
 

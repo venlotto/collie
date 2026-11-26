@@ -15,7 +15,7 @@ import { TrickSessionRoute } from "@/routes/trick-session";
 import { DetailRoute } from "@/routes/detail";
 import { OldSettingsRedirect } from "@/routes/settings-redirect";
 import { PairApproveRoute } from "@/routes/pair-approve";
-import { loadBotSections } from "@/lib/bot-sections";
+import { loadBotPreferences } from "@/lib/bot-preferences";
 import {
   devicesLoader,
   historyLoader,
@@ -72,7 +72,7 @@ export const routes: RouteObject[] = [
     errorElement: <RootError />,
     HydrateFallback: BootSplash,
     children: [
-      { index: true, element: <></>, loader: loadBotSections, shouldRevalidate: () => false },
+      { index: true, element: <></>, loader: loadBotPreferences, shouldRevalidate: () => false },
       // A permanent address for one browser tab; it replaces itself with that tab's last pane (lib/slots.ts).
       { path: "slot/:slot", element: <SlotRoute /> },
       { path: "space/:spaceId", element: <SpaceRoute /> },
@@ -199,7 +199,7 @@ export const routes: RouteObject[] = [
         id: PANE_ROUTE_ID,
         path: "pane/:paneId",
         loader: async args => {
-          const [pane] = await Promise.all([paneLoader(args), loadBotSections()]);
+          const [pane] = await Promise.all([paneLoader(args), loadBotPreferences()]);
           return pane;
         },
         element: <DetailRoute />,

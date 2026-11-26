@@ -1,6 +1,7 @@
 import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useBotSections } from "@/lib/bot-sections";
+import { useBotFeatured } from "@/lib/bot-featured";
 import { chatOrderId } from "@/lib/chat-order";
 import { WorkspaceMenu } from "./bot-workspace-menu";
 import { dragScope, sectionKey, useBotOrganization } from "./bot-organization";
@@ -84,6 +85,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   useLocale();
   const [query, setQuery] = useState("");
   const { folded, toggle, setClosed } = useBotSections();
+  const { clearFeatured } = useBotFeatured();
   const [mode, setMode] = useState<"chats" | "trash" | null>(null);
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [sheet, setSheet] = useState<"move" | "restore" | "purge" | null>(null);
@@ -218,6 +220,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         const scope = scopeOf(p);
         const portrait = identityOf(p, scope);
         await actOnBot(action, p, scope, workspaceId);
+        if (action === "move" || action === "trash" || action === "purge") clearFeatured(p);
         if (p.terminalId) {
           if (action === "purge") forgetBot(scope, p.terminalId);
           else saveBot(scope, p.terminalId, portrait);

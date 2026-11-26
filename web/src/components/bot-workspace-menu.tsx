@@ -15,9 +15,10 @@ function selectName(field: HTMLInputElement | null) {
   if (field) { field.focus(); field.select(); }
 }
 
-export function WorkspaceMenu({ space, spaces, move, close, refresh }: {
+export function WorkspaceMenu({ space, spaces, move, close, refresh, clearFeatured }: {
   space: WorkspaceChoice; spaces: WorkspaceChoice[];
   move: (before: string | null) => Promise<void>; close: () => void; refresh: () => void;
+  clearFeatured: () => void;
 }) {
   const [view, setView] = useState<"actions" | "name" | "move" | "trash">("actions");
   const [name, setName] = useState(space.title);
@@ -59,6 +60,7 @@ export function WorkspaceMenu({ space, spaces, move, close, refresh }: {
         {view === "name" && <form onSubmit={e => { e.preventDefault(); void apply(async () => {
           const res = await renameSpace(space.id, name.trim(), space.scope);
           if (!res.ok) throw new Error(res.error);
+          clearFeatured();
         }); }}>
           <input aria-label="Nombre del workspace" value={name} ref={selectName} maxLength={80} onChange={e => setName(e.target.value)} />
           <button disabled={!name.trim()}>Guardar</button>
@@ -74,6 +76,7 @@ export function WorkspaceMenu({ space, spaces, move, close, refresh }: {
           <button className="danger" onClick={() => void apply(async () => {
             const res = await trashWorkspace(space.scope, space.id);
             if (!res.ok) throw new Error(res.error);
+            clearFeatured();
           })}><Trash2 />Enviar a Papelera</button>
           <button onClick={dismiss}>Cancelar</button>
         </>}

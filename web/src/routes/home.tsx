@@ -10,8 +10,8 @@ import { useNav } from "@/hooks/use-nav";
 import { findPane, paneScope } from "@/lib/hosts";
 import { prefetchPaneData } from "@/lib/loaders";
 import { pairedDevicesPath, panePath } from "@/lib/nav";
+import { useBotFeatured, featuredBotPane, useLegacyPinMigration } from "@/lib/bot-featured";
 import { usePairing } from "@/lib/pairing";
-import { pinMatcher, usePins } from "@/lib/pins";
 import { useRootData } from "@/lib/route-data";
 import type { Scope } from "@/lib/scope";
 import { isReadOnly, type AgentView } from "@/lib/types";
@@ -22,13 +22,14 @@ export function HomeRoute() {
   const nav = useNav();
   const { paneId } = useParams();
   const { refused } = usePairing();
-  const pins = usePins();
+  const { featured: pinnedTop } = useBotFeatured();
   const [create, setCreate] = useState<{ scope: Scope; beside?: AgentView } | null>(null);
   const panes = [...data.agents, ...data.shellPanes];
   const scopeOf = (pane: AgentView) => paneScope(data.scope, pane, data.servers, data.sessions);
   const active = paneId ? findPane(panes, paneId, data.scope, data.servers, data.sessions) : undefined;
   const visible = panes.filter(p => !p.trash);
-  const featured = visible.find(pinMatcher(pins)) ?? visible.find(p => p.focused) ?? visible[0];
+  useLegacyPinMigration(visible);
+  const featured = featuredBotPane(visible, pinnedTop);
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (
     <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>

@@ -1,18 +1,8 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { requestBotSections, type SectionAccount } from "./api";
+import { botAccountForPage } from "./bot-account";
 import { loadSectionCache, saveSectionCache } from "./bot-section-cache";
 import { onWipe } from "./wipe";
-import { asJsonString, parseJsonObject } from "./json";
-
-function accountForPage(): SectionAccount | null {
-  const marker = document.querySelector('meta[name="collie-sso"]');
-  if (!marker) return { userId: "local" };
-  const account = parseJsonObject(marker.getAttribute("content") ?? "");
-  const sub = asJsonString(account?.sub);
-  const role = asJsonString(account?.role);
-  return sub && (role === "admin" || role === "member" || role === "viewer")
-    ? { userId: "sso:" + sub, sub, role } : null;
-}
 
 class BotSections {
   readonly abort = new AbortController();
@@ -110,7 +100,7 @@ class BotSections {
 
 let current: BotSections | undefined;
 function sections() {
-  const account = accountForPage();
+  const account = botAccountForPage();
   if (!current || current.account?.userId !== account?.userId || current.account?.role !== account?.role) {
     current?.dispose();
     current = new BotSections(account);

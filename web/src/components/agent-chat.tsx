@@ -172,7 +172,8 @@ import { openReport, signalTrouble, unreadDialogReport } from "@/lib/report/stor
 import { unreadDialogScreen } from "@/lib/report/screen";
 import { answerRouteFor, cardsOnOlderMember, holdAnswerRouteFor, textRouteFor } from "@/lib/send-path";
 import { useSessionCard, wearsExperimental } from "@/lib/session-cards";
-import { pinMatcher, setPinned, usePins } from "@/lib/pins";
+import { pinMatcher, usePins } from "@/lib/pins";
+import { botFeaturedMatches, useBotFeatured } from "@/lib/bot-featured";
 import { paneFilesDir } from "@/lib/file-paths";
 import { changeLoginPath, changesPath, filesPath, historyPath, trickSessionPath, newPath, panePath, spacePath } from "@/lib/nav";
 import { beltMarksOf, beltTapHandlers } from "@/components/belt-trick-mark";
@@ -478,6 +479,7 @@ export function AgentChat({
   // tell a live pin from a dormant one), and this device's pins, for the switcher's Pinned section.
   const herd = useMemo(() => [...agents, ...shellPanes], [agents, shellPanes]);
   const pins = usePins();
+  const { featured: botPin, setFeatured: setBotPin } = useBotFeatured();
   // This device may not type into agents: the backend rejects every write, so the composer drops to
   // read-only (and shows a banner). The mirror still polls (reading is fine). Either write gate puts
   // us here — the proxy-asserted allowlist, or a missing/rejected pairing credential — and the
@@ -2642,7 +2644,7 @@ export function AgentChat({
             not the 640px every other route uses: a 640px column minus its 16px gutters clips an
             80-column mirror, so the pane pair get their own claim. */}
         {mobileShell && bot && agent ? <BotChatBar bot={bot} pane={agent} unread={herd.filter(isUnseen).length}
-          pinned={pinMatcher(pins)(agent)} pin={() => setPinned(agent, !pinMatcher(pins)(agent), herd)} back={onBackArrow ?? onBack}
+          pinned={!!botPin && botFeaturedMatches(botPin, agent)} pin={() => setBotPin(agent, !botPin || !botFeaturedMatches(botPin, agent))} back={onBackArrow ?? onBack}
           terminal={!chatShown} toggleView={transcriptReadable && !gridless ? () => paneViewChange(chatShown ? "terminal" : "chat") : undefined} /> : <RouteHeader
           onHome={onBackArrow ?? onBack}
           width="wide"

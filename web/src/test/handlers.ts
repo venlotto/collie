@@ -1166,6 +1166,9 @@ export const handlers = [
     return HttpResponse.json({ results: [{ target: "local/w1:p1", result: "taken", receipt: { ...walkyReceipt(id, "local/w1:p1"), state: "inbox-only", reason: "dropped by the pane's owner" } }] });
   }),
   http.get("/api/ui-sections", () => HttpResponse.json({ userId: "local", folded: [] })),
+  http.get("/api/bot-featured", () => HttpResponse.json({ userId: "local", featured: null })),
+  http.put<never, { featured: { row: string; space: string; at: number } | null }>("/api/bot-featured", async ({ request }) =>
+    HttpResponse.json({ userId: "local", featured: (await request.json()).featured })),
   http.get("/api/snapshot", () => HttpResponse.json(fixtureSnapshot)),
   http.get(/\/api\/pane\/[^/]+$/, () =>
     HttpResponse.json({ paneId: "w1:p1", text: paneTextWithDraft(), truncated: false, revision: 1 }),

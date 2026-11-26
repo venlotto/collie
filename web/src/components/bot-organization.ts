@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { identityOf } from "./bot-identity";
+import { useBotFeatured } from "@/lib/bot-featured";
 import { forgetBot, saveBot } from "@/lib/bot-identity";
 import { actOnBot, fetchChatOrder, placeChat, placeWorkspace } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
@@ -20,6 +21,7 @@ async function move(space: WorkspaceChoice, before: string | null) {
 export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows: AgentView[] }>,
   list: RefObject<HTMLDivElement | null>, enabled: boolean, refresh: () => void) {
   const [order, setOrder] = useState<Map<string, string[]>>(new Map());
+  const { clearFeatured } = useBotFeatured();
   const [menu, setMenu] = useState<WorkspaceChoice | null>(null);
   const [error, setError] = useState("");
   const locked = useRef(false);
@@ -72,11 +74,13 @@ export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows:
         if (!pane?.terminalId) return;
         if (drop.trash) {
           await actOnBot("trash", pane, space.scope);
+          clearFeatured(pane);
           return;
         }
         if (space !== target) {
           const portrait = identityOf(pane, space.scope);
           await actOnBot("move", pane, space.scope, target.id);
+          clearFeatured(pane);
           saveBot(space.scope, pane.terminalId, portrait);
           if (pane.paneId !== pane.terminalId) forgetBot(space.scope, pane.paneId);
           transferred = true;
@@ -96,5 +100,6 @@ export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows:
   return { dragging, error, menu: space && enabled ? {
     space, spaces: [...groups.values()].filter(s => dragScope(s.scope) === dragScope(space.scope)),
     move: (before: string | null) => move(space, before), refresh, close: () => setMenu(null),
+    clearFeatured: () => { for (const pane of groups.get(sectionKey(space.scope, space.id))?.rows ?? []) clearFeatured(pane); },
   } : null };
 }

@@ -76,6 +76,7 @@ export function privateRoot(id: PrivateRoot["id"]): PrivateRoot {
 const KNOWN_NAMES: ReadonlySet<string> = new Set([
   // State folder.
   "activity.json",
+  "bot-featured.json",
   "audit.log",
   "cache-watch.json",
   "crew-ops.json",

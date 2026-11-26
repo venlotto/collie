@@ -115,6 +115,9 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   if (fixtureKiroChat.page !== "live") throw new Error("Expected a live chat fixture");
   const world = await installPaneWorld(page, { paneId: panes[0]!.paneId, snapshot, chat: { ...fixtureKiroChat, oldest: 1, head: 4, upserts }, start: "approval", screens: { idle: paneCapture("kiro--v3-idle-w120"), approval: paneCapture("kiro--v3-approval-allow-w120") },
     script: [{ on: "approval", keys: ["Enter"], to: "idle" }] });
+  await page.route("**/api/bot-featured", route => route.fulfill({ json: { userId: "local", featured: {
+    row: ["", "", panes[0]!.paneId].join("\u0000"), space: panes[0]!.workspaceLabel, at: now,
+  } } }));
   await page.goto("/");
   const rows = page.locator(".bot-row");
   await expect(rows).toHaveCount(names.length);
@@ -601,6 +604,9 @@ for (const inset of [0, 34]) {
       chat: { paneId: pane.paneId, available: false, reason: "no-session" },
       start: "idle", screens: { idle: paneTextWithDraft() },
     });
+    await page.route("**/api/bot-featured", route => route.fulfill({ json: { userId: "local", featured: {
+      row: ["", "", pane.paneId].join("\u0000"), space: pane.workspaceLabel, at: 1,
+    } } }));
     await page.goto("/");
     const row = page.locator(".bot-row").filter({ has: page.getByText(pane.paneLabel, { exact: true }) });
     await expect(row).toBeVisible({ timeout: 20_000 });

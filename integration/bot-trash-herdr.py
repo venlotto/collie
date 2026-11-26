@@ -112,11 +112,33 @@ def exercise(root):
             assert api("/api/bot-action", payload)["ok"]
 
         eventually(chat)
+
+        def featured():
+            prefs = api("/api/bot-featured")
+            assert prefs["userId"] == "local"
+            return prefs["featured"]
+
+        def featured_pin(pane):
+            return {"row": "\0\0" + pane["paneId"], "space": pane["workspaceLabel"], "at": 1}
+
+        assert featured() is None
+        source_pin = featured_pin(chat())
+        assert api("/api/bot-featured", json.dumps({"featured": source_pin}).encode(), method="PUT")["featured"] == source_pin
+        other = next(p for p in rows() if p.get("terminalId") == target["terminal_id"])
+        other_pin = featured_pin(other)
+        assert api("/api/bot-featured", json.dumps({"featured": other_pin}).encode(), method="PUT")["featured"] == other_pin
+        stop(bridge)
+        bridge = start_bridge()
+        assert eventually(lambda: featured() == other_pin and other_pin) == other_pin
+        assert api("/api/bot-featured", json.dumps({"featured": source_pin}).encode(), method="PUT")["featured"] == source_pin
+        print("PASS isolated featured chat replaces its owner and survives a bridge restart")
         shell_pid = rpc("pane.process_info", pane_id=source["pane_id"])["process_info"]["shell_pid"]
         act("move", workspaceId=target["workspace_id"])
         eventually(lambda: chat().get("workspaceId") == target["workspace_id"])
         moved = chat()["paneId"]
         assert moved != source["pane_id"]
+        eventually(lambda: featured() is None)
+        assert api("/api/bot-featured", json.dumps({"featured": featured_pin(chat())}).encode(), method="PUT")["featured"]["space"] == other["workspaceLabel"]
         assert rpc("pane.process_info", pane_id=moved)["process_info"]["shell_pid"] == shell_pid
         boundary = "fixture-bot-trash"
         form = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="test.txt"\r\n'
@@ -124,6 +146,7 @@ def exercise(root):
         upload = Path(api("/api/pane/" + moved + "/upload", form, f"multipart/form-data; boundary={boundary}")["path"])
         assert upload.is_relative_to(state) and upload.is_file()
         act("trash")
+        eventually(lambda: featured() is None)
         record = eventually(lambda: chat().get("trash"))
         stop(bridge)
         bridge = start_bridge()
