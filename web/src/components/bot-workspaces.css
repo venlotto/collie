@@ -238,3 +238,75 @@
 .bot-trashed-workspace strong,.bot-trashed-workspace small { display: block; overflow: hidden; text-overflow: ellipsis; }
 .bot-trashed-workspace small { color: #8e8e93; }
 .bot-trashed-workspace button { min-height: 40px; padding: 0 12px; border-radius: 999px; background: #262628; font-size: 13px; }
+
+.bot-launch-fields { flex: none; width: 94%; margin-top: 6px; display: grid; gap: 6px; }
+.bot-launch-fields fieldset { display: flex; align-items: center; min-width: 0; gap: 2px; background: #202023; border-radius: 16px; padding: 3px 5px; }
+.bot-launch-fields legend { float: left; width: 68px; padding-left: 5px; color: #c9c9d0; font-size: 12px; }
+.bot-launch-fields button { flex: 1; min-height: 32px; padding: 0 3px; font-size: 13px; border-radius: 999px; }
+.bot-launch-fields button[aria-pressed=true] { background: #53535c; color: #fff; font-weight: 600; }
+.bot-sheet:has(.bot-launch-fields) .bot-create { margin-top: 14px; }
+
+/* The inset hairline and reflection paint inside the existing boxes. */
+[data-bots], .bot-dialog {
+  --glass-rgb: 27 27 31;
+  --glass-opacity: .70;
+  --glass-filter: blur(24px) saturate(170%);
+  --glass-edge: inset 0 0 0 .5px rgb(255 255 255 / .11), inset 0 1px 0 rgb(255 255 255 / .09);
+  --glass-light: linear-gradient(168deg, rgb(255 255 255 / .065), transparent 48%);
+  --bot-head: calc(57px + env(safe-area-inset-top, 0px));
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-bots], .bot-dialog { --glass-opacity: 1; --glass-filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-bots], .bot-dialog { --glass-opacity: 1; --glass-filter: none; }
+}
+.bot-bar, .bot-search, .bot-circle, .bot-pill, .bot-user, .bot-sheet,
+.bot-popup, .bot-picker, .bot-drop-trash, .bot-detail [data-slot="composer-box"],
+.bot-detail [data-bot-controls] > button, .bot-sheet header .bot-circle {
+  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+/* Controls on an already filtered surface share its backdrop sample. */
+.bot-bar :is(.bot-circle,.bot-pill,.bot-user), .bot-sheet header .bot-circle,
+.bot-detail [data-bot-controls] > button {
+  --glass-rgb: 61 61 68;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.bot-bar .bot-user { --glass-rgb: 0 102 114; border-color: transparent; }
+.bot-detail [data-bot-controls] > [data-slot="composer-primary"] { --glass-rgb: 8 110 56; }
+.bot-drop-trash { --glass-rgb: 54 24 31; color: #ffd1cc; }
+.bot-drop-trash[data-trash-over] { --glass-rgb: 114 25 30; background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity)); }
+.bot-select-bar button { color: #c2e1ff; }
+.bot-actions button:last-child, .bot-danger, .bot-workspace-fields .danger { color: #ffc6c1; }
+.bot-search input::placeholder, .bot-detail [data-slot="composer-box"] textarea::placeholder { color: #e0e0e6; }
+.bot-sheet input::placeholder { color: #adadb4; }
+.bot-sheet p[role=alert] { color: #ffd0ca; }
+.bot-search-foot { background: transparent; }
+.bot-list-surface > .bot-bar { position: absolute; inset: 0 0 auto; z-index: 2; }
+.bot-scroll { padding-top: calc(var(--bot-head) + 8px); scroll-padding-block: var(--bot-head) 58px; }
+.bot-row, .bot-index [data-drag-space] .bot-row { transition-property: transform, opacity; }
+
+/* Extend the scrollport behind the bars. The padding returns the space at
+   either end. A docked question still gets its own row above the composer. */
+.bot-chat-bar { position: relative; }
+.bot-chat-bar + div { --bot-head-overlap: var(--bot-head); }
+.bot-chat-bar + div:has(> [data-slot="collapse"] [data-slot="notice"]) { --bot-head-overlap: 0px; }
+.bot-chat-bar + div [data-slot="pane-reading"] { margin-top: calc(-1 * var(--bot-head-overlap)); }
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto {
+  scroll-padding-top: var(--bot-head-overlap);
+}
+.bot-chat-bar + div [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::before {
+  content: ""; display: block; height: var(--bot-head-overlap);
+}
+.bot-chat-bar + div:has([data-slot="composer-box"]):not(:has([data-slot="card-dock"])) {
+  --bot-composer-overlap: 40px;
+}
+.bot-detail [data-slot="pane-reading"] { margin-bottom: calc(-1 * var(--bot-composer-overlap, 0px)); }
+.bot-detail [data-slot="pane-reading"] > .relative.h-full > .overflow-y-auto::after {
+  content: ""; display: block; height: var(--bot-composer-overlap, 0px);
+}
+.bot-detail [data-slot="chrome-block"], .bot-detail [data-slot="chrome-block"] > .bg-chrome { background: transparent; }

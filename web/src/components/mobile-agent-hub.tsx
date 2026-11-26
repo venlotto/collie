@@ -90,10 +90,11 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     const list = scroll.current;
     if (!list) return { above: [], below: [] };
     const bounds = list.getBoundingClientRect();
+    const top = list.previousElementSibling?.getBoundingClientRect().bottom ?? bounds.top;
     const bottom = footer.current?.getBoundingClientRect().top ?? bounds.bottom;
     const unread = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"));
     return {
-      above: unread.filter(el => el.getBoundingClientRect().bottom <= bounds.top),
+      above: unread.filter(el => el.getBoundingClientRect().bottom <= top),
       below: unread.filter(el => el.getBoundingClientRect().top >= bottom),
     };
   }
