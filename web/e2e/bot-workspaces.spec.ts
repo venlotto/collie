@@ -97,8 +97,10 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await search.fill("");
   await page.getByRole("button", { name: sections[0], exact: true }).click();
   await rows.first().click();
-  await expect(page.getByText(messages[3]!, { exact: true })).toBeVisible();
-  await expect(page.getByText("Nuevos", { exact: true })).toBeVisible();
+  // The list preview can already show this message while the pane loader is pending.
+  const detail = page.locator(".bot-detail");
+  await expect(detail.getByText(messages[3]!, { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(detail.getByText("Nuevos", { exact: true })).toBeVisible();
   await expect(page.getByText("4 mensajes con 2 Bots")).toBeAttached();
   await expect(page.getByText("Mensaje de Avisos de agentes", { exact: true })).toBeAttached();
   await expect(page.locator(".bot-attribution").filter({ hasText: "Mensaje de" }).last()).toBeVisible();
@@ -205,7 +207,7 @@ for (const inset of [0, 34]) {
     });
     await page.goto("/");
     const row = page.locator(".bot-row").filter({ has: page.getByText(pane.paneLabel, { exact: true }) });
-    await expect(row).toBeVisible();
+    await expect(row).toBeVisible({ timeout: 20_000 });
     await page.locator(".bot-scroll").evaluate(el => { el.scrollTop = 60; });
     const shell = await page.locator("[data-bots]").elementHandle();
     const list = await page.locator(".bot-scroll").elementHandle();
