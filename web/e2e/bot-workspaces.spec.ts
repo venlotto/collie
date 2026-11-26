@@ -305,23 +305,39 @@ for (const inset of [0, 34]) {
       const panel = stack.querySelector("main")!;
       const search = stack.querySelector(".bot-search")!;
       const surface = stack.querySelector(".bot-list-surface")!;
-      const frames: { ms: number; open: boolean; x: number; sheet: string; scale: number; searchTop: number; search: number; composerTop: number | null; composer: number | null; scroll: number }[] = [];
+      const frames: { ms: number; source: "raf" | "midpoint"; open: boolean; x: number; sheet: string; scale: number; searchTop: number; search: number; composerTop: number | null; composer: number | null; scroll: number }[] = [];
       const t0 = performance.now();
       let raf = 0;
-      function sample() {
+      function record(source: "raf" | "midpoint") {
         const box = panel.querySelector('[data-slot="composer-box"]')?.getBoundingClientRect();
         const rect = search.getBoundingClientRect();
         const dialog = stack.querySelector<HTMLElement>("dialog[open]");
-        frames.push({ ms: performance.now() - t0, open: stack.dataset.detail === "true",
+        frames.push({ ms: performance.now() - t0, source, open: stack.dataset.detail === "true",
           x: panel.getBoundingClientRect().left - stack.getBoundingClientRect().left,
           sheet: dialog ? dialog.dataset.leaving === "true" ? "closing" : "open" : "closed",
           scale: surface.getBoundingClientRect().width / stack.clientWidth,
           searchTop: rect.top, search: rect.bottom, composerTop: box?.height ? box.top : null, composer: box?.height ? box.bottom : null,
           scroll: scroll.scrollTop });
+      }
+      // The compositor can finish a transform between two main-thread rAF callbacks.
+      // Sample the actual CSS transition at its midpoint as well as recording live frames.
+      const observer = new MutationObserver(changes => {
+        const target = changes.some(change => change.attributeName === "data-detail") ? panel : surface;
+        const transition = target.getAnimations().find(a => a instanceof CSSTransition && a.transitionProperty === "transform");
+        const duration = transition?.effect?.getTiming().duration;
+        if (!transition || typeof duration !== "number" || duration <= 0) return;
+        const time = transition.currentTime;
+        transition.currentTime = duration / 2;
+        record("midpoint");
+        transition.currentTime = time ?? 0;
+      });
+      observer.observe(stack, { subtree: true, attributes: true, attributeFilter: ["data-detail", "data-leaving", "open"] });
+      function sample() {
+        record("raf");
         raf = requestAnimationFrame(sample);
       }
       sample();
-      return () => { cancelAnimationFrame(raf); return frames; };
+      return () => { observer.disconnect(); cancelAnimationFrame(raf); return frames; };
     });
     const dir = process.env.BOT_SCREENSHOTS;
     const openSheet = () => page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
