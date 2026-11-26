@@ -2,14 +2,10 @@ import { randomUUID } from "node:crypto";
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { asJsonObject, asJsonString, parseJson, type JsonValue } from "../web/src/lib/json.ts";
+import { BOT_CREATE_PROFILES } from "../web/src/lib/bot-create-profiles.ts";
 import type { BotCreatePrefs } from "./types.ts";
 
-// coder1's three interactive wrappers. Both claudep and kimi forward argv to Claude Code.
-const profiles = [
-  { id: "codexp", harness: "codex", efforts: ["low", "medium", "high", "xhigh"] },
-  { id: "claudep", harness: "claude", efforts: ["low", "medium", "high", "xhigh", "max"] },
-  { id: "kimi", harness: "claude", efforts: ["low", "medium", "high"] },
-];
+const profiles = BOT_CREATE_PROFILES;
 
 export class BotCreateStore {
   constructor(private readonly stateDir: string, private readonly locate: (id: string) => string | null) {}
