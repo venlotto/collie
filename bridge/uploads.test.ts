@@ -237,3 +237,35 @@ describe("sweepUploads", () => {
     expect(unlinked).toEqual(["b.png"]);
   });
 });
+
+
+describe("video uploads", () => {
+  function ftyp(brand: string) {
+    return new Uint8Array([0, 0, 0, 20, ...Buffer.from("ftyp" + brand), 0, 0, 0, 0, ...Buffer.from(brand)]);
+  }
+
+  test("recognises MP4 and QuickTime independently of the filename", () => {
+    expect(uploadExt("clip.mp4", ftyp("isom"))).toBe("mp4");
+    expect(uploadExt("clip.MOV", ftyp("qt  "))).toBe("mov");
+    expect(uploadExt("no-extension", ftyp("mp42"))).toBe("mp4");
+  });
+
+  test("accepts WebM only with a bounded EBML header and webm DocType", () => {
+    const webm = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x87, 0x42, 0x82, 0x84, ...Buffer.from("webm")]);
+    expect(uploadExt("clip.webm", webm)).toBe("webm");
+    expect(uploadExt("clip.webm", webm.slice(0, -1))).toBeNull();
+    webm[7] = 0xff;
+    expect(uploadExt("clip.webm", webm)).toBeNull();
+  });
+
+  test("refuses renamed text, image/audio ftyp brands and truncated boxes", () => {
+    expect(uploadExt("clip.mp4", new TextEncoder().encode("not a video"))).toBeNull();
+    for (const brand of ["avif", "heic", "M4A ", "xxxx"]) {
+      expect(uploadExt("clip.mp4", ftyp(brand))).toBeNull();
+    }
+    expect(uploadExt("clip.mov", ftyp("qt  ").slice(0, 15))).toBeNull();
+    const invalid = ftyp("isom");
+    invalid[3] = 255;
+    expect(uploadExt("clip.mp4", invalid)).toBeNull();
+  });
+});

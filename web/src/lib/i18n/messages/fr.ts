@@ -441,6 +441,7 @@ export const fr: Dictionary = {
   "composer.expand": "Développer",
   "composer.collapse": "Réduire",
   "composer.attach.title": "Joindre",
+  "composer.attach.videos": "Vidéos",
   "composer.attach.photos": "Photos",
   "composer.attach.files": "Fichiers",
   "composer.attach.listAria": "Pièces jointes",

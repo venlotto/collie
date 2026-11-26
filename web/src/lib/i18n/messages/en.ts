@@ -537,6 +537,7 @@ export const en = {
   "composer.expand": "Expand",
   "composer.collapse": "Collapse",
   "composer.attach.title": "Attach",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Photos",
   "composer.attach.files": "Files",
   "composer.attach.listAria": "Attachments",

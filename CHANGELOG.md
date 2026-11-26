@@ -47,6 +47,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Finished background runs can resume or implement their plans.** Reply in the same bot to continue with its saved session or a contextual summary. A finished plan also offers Implement, which opens a separate implementation bot with your chosen agent and instructions to work on a new branch and open a PR.
 - **Hold a chat title to edit its bot.** Change its name, appearance and workspace with the creation form, keeping its running agent.
 
+- **Attach videos alongside images in your messages.** The attachment menu accepts MP4, MOV and WebM videos, checks their container headers, and keeps video previews alongside image attachments.
+
 ### Changed
 
 - **Chat controls float over the conversation in dark glass.** Headers, search, reply controls and action sheets share a translucent surface. Reducing transparency gives them an opaque background.

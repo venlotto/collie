@@ -439,6 +439,7 @@ export const tr: Dictionary = {
   "composer.expand": "Genişlet",
   "composer.collapse": "Daralt",
   "composer.attach.title": "Ekle",
+  "composer.attach.videos": "Videolar",
   "composer.attach.photos": "Fotoğraflar",
   "composer.attach.files": "Dosyalar",
   "composer.attach.listAria": "Ekler",

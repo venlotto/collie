@@ -443,6 +443,7 @@ export const it: Dictionary = {
   "composer.expand": "Espandi",
   "composer.collapse": "Comprimi",
   "composer.attach.title": "Allega",
+  "composer.attach.videos": "Video",
   "composer.attach.photos": "Foto",
   "composer.attach.files": "File",
   "composer.attach.listAria": "Allegati",

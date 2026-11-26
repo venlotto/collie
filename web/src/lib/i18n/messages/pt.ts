@@ -439,6 +439,7 @@ export const pt: Dictionary = {
   "composer.expand": "Expandir",
   "composer.collapse": "Recolher",
   "composer.attach.title": "Anexar",
+  "composer.attach.videos": "Vídeos",
   "composer.attach.photos": "Fotos",
   "composer.attach.files": "Arquivos",
   "composer.attach.listAria": "Anexos",

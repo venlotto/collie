@@ -483,6 +483,7 @@ export const ko: Dictionary = {
   "composer.expand": "펼치기",
   "composer.collapse": "접기",
   "composer.attach.title": "첨부",
+  "composer.attach.videos": "동영상",
   "composer.attach.photos": "사진",
   "composer.attach.files": "파일",
   "composer.attach.listAria": "첨부 파일",

@@ -441,6 +441,7 @@ export const ru: Dictionary = {
   "composer.expand": "Развернуть",
   "composer.collapse": "Свернуть",
   "composer.attach.title": "Прикрепить",
+  "composer.attach.videos": "Видео",
   "composer.attach.photos": "Фото",
   "composer.attach.files": "Файлы",
   "composer.attach.listAria": "Вложения",

@@ -498,6 +498,7 @@ export const de: Dictionary = {
   "composer.expand": "Ausklappen",
   "composer.collapse": "Einklappen",
   "composer.attach.title": "Anhängen",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Fotos",
   "composer.attach.files": "Dateien",
   "composer.attach.listAria": "Anhänge",

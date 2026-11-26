@@ -471,6 +471,7 @@ export const zhTW: Dictionary = {
   "composer.expand": "展開",
   "composer.collapse": "摺疊",
   "composer.attach.title": "附加",
+  "composer.attach.videos": "影片",
   "composer.attach.photos": "照片",
   "composer.attach.files": "檔案",
   "composer.attach.listAria": "附件",
