@@ -161,6 +161,9 @@
   .bot-sidebar {
     background: var(--glass-light, none), rgb(var(--glass-rgb, 18 18 20) / var(--glass-opacity, 1));
     border-inline-end: 1px solid #323234;
+    box-shadow: var(--glass-edge, none);
+    -webkit-backdrop-filter: var(--glass-filter, none);
+    backdrop-filter: var(--glass-filter, none);
   }
   .bot-detail, .bot-layout[data-detail=true] .bot-detail {
     position: relative;
