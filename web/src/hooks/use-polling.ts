@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { useRevalidator } from "react-router";
 
 import { refreshNow } from "@/lib/api";
 import { isLongUpload } from "@/lib/connection-health";
-import { beginCatchUp, endCatchUp, isLocked, useLocked } from "@/lib/idle";
+import { isLocked } from "@/lib/idle";
+import { useIdleLock } from "./use-idle-lock";
 import {
   burstAppliesTo,
   consumeTopologyPoll,
@@ -217,15 +218,6 @@ export function usePolling(
   if (startupId === undefined) startupWatch.current = null;
   else if (startupWatch.current?.id !== startupId) startupWatch.current = { id: startupId, at: Date.now() };
   const starting = startupWatch.current !== null && Date.now() - startupWatch.current.at < STARTUP_HOT_MS;
-  // Held in a ref for the same reason the revalidator is: the tick effect must not re-subscribe
-  // every time the viewed host or session changes identity.
-  const scopeRef = useRef(scope);
-  scopeRef.current = scope;
-  // Hold the revalidator in a ref so the effect only re-subscribes when the cadence changes,
-  // not on every revalidation (its identity flips each cycle).
-  const ref = useRef(revalidator);
-  ref.current = revalidator;
-
   // Wall-clock timestamp of when the current revalidation began, or null when idle. Stamped on the
   // idle→loading edge and cleared on →idle, so a tick can tell how long a load has been in flight
   // (used to detect and supersede a wedged one). A ref, not state — it must not trigger re-renders.
@@ -264,63 +256,42 @@ export function usePolling(
     starting,
   });
 
-  // Resuming from the idle lock must refetch AT ONCE. The route tree stays mounted through a pause
-  // (see App), so unlocking re-runs no loaders by itself — without this the first thing you'd see on
-  // resume is however stale the snapshot got while paused, for up to one full interval. Fires on the
-  // falling edge only; `wasLocked` seeds from the current value so mounting never counts as a release.
-  const locked = useLocked();
-  const wasLocked = useRef(locked);
-  useEffect(() => {
-    const released = wasLocked.current && !locked;
-    wasLocked.current = locked;
-    if (!released) return;
-    beginCatchUp(); // holds the cover through the refetch — see the settle effect below
-    lookNow(scopeRef.current);
-    if (ref.current.state === "idle") ref.current.revalidate();
-  }, [locked]);
+  // `supersede` is the network-change kick (see `onNetwork` below): it starts a fresh read even while
+  // one is in flight, because the one in flight was started on the network that just went away.
+  const tick = useEffectEvent((supersede = false) => {
+    if (document.hidden) return;
+    if (isLocked()) return;
+    // A long upload the operator started (a voice clip) is on the wire. A phone's uplink is the
+    // narrow half of a mobile link, so a poll fired now does not arrive sooner — it queues behind
+    // the audio and makes the audio slower. Skipped, not cancelled: the upload ends in seconds,
+    // releasing it stamps a wake, and the very next tick reads a fresh snapshot.
+    if (isLongUpload()) return;
+    // Deliberately NO navigator.onLine gate here. On some phones the flag lies — it stuck FALSE
+    // after an airplane-mode toggle even though the network was back — and gating the tick on it
+    // wedged polling permanently: the app froze on "not connected" with a resting/bad-state dog and
+    // a stale mirror forever, because it never fetched again to discover the network had returned. A
+    // failed fetch on a genuinely dead connection is cheap and self-heals the instant it's back; the
+    // focus/online/visibility listeners below only accelerate that first beat. Never STOP fetching
+    // because a possibly-lying flag says offline.
+    const r = revalidator;
+    if (r.state === "idle") {
+      consumeTopologyPoll();
+      r.revalidate();
+      return;
+    }
+    // Already loading: normally we leave it be, but a revalidation stuck past SUPERSEDE_MS is
+    // almost certainly a black-holed fetch — kick a fresh one to supersede it and self-heal.
+    const since = loadingSince.current;
+    if (supersede || (since !== null && Date.now() - since >= SUPERSEDE_MS)) r.revalidate();
+  });
 
-  // End the catch-up beat when the revalidator comes to rest. Keyed on the state itself, so it can't
-  // fire on the loading edge: at release the state is still "idle" for one render, but `beginCatchUp`
-  // has already run by the time this effect's dependency changes to "loading" and back.
-  useEffect(() => {
-    if (revalidator.state === "idle") endCatchUp();
-  }, [revalidator.state]);
+  useIdleLock((refreshSnapshot) => {
+    if (refreshSnapshot) lookNow(scope);
+    tick(refreshSnapshot);
+  });
 
   useEffect(() => {
-    // `supersede` is the network-change kick (see `onNetwork` below): it starts a fresh read even while
-    // one is in flight, because the one in flight was started on the network that just went away.
-    const tick = (supersede = false) => {
-      if (document.hidden) return;
-      // Idle-locked: the app is covered and nobody is reading it, so don't keep hitting the socket.
-      // A live read (not a captured render value) because this fires from an interval — and unlike
-      // the `navigator.onLine` trap below, this flag can't lie: it's set by our own lock, and
-      // resuming re-runs every loader, so a pause can't strand the UI on stale data.
-      if (isLocked()) return;
-      // A long upload the operator started (a voice clip) is on the wire. A phone's uplink is the
-      // narrow half of a mobile link, so a poll fired now does not arrive sooner — it queues behind
-      // the audio and makes the audio slower. Skipped, not cancelled: the upload ends in seconds,
-      // releasing it stamps a wake, and the very next tick reads a fresh snapshot.
-      if (isLongUpload()) return;
-      // Deliberately NO navigator.onLine gate here. On some phones the flag lies — it stuck FALSE
-      // after an airplane-mode toggle even though the network was back — and gating the tick on it
-      // wedged polling permanently: the app froze on "not connected" with a resting/bad-state dog and
-      // a stale mirror forever, because it never fetched again to discover the network had returned. A
-      // failed fetch on a genuinely dead connection is cheap and self-heals the instant it's back; the
-      // focus/online/visibility listeners below only accelerate that first beat. Never STOP fetching
-      // because a possibly-lying flag says offline.
-      const r = ref.current;
-      if (r.state === "idle") {
-        consumeTopologyPoll();
-        r.revalidate();
-        return;
-      }
-      // Already loading: normally we leave it be, but a revalidation stuck past SUPERSEDE_MS is
-      // almost certainly a black-holed fetch — kick a fresh one to supersede it and self-heal.
-      const since = loadingSince.current;
-      if (supersede || (since !== null && Date.now() - since >= SUPERSEDE_MS)) r.revalidate();
-    };
     const id = window.setInterval(() => tick(), ms);
-    const onWake = () => tick();
     // THE NETWORK CHANGED (M46 pass 3, 2026-10-07): `online` and `offline` ask for a read AT ONCE and
     // supersede one already in flight, rather than waiting out the gap or a read that may now hang.
     // The flag the events carry is never trusted (see the tick): the read that follows is what decides,
@@ -328,27 +299,12 @@ export function usePolling(
     // waiting for the next beat. Superseding aborts the old read as an AbortError, which counts as
     // nothing (lib/api.ts `readFailureKind`).
     const onNetwork = () => tick(true);
-    const onVisible = () => {
-      if (document.hidden) return;
-      // Coming back to the foreground is the operator saying "show me now" — see lookNow. `focus`
-      // and `online` are deliberately NOT given one: a focus fires on every tap into the window and
-      // `online` fires on a flag that is known to lie (see the tick), so either would spend a
-      // listing on something that is not somebody returning to the app.
-      lookNow(scopeRef.current);
-      // A read left in flight while the app was in the background is superseded too: the phone may
-      // have changed networks under it.
-      tick(true);
-    };
-    window.addEventListener("focus", onWake);
     window.addEventListener("online", onNetwork);
     window.addEventListener("offline", onNetwork);
-    document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(id);
-      window.removeEventListener("focus", onWake);
       window.removeEventListener("online", onNetwork);
       window.removeEventListener("offline", onNetwork);
-      document.removeEventListener("visibilitychange", onVisible);
     };
     // `sendKick` is the reschedule: a send must not wait out the remainder of a gap that was timed
     // for an idle pane, so re-running this effect tears the old interval down and starts the next

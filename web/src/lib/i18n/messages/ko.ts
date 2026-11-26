@@ -503,7 +503,6 @@ export const ko: Dictionary = {
   "composer.tap.sending": "이 휴대폰에서 보낸 다른 전송이 아직 진행 중입니다. 끝날 때까지 기다리세요.",
   "composer.tap.noCard": "질문 카드가 화면에 없습니다. ‘화면’을 열어 터미널에서 답하세요.",
   "composer.tap.typeBusy": "전송이나 업로드가 끝나면 ‘입력’이 켜집니다.",
-  "composer.tap.typeWait": "Collie가 창의 상태를 따라잡는 중입니다. 잠시 뒤 ‘입력’을 다시 탭하세요.",
   "composer.tap.beltOff": "지금 이 창에서는 이 버튼이 할 일이 없습니다.",
   "composer.tap.fileType": "Collie는 이 종류의 파일을 첨부할 수 없습니다.",
   "composer.tap.clearBusy": "전송이 끝나면 초안을 지울 수 있습니다.",
@@ -1799,14 +1798,6 @@ export const ko: Dictionary = {
   "error.root.title": "오류 발생",
   "error.root.unknown": "알 수 없는 오류",
   "error.root.reload": "새로고침",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie 일시 중지됨",
-  "idle.catchingUp.title": "동기화 중",
-  "idle.catchingUp.body": "에이전트의 최신 상태를 불러오는 중입니다.",
-  "idle.paused.title": "일시 중지됨",
-  "idle.paused.body": "이 화면을 한동안 사용하지 않아 실시간 업데이트가 멈췄습니다. 이 안내 뒤의 화면은 마지막 상태를 그대로 표시합니다. 다시 시작하면 보던 위치에서 최신 상태를 불러옵니다.",
-  "idle.resume": "탭하여 재개",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "새 버전 업데이트 가능. 탭하여 적용하세요.",

@@ -263,7 +263,7 @@ Key security boundaries and risks:
   than the user holding it. There are no passwords or user sessions; an unlocked or stolen phone
   provides an open shell. Pairing ties access to a credential on the device
   ([above](#pair-a-device--the-write-credential)), so revoke a lost phone at once. The built-in
-  idle lock merely blanks an unattended screen and provides no actual security boundary
+  idle pause keeps the current screen visible and stops polling and animations
   ([ADR 0007](../.adr/0007-the-idle-lock-is-a-pause-not-a-gate.md)).
 - **Every machine of a crew is trusted in full.** A [crew](crew.md) is for machines that are all
   yours. The lead drives the terminals of every member, so whoever controls the lead controls every

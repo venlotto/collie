@@ -5,7 +5,6 @@ import { useNav } from "@/hooks/use-nav";
 import { trackSoftKeyboard } from "@/hooks/use-keyboard";
 import { useShortcutHandler } from "@/hooks/use-shortcut-handler";
 import { noteKeyPress } from "@/lib/hardware-keyboard";
-import { isCatchingUp, isLocked } from "@/lib/idle";
 import { markKeyboardHintDone } from "@/lib/keyboard-hint";
 import { homePath, newPath, resolveHomeScope, settingsPath } from "@/lib/nav";
 import { useOperatorShortcuts, type OperatorShortcutsWire } from "@/lib/operator-config";
@@ -85,8 +84,6 @@ function handleKeyDown(event: KeyboardEvent, resolver: Resolver): void {
   // The first press of a physical key is remembered for this device: it is what offers the shortcut
   // list in Settings (lib/hardware-keyboard.ts). A key that is not ours is read, never touched.
   noteKeyPress(event);
-  // Under the idle cover the app is inert: its keyboard is too.
-  if (isLocked() || isCatchingUp()) return;
   const sink = paneKeySink();
   const startedNormal = resolver.mode === "normal";
   const answered = resolver.press(toKeyLike(event));

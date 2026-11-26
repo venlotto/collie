@@ -49,8 +49,8 @@ import { cn } from "@/lib/utils";
  *
  * THE STACKING RUNG: `z-30`. Every in-flow surface in the app tops out at `z-20` (the sticky header,
  * the composer dock, the Changes file bar, the agent-chat docks), so the band covers all of them.
- * `z-40` is the toasts and the anchored menu's dismiss surface, `z-50` the sheets, the update screen
- * and the idle lock, so all of those cover the band. The anchor is `relative` and in the root
+ * `z-40` is the toasts and the anchored menu's dismiss surface, `z-50` the sheets and the update screen.
+ * Both cover the band. The anchor is `relative` and in the root
  * column's own stacking context, which is what lets the number compare against the route's.
  *
  * THE SURFACE. The band paints the page colour (`bg-background`) under the Notice's translucent

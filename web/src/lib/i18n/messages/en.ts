@@ -558,7 +558,6 @@ export const en = {
   "composer.tap.sending": "Another send from this phone is still running. Wait for it to end.",
   "composer.tap.noCard": "The question's card is not on screen. Open the Screen to answer it in the terminal.",
   "composer.tap.typeBusy": "Type turns on when the send or the upload ends.",
-  "composer.tap.typeWait": "Collie is catching up with the pane. Tap Type again in a moment.",
   "composer.tap.beltOff": "This button has nothing to do on this pane now.",
   "composer.tap.fileType": "Collie cannot attach this kind of file.",
   "composer.tap.clearBusy": "You can clear the draft when the send ends.",
@@ -1964,15 +1963,6 @@ export const en = {
   "error.root.title": "Something went wrong",
   "error.root.unknown": "Unknown error",
   "error.root.reload": "Reload",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Koperca Agent Hub paused",
-  "idle.catchingUp.title": "Catching up",
-  "idle.catchingUp.body": "Fetching the herd's current state.",
-  "idle.paused.title": "Paused",
-  "idle.paused.body":
-    "Live updates stopped while this screen sat idle. What's behind this is frozen. Resuming picks up right where you left off.",
-  "idle.resume": "Tap to resume",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "New version, tap to update",

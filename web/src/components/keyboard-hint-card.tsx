@@ -8,7 +8,6 @@ import { useAppHeaderBottom } from "@/hooks/use-app-header-bottom";
 import { useLocale } from "@/hooks/use-locale";
 import { useHardwareKeyboardSeen } from "@/lib/hardware-keyboard";
 import { t } from "@/lib/i18n";
-import { useCatchingUp, useLocked } from "@/lib/idle";
 import { markKeyboardHintDone, useKeyboardHintDone } from "@/lib/keyboard-hint";
 import { openShortcutHelp } from "@/lib/shortcuts/help";
 import { useShortcutKeymap, useShortcutMode } from "@/lib/shortcuts/state";
@@ -29,7 +28,7 @@ import type { Keymap } from "@/lib/shortcuts/types";
 // and the header (`z-20`), under the strip band (`z-30`), so a connection or update strip, which needs its
 // Retry or its tap, is never covered by it. The strip then hides its top edge for as long as it shows.
 //
-// NOT SHOWN: under the idle lock or the catch-up cover, while a sheet is open (the tour included), and
+// NOT SHOWN: while a sheet is open (the tour included), and
 // while the mode bar is up (the person is already pressing keys). The words are English only until the next
 // translation pass (`PENDING_TRANSLATION`).
 
@@ -97,10 +96,8 @@ export function KeyboardHintCard() {
   const isDone = useKeyboardHintDone();
   const keymap = useShortcutKeymap();
   const mode = useShortcutMode();
-  const isLocked = useLocked();
-  const isCatchingUp = useCatchingUp();
   const isSheetOpen = useAnySheetOpen();
   if (!hasKeyboard || isDone || keymap === null) return null;
-  if (isLocked || isCatchingUp || isSheetOpen || mode !== "normal") return null;
+  if (isSheetOpen || mode !== "normal") return null;
   return <HintCard keymap={keymap} />;
 }

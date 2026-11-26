@@ -164,7 +164,6 @@ const BRAND_KEYS = new Set<MessageKey>([
   "nav.home.aria.updating",
   "nav.home.aria.reconnected",
   "error.boot.body",
-  "idle.dialogAria",
   "settings.install.description",
   "settings.character.note",
   "tour.title",

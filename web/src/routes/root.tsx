@@ -86,8 +86,7 @@ export function shownStale(home: HomeData, pane: PaneData | undefined): boolean 
 }
 
 // The data root: owns the snapshot loader, drives polling, and fans the herd out to the child
-// routes (home + pane detail) via the router's loader data. Mounted only while unlocked (the
-// idle-lock in App swaps the whole RouterProvider out), so polling pauses when the app is locked.
+// routes (home + pane detail) via the router's loader data. The route stays mounted while idle.
 export function RootLayout() {
   // SAFETY: this component IS the root route's element, and `rootLoader` — the loader `router.tsx`
   // pairs with it — returns `HomeData`. React Router types `useLoaderData()` as `unknown` in data
