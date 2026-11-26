@@ -523,6 +523,7 @@ export const tr: Dictionary = {
   "composer.steer.steered": "Yönlendirildi: ajan bunu geçerli adımından sonra alır.",
   "composer.steer.unsupported": "Yönlendir bu bölmede kullanılamıyor, bu yüzden hiçbir şey gönderilmedi. Turun sonuna kuyruğa almak için tekrar gönderin.",
   "composer.steer.notAllowed": "Yalnızca telefondaki bir kişi yönlendirebilir. Yönlendir olmadan tekrar gönderin.",
+  "composer.startup.queued": "Sıraya alındı. Ajan hazır olduğunda gönderilecek.",
   "composer.protocol.held": "Kuyruğa alındı. Tur bittiğinde gönderilir.",
   "composer.protocol.expired": "Gönderilmedi. Tur 30 dakika içinde bitmedi.",
   "composer.protocol.cancelled": "İptal edildi. Ajana hiçbir şey iletilmedi.",

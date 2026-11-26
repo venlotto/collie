@@ -75,6 +75,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+it("Ctrl+M focuses the composer and consumes the shortcut", async () => {
+  registerShortcutHandler("focus_composer", () => screen.getByRole("textbox", { name: "Reply" }).focus());
+  await renderPage();
+  expect(tap(document.body, { key: "m", ctrlKey: true })).toBe(false);
+  expect(screen.getByRole("textbox", { name: "Reply" })).toHaveFocus();
+});
+
 describe("the prefix and an action key", () => {
   it("the prefix then b runs the sidebar handler, and both keys are consumed", async () => {
     const toggle = vi.fn();

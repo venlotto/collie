@@ -763,7 +763,7 @@ function lockWordsFor(slot: SendSlot, unreachableWords: string): string | null {
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, instance, surface, unreachableNote, scope, stopOffered = false, agent, canSteer, returnedDraft = false, isShell, cwd, gone, readOnly, composing, onAnswerDialog, dialogCard = false, text, terminalDraft, rawTerminalDraft, prefs, display, onSent, sendAction, onOpenMessages, walkyLinked = false, onDeliverNow, held: heldRows, chatEntries, pullHandle, draftNoticeSlot, expandArea, changesPill, zoomPill, stale, hand = "right", layout = "field", minimal = false, botName, aboveBelt, beltMarks, floatingHint, screen, todos, subagents, jobs, pins, agentView, onViewRequest, unreadState = null, onScreenUnread, onAnswerUnseen, onCannotTell, onCannotTellRing, cannotTellInView, heldScreen, olderMember },
+  { paneId, instance, surface, starting = false, unreachableNote, scope, stopOffered = false, agent, canSteer, returnedDraft = false, isShell, cwd, gone, readOnly, composing, onAnswerDialog, dialogCard = false, text, terminalDraft, rawTerminalDraft, prefs, display, onSent, sendAction, onOpenMessages, walkyLinked = false, onDeliverNow, held: heldRows, chatEntries, pullHandle, draftNoticeSlot, expandArea, changesPill, zoomPill, stale, hand = "right", layout = "field", minimal = false, botName, aboveBelt, beltMarks, floatingHint, screen, todos, subagents, jobs, pins, agentView, onViewRequest, unreadState = null, onScreenUnread, onAnswerUnseen, onCannotTell, onCannotTellRing, cannotTellInView, heldScreen, olderMember },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -2774,6 +2774,34 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     void sendThroughProtocol(words, held.isDraft, mode, seen, offer === "commit" && held.capAck, undefined, undefined, undefined, undefined, offer === "commit");
   }
 
+  const startupQueue = useRef<{ key: string; line: string; when: SendWhen | undefined; pane: string; scope: Scope | undefined }[]>([]);
+  useEffect(() => () => {
+    // Leaving the bot returns unsent words to its existing persisted recovery list.
+    // Never abandon a submitted message when the composer unmounts.
+    for (const row of startupQueue.current.splice(0)) {
+      putAside({ draft: row.line, chips: [], pane: row.pane, scope: row.scope, line: row.line });
+    }
+  }, []);
+  const drainingStartup = useRef(false);
+  // Consume once before the asynchronous request; rerenders cannot duplicate delivery.
+  // Each row retains its destination so changing panes cannot send it to another bot.
+  useEffect(() => {
+    if (starting || locked || offline || sending || drainingStartup.current) return;
+    const index = startupQueue.current.findIndex((row) => row.key === paneScopeKey(scope, paneId));
+    if (index < 0) return;
+    const [row] = startupQueue.current.splice(index, 1);
+    if (!row) return;
+    drainingStartup.current = true;
+    void send(row.line, false, row.when).then((sent) => {
+      if (!sent) returnHeldWords(row.line, paneId);
+      return sent;
+    }).catch(() => returnHeldWords(row.line, paneId)).finally(() => {
+      drainingStartup.current = false;
+      setStartupTick((tick) => tick + 1);
+    });
+  });
+  const [, setStartupTick] = useState(0);
+
   // Gate the composer's Send through the destructive-input confirm: a matching command arms the
   // "Really send?" state instead of sending; the confirming second tap goes through. Non-destructive
   // input sends immediately (and any stray armed state is cleared).
@@ -2843,6 +2871,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     setDestructiveNote(null);
     armedWhen.current = undefined;
     forgetUnknownSend(scope, paneId, line, isShell); // the confirming tap ends it; an unknown answer arms it afresh
+    if (starting) {
+      if (!line.trim() || noEchoRef.current !== null || secretRefusal(false) !== null) return;
+      startupQueue.current.push({ key: paneScopeKey(scope, paneId), line, when, pane: paneId, scope });
+      inputValueRef.current = "";
+      attachmentsRef.current = [];
+      setInput("");
+      setAttachments([]);
+      setStatus(translate("composer.startup.queued"), "info", null);
+      return;
+    }
     void send(line, true, when);
   }
   // Armed on the composed line: an edited line no longer stands armed, and the note goes with it.
