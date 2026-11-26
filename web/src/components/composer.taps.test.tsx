@@ -299,8 +299,9 @@ describe("composer taps: the round Send button that cannot act (fix 4)", () => {
     expect(recordedSends()).toEqual([]);
   });
 
-  it("while the launch starts, Send uses the ordinary protocol and keeps no refusal", async () => {
+  it("no tap vanishes: while the launch starts, a tap queues the message", async () => {
     const user = userEvent.setup();
+    // A draft typed before startup can be submitted while delivery waits.
     const m = mount();
     await user.type(field(), "hello");
     m.update({ starting: true });
@@ -308,9 +309,9 @@ describe("composer taps: the round Send button that cannot act (fix 4)", () => {
     expect(field()).not.toHaveAttribute("readonly");
     expect(field()).not.toHaveAttribute("aria-disabled");
     expect(field()).toHaveValue("hello");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-    await waitFor(() => expect(recordedSends()).toHaveLength(1));
-    expect(document.querySelector('[data-slot="composer-refusal"]')).toBeNull();
+    await expectTapAnswers(() => user.click(screen.getByRole("button", { name: "Send" })));
+    expect(field()).toHaveValue("");
+    expect(recordedSends()).toEqual([]);
   });
 });
 
