@@ -93,7 +93,10 @@ async function gesture(page: Page, source: Locator) {
   }
   await send("pointerdown", start);
   return {
-    hold: async () => { await page.waitForTimeout(510); await send("pointerup", start); },
+    hold: async () => {
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await send("pointerup", start);
+    },
     lift: async () => { if (phone) await page.waitForTimeout(160); await send("pointermove", { ...start, x: start.x + 16 }); },
     drop: async (el: Locator, at?: number) => {
       const end = await point(el, at); await send("pointermove", end);
