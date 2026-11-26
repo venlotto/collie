@@ -204,6 +204,7 @@ def exercise(root):
         topology = rpc("session.snapshot")["snapshot"]
         assert [s["workspace_id"] for s in topology["workspaces"]] == [target["workspace_id"]]
         assert sorted(p["terminal_id"] for p in topology["panes"]) == sorted(untouched)
+        print("PASS isolated chat and workspace move, rename, order, restart, restore and seven-day purge")
         # Exercise the real shell command with harmless local executables.
         catalog = api("/api/launchers")["botCreate"]
         assert catalog["last"] is None
@@ -224,7 +225,6 @@ def exercise(root):
         bridge = start_bridge()
         assert eventually(lambda: api("/api/launchers")["botCreate"]["last"]) == prefs
         print("PASS installed fixture wrappers receive the chosen argv and the bridge remembers after restart")
-        print("PASS isolated chat and workspace move, rename, order, restart, restore and seven-day purge")
     finally:
         if bridge is not None:
             stop(bridge)
