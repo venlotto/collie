@@ -37,6 +37,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The chat list opens as you left it.** Your folded workspaces and Trash follow you between devices. Searching temporarily reveals matching chats.
 
 - **Working bots pulse gently in the chat list and header.** A short status replaces the message preview while a bot works, needs an answer, or has a new result to read.
+- **Background runs show their activity on the same portraits.** The list keeps their elapsed time while they work and returns to the last message after you read their result.
 
 ### Changed
 

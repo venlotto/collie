@@ -7,18 +7,20 @@ import { stopAgentRun } from "@/lib/api";
 import { homePath } from "@/lib/nav";
 import { paneScopeKey, type Scope } from "@/lib/scope";
 import type { AgentView } from "@/lib/types";
-import { BlobAvatar, identityOf } from "./bot-identity";
+import { activityStatusOf } from "@/lib/activity-status";
+import { BotActivityPill } from "./bot-activity-avatar";
+import { identityOf } from "./bot-identity";
 import { SessionStream } from "./session-stream";
 import type { ChatMessageListHandle } from "./ui/chat/chat-message-list";
 
 type Run = NonNullable<AgentView["agentRun"]>;
 
-export function runProgress(run: Run) {
-  const state = { running: "Corriendo", done: "Listo", failed: "Falló", timeout: "Tiempo agotado", orphaned: "Sin supervisor" }[run.status];
+const runState = { running: "Corriendo", done: "Listo", failed: "Falló", timeout: "Tiempo agotado", orphaned: "Sin supervisor" };
+export function runProgress(run: Run, label = runState[run.status]) {
   const seconds = Math.max(0, Math.floor(((run.end ?? Date.now()) - run.start) / 1000));
   const elapsed = seconds >= 3600 ? Math.floor(seconds / 3600) + " h " + Math.floor(seconds % 3600 / 60) + " min" :
     seconds >= 60 ? Math.floor(seconds / 60) + " min" : seconds + " s";
-  return state + " · " + elapsed;
+  return label + " · " + elapsed;
 }
 
 export function AgentRunChat({ run, agent, scope, active, writable }: {
@@ -47,7 +49,7 @@ export function AgentRunChat({ run, agent, scope, active, writable }: {
   return <>
     <header className="bot-bar bot-chat-bar agent-run-bar">
       <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>
-      <div className="bot-pill"><BlobAvatar {...bot} /><strong>{bot.name}</strong></div>
+      <BotActivityPill bot={bot} status={activityStatusOf(agent)} />
     </header>
     <SessionStream bot={bot} feed={feed} working={run.status === "running"} agent={agent.agent}
       address={paneScopeKey(scope, id)} showToolCalls={false} showCompactions={false} fontSize={15} listRef={list} />

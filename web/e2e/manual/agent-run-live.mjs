@@ -56,7 +56,7 @@ async function check(phone, pane, dir) {
     };
     await page.goto(bridge.url);
     const row = page.locator(".bot-row").filter({ hasText: "Informe de salas" });
-    await expect(row).toContainText("Corriendo", { timeout: 45000 });
+    await expect(row).toContainText("Trabajando…", { timeout: 45000 });
     await expect(page.locator(".bot-row").filter({ hasText: "Balance diario" })).toContainText("Listo");
     await shot("list");
     const listNode = await page.locator(".bot-scroll").elementHandle();
@@ -85,7 +85,11 @@ async function check(phone, pane, dir) {
     await shot("failed");
     await page.getByRole("button", { name: "Volver a los chats" }).click();
     await page.locator(".bot-row").filter({ hasText: "Balance diario" }).click();
-    await expect(page.getByText("Balance de la tarde confirmado.", { exact: true })).toBeVisible({ timeout: 40000 });
+    await expect(page.locator(".bot-detail").getByText("Balance de la tarde confirmado.", { exact: true })).toBeVisible({ timeout: 40000 });
+    await page.getByRole("button", { name: "Volver a los chats" }).click();
+    const balance = page.locator(".bot-row").filter({ hasText: "Balance diario" });
+    await expect(balance).toContainText("Balance de la tarde confirmado.", { timeout: 40000 });
+    await expect(balance.locator(".bot-activity-avatar")).toHaveAttribute("data-activity", "idle");
   } finally { await browser.close(); }
 }
 // The terminal screenshot uses the actual Herdr pane. Put this run in a

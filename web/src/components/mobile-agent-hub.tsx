@@ -40,6 +40,10 @@ function Preview({ pane, scope, active, status, label }: { pane: AgentView; scop
   const [preview, setPreview] = useState<{ text: string; outgoing: boolean } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
   const { host, session } = scope;
+  const run = pane.agentRun;
+  const journalId = run ? "agent-run:" + run.id : pane.paneId;
+  const hasJournal = !!run || pane.hasSession;
+  const showRunProgress = !!run && status !== "idle";
   useEffect(() => {
     const abort = new AbortController();
     const show = (entries: readonly TranscriptEntry[]) => {
@@ -50,14 +54,14 @@ function Preview({ pane, scope, active, status, label }: { pane: AgentView; scop
     setPreview(null);
     let livePreview = false;
     const sensitive = pane.surface?.field === "secret";
-    if (sensitive) return () => abort.abort();
-    void loadChatTail({ host, session }, pane.paneId, pane.instance).then(saved => saved && !livePreview ? show(saved.entries) : undefined);
+    if (sensitive || showRunProgress) return () => abort.abort();
+    void loadChatTail({ host, session }, journalId, pane.instance).then(saved => saved && !livePreview ? show(saved.entries) : undefined);
     const node = ref.current;
-    if (!pane.hasSession || !node || !window.IntersectionObserver) return () => abort.abort();
+    if (!hasJournal || !node || !window.IntersectionObserver) return () => abort.abort();
     const observer = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return;
       observer.disconnect();
-      void fetchChat(pane.paneId, { limit: 3, turns: 1 }, { host, session }, abort.signal, { seen: false }).then(answer => {
+      void fetchChat(journalId, { limit: 3, turns: 1 }, { host, session }, abort.signal, { seen: false }).then(answer => {
         if (answer.outcome !== "body" || !answer.body.available || answer.body.page !== "live") return;
         livePreview = true;
         return show(answer.body.upserts);
@@ -65,8 +69,8 @@ function Preview({ pane, scope, active, status, label }: { pane: AgentView; scop
     });
     observer.observe(node);
     return () => { observer.disconnect(); abort.abort(); };
-  }, [host, session, pane.paneId, pane.instance, pane.hasSession, pane.surface?.field, active, pane.lastActiveAt]);
-  if (status !== "idle") return <span ref={ref} className="bot-line" data-activity={status}><span>{label}</span></span>;
+  }, [host, session, journalId, pane.instance, hasJournal, showRunProgress, pane.surface?.field, active, pane.lastActiveAt]);
+  if (status !== "idle") return <span ref={ref} className="bot-line" data-activity={status}><span>{run ? runProgress(run, label) : label}</span></span>;
   const text = preview?.text || pane.subtitle || pane.hint || pane.terminalTitle || pane.tabLabel || pane.agent;
   const Icon = !preview && pane.kind === "shell" && text === pane.agent ? null
     : /^(mensaje de |\[walky-talky )/iu.test(text) ? UsersRound

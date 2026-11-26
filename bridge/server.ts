@@ -3431,7 +3431,7 @@ export function startServer(opts: {
           return json({ ok: true }, null);
         }
         const paneId = "agent-run:" + id;
-        const result = live && journals && cfg.transcript && await opts.agentRuns.chat(id, journals, live, chatParams(url));
+        const result = await opts.agentRuns.chat(id, cfg.transcript ? journals : null, live, chatParams(url), marksPaneSeen(req, "chat"));
         if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
         return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
       }

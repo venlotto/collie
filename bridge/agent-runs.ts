@@ -4,11 +4,15 @@ import { basename, join } from "node:path";
 import { containedRealpath, head, tailBytes } from "./journal/files.ts";
 import type { ChatBody, ChatParams, LiveWindows } from "./journal/live.ts";
 import type { JournalAdapter } from "./journal/types.ts";
+import type { ActivityLedger } from "./activity.ts";
 import type { PaneWire, SnapshotResponse } from "./types.ts";
 
 const RUN_ID = /^\d{8}T\d{6}-[A-Za-z0-9._-]{1,40}-[a-f0-9]{4}$/u;
 const UUID = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu;
 const DAY = 86_400_000;
+// Separate from mux session names (which cannot contain NUL): a run survives
+// a pane reassignment, and mux reconciliation only knows the physical panes.
+const RUN_RECEIPTS = "\0agent-runs";
 type RunInfo = NonNullable<PaneWire["agentRun"]>;
 interface Run extends RunInfo {
   name: string;
@@ -39,7 +43,8 @@ function boundPane(run: Run, panes: PaneWire[]) {
 export class AgentRuns {
   private listing?: { expires: number; rows: Promise<Run[]> };
 
-  constructor(private dir: string, private stopRun: (id: string, dir: string) => Promise<boolean>) {}
+  constructor(private dir: string, private stopRun: (id: string, dir: string) => Promise<boolean>,
+    private activity: ActivityLedger) {}
 
   async read(id: string): Promise<Run | null> {
     if (!RUN_ID.test(id)) return null;
@@ -67,6 +72,7 @@ export class AgentRuns {
   }
 
   private async scan() {
+    this.activity.forgetSeenBefore(RUN_RECEIPTS, Date.now() - DAY);
     const names = await readdir(this.dir).catch(() => []);
     const rows: Run[] = [];
     for (const name of names) {
@@ -86,13 +92,14 @@ export class AgentRuns {
     for (const run of await this.listing.rows) {
       const pane = boundPane(run, panes);
       const agentRun = { id: run.id, status: run.status, start: run.start, end: run.end };
+      const times = { lastActiveAt: run.end ?? run.start, lastSeenAt: this.activity.get(RUN_RECEIPTS, run.id)?.seenAt ?? 0 };
       if (pane && !claimed.has(pane.paneId)) {
         claimed.add(pane.paneId);
-        Object.assign(pane, { agentRun, paneLabel: run.name });
+        Object.assign(pane, times, { agentRun, paneLabel: run.name });
         continue;
       }
       const workspace = body.workspaces.find(w => w.workspaceId === (pane?.workspaceId ?? run.workspace) || w.label === run.workspace);
-      body.shellPanes.push({ paneId: "agent-run:" + run.id, paneLabel: run.name, agentRun,
+      body.shellPanes.push({ paneId: "agent-run:" + run.id, paneLabel: run.name, agentRun, ...times,
         workspaceId: workspace?.workspaceId ?? "agent-runs", workspaceLabel: workspace?.label ?? "Agent runs",
         workspaceNumber: workspace?.number ?? 0, tabId: "", agent: run.agent, status: "unknown",
         kind: "shell", cwd: run.cwd, focused: false });
@@ -103,9 +110,14 @@ export class AgentRuns {
     return (await this.read(id))?.status === "running" && await this.stopRun(id, this.dir);
   }
 
-  async chat(id: string, adapters: Record<string, JournalAdapter>, live: LiveWindows, params: ChatParams): Promise<ChatBody | null> {
+  async chat(id: string, adapters: Record<string, JournalAdapter> | null, live: LiveWindows | null,
+    params: ChatParams, seen: boolean): Promise<ChatBody | null> {
     const run = await this.read(id);
     if (!run) return null;
+    if (seen && run.status !== "running" && (this.activity.get(RUN_RECEIPTS, id)?.seenAt ?? 0) < (run.end ?? run.start)) {
+      this.activity.noteSeen(RUN_RECEIPTS, id);
+    }
+    if (!adapters || !live) return null;
     const file = await containedRealpath(join(this.dir, id + ".log"), this.dir);
     const codex = run.agent === "codexp" || run.agent === "codex";
     const adapter = codex ? adapters.codex : ["claude", "claudep", "kimi", "glm"].includes(run.agent) ? adapters.claude : undefined;

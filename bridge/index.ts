@@ -4516,7 +4516,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
     async (id, dir) => {
       const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });
       return await child.exited === 0;
-    }),
+    }, activity),
   uiSections,
   walkyInstance: (session, paneId) => walkyInstances.tokenOf(session, paneId),
   // The pane read's `linked` (M99 spec 15): the session half of the send pick, one function.

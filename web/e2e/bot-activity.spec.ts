@@ -2,12 +2,11 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { AgentRunActivity } from "@/lib/activity-status";
 import type { AgentView } from "@/lib/types";
 import { fixtureAgents, fixtureKiroChat, fixtureShellPanes, fixtureSnapshot } from "@/test/handlers";
 import { installApiStub, installPaneWorld, paneCapture, pinLocale } from "./fixtures/api";
 
-type SnapshotRun = Extract<AgentRunActivity, { end: number | null }> & { id: string; start: number };
+type SnapshotRun = NonNullable<AgentView["agentRun"]>;
 
 async function openActivityFixture(page: Page) {
   await pinLocale(page, "es");
@@ -31,7 +30,7 @@ async function openActivityFixture(page: Page) {
   };
   const run = {
     ...fixtureShellPanes[0]!, workspaceId: workspace.workspaceId, workspaceLabel: workspace.label,
-    paneId: "w1:p6", paneLabel: "Exportación", terminalId: "fixture-run", lastSeenAt: now - 3_600_000,
+    paneId: "agent-run:" + agentRun.id, paneLabel: "Exportación", agent: "codexp", lastSeenAt: now - 3_600_000,
     agentRun,
   };
   if (fixtureKiroChat.page !== "live") throw new Error("Expected a live chat fixture");
@@ -48,10 +47,15 @@ async function openActivityFixture(page: Page) {
     chat: { ...fixtureKiroChat, paneId: agents[0]!.paneId, oldest: 1, head: 2, upserts }, start: "idle",
     screens: { idle: paneCapture("kiro--v3-idle-w120") },
   });
+  const progress = "Preparé la tabla de exportación.";
+  const runChat = { ...fixtureKiroChat, paneId: run.paneId, oldest: 1, head: 2,
+    upserts: [upserts[0]!, { ...upserts[1]!, parts: [{ kind: "text" as const, text: progress }] }] };
+  await page.route(url => url.pathname === "/api/pane/" + encodeURIComponent(run.paneId) + "/chat",
+    route => route.fulfill({ json: runChat }));
   await page.goto("/");
   const rows = page.getByRole("listitem").getByRole("button");
   await expect(rows).toHaveCount(agents.length + 1);
-  return { agents, run, rows, first: rows.filter({ hasText: "Orquestador" }) };
+  return { agents, run, rows, progress, first: rows.filter({ hasText: "Orquestador" }) };
 }
 
 async function capture(page: Page, state: string) {
@@ -127,6 +131,33 @@ test("changing activity preserves every row position and the chat header", async
     expect(await pill.boundingBox()).toEqual(pillBefore);
   }
   expect(await opened.evaluate(el => el.isConnected)).toBe(true);
+});
+
+test("a headless run keeps its duration, stop control and live portrait", async ({ page }) => {
+  const { rows, run, progress } = await openActivityFixture(page);
+  const row = rows.filter({ hasText: "Exportación" });
+  await expect(row).toContainText(/Trabajando… · \d+ min/);
+  await row.click();
+  const header = page.getByRole("button", { name: "Volver a los chats" }).locator("..");
+  await expect(header).toBeInViewport({ ratio: 1, timeout: 30_000 });
+  const pill = header.getByText("Exportación", { exact: true }).locator("..");
+  await expect(pill.getByRole("status")).toHaveText("Trabajando…");
+  await expect.poll(() => ringStyle(pill, "animationName")).not.toBe("none");
+  const stop = page.getByRole("button", { name: "Detener", exact: true });
+  await expect(stop).toBeEnabled();
+  await expect(stop.locator("..")).toContainText(/Corriendo · \d+ min/);
+  await expect(page.getByText(progress, { exact: true })).toBeVisible();
+  await capture(page, "header-run");
+
+  run.agentRun.status = "done";
+  run.agentRun.end = Date.now();
+  run.lastSeenAt = run.agentRun.end;
+  await refresh(page);
+  await expect(pill.locator("[data-activity]")).toHaveAttribute("data-activity", "idle");
+  await expect(stop).toHaveCount(0);
+  await header.getByRole("button", { name: "Volver a los chats" }).click();
+  await expect(row).toContainText(progress);
+  await expect(row.locator("[data-activity][aria-hidden=true]")).toHaveAttribute("data-activity", "idle");
 });
 
 test("working motion respects reduced motion, visibility and the silent idle deadline", async ({ page }) => {

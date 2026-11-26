@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { appendFile, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { ActivityLedger } from "./activity.ts";
 import { AgentRuns } from "./agent-runs.ts";
 import { claudeJournal } from "./journal/claude.ts";
 import { codexJournal } from "./journal/codex.ts";
@@ -31,7 +32,7 @@ test("join shell panes without hooks, follow the main rollout and stop only the 
     await writeFile(join(dir, other + ".status"), JSON.stringify({ ...status, id: other, cwd: "/otro", status: "failed" }));
     await writeFile(join(dir, other + ".log"), "Salida del agente");
     const stop: string[][] = [];
-    const source = new AgentRuns(dir, async (...args) => { stop.push(args); return true; });
+    const source = new AgentRuns(dir, async (...args) => { stop.push(args); return true; }, new ActivityLedger({ stateDir: root }));
     // SAFETY: attach reads only the workspace identity and shell pane fields populated here.
     const body = { workspaces: [{ workspaceId: "w1", label: "Collie" }],
       shellPanes: [{ paneId: "w1:p1", cwd: status.cwd, kind: "shell", workspaceId: "w1" }] } as SnapshotResponse;
@@ -41,7 +42,7 @@ test("join shell panes without hooks, follow the main rollout and stop only the 
     const adapters = { codex: codexJournal(join(root, "sessions")), claude: claudeJournal(join(root, "projects")) };
     let clock = Date.now();
     const live = new LiveWindows(new TranscriptStore(), () => clock);
-    const read = (id: string) => source.chat(id, adapters, live, { limit: 50 });
+    const read = (id: string) => source.chat(id, adapters, live, { limit: 50 }, false);
     expect((await read(main))?.upserts.map(e => e.role)).toEqual(["user"]);
     clock += 5000;
     await appendFile(journal, row("assistant", "Informe listo."));
@@ -61,4 +62,46 @@ test("join shell panes without hooks, follow the main rollout and stop only the 
     await symlink(journal, join(dir, other + ".log"));
     expect(await read(other)).toBeNull();
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("a settled run shares its read receipt across pane reassignment, polls and a bridge restart", async () => {
+  const root = await mkdtemp(join(tmpdir(), "collie-run-seen-"));
+  const dir = join(root, "runs");
+  let now = Date.now();
+  const clock = () => now;
+  const ledger = new ActivityLedger({ stateDir: root }, clock);
+  const resumed = new ActivityLedger({ stateDir: root }, clock);
+  try {
+    await mkdir(dir);
+    const id = "20261126T030000-informe-abcd";
+    const end = now - 1000;
+    const run = { id, status: "failed", name: "Informe", agent: "codexp", cwd: "/work/informe",
+      started_at: new Date(end - 3000).toISOString(), ended_at: new Date(end).toISOString() };
+    const file = join(dir, id + ".status");
+    await writeFile(file, JSON.stringify(run));
+    const source = new AgentRuns(dir, async () => false, ledger);
+    async function snapshot(runs: AgentRuns, bound: boolean) {
+      // SAFETY: attach only reads workspace and shell pane fields.
+      const body = { workspaces: [], shellPanes: bound ? [{ paneId: "w1:p1", cwd: run.cwd,
+        kind: "shell", workspaceId: "w1", lastSeenAt: now }] : [] } as SnapshotResponse;
+      await runs.attach(body, "default");
+      return body.shellPanes[0];
+    }
+    await source.chat(id, null, null, { limit: 3 }, false);
+    expect(await snapshot(source, true)).toMatchObject({ paneId: "w1:p1", lastActiveAt: end, lastSeenAt: 0 });
+    await source.chat(id, null, null, { limit: 50 }, true);
+    const firstSeen = now;
+    now += 5000;
+    await source.chat(id, null, null, { limit: 50 }, true);
+    ledger.reconcile("default", []);
+    expect(await snapshot(source, false)).toMatchObject({ paneId: "agent-run:" + id, lastSeenAt: firstSeen });
+    await ledger.flush();
+    await resumed.load();
+    const recovered = new AgentRuns(dir, async () => false, resumed);
+    expect(await snapshot(recovered, true)).toMatchObject({ lastSeenAt: firstSeen });
+  } finally {
+    ledger.stop();
+    resumed.stop();
+    await rm(root, { recursive: true, force: true });
+  }
 });
