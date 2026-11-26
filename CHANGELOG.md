@@ -43,11 +43,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Bot chats group each turn’s work behind one tap.** Open the step count to read commands and reasoning. Failed steps and questions stay visible, and the terminal uses the full reading area.
 
+- **Wide windows show the chat list beside the conversation.** The terminal fills the conversation panel, and resizing keeps the current chat and draft in place.
+
 ### Fixed
 
 - **On macOS, a linked Claude Code session takes your phone messages by data.** After `collie harness link claude`, the Collie plugin inside Claude Code could not read its process id on a Mac, so it never bound and every message was typed into the terminal. The plugin now names its Claude Code session instead, and Collie takes the process id from the hook events of that session (`collie hooks install claude` sends them). The first answer often says that it does not know the session yet, because the hook event comes a moment later, so the plugin asks again after 1, 3, 10 and 30 seconds. Linux is unchanged. `collie harness unlink claude` turns the link off. Thanks @wraithyy (#864).
 
-- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the list in place, including on a desktop where the same phone-width column is centered.
+- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the phone list in place.
 
 - **The chat list shows the paired device’s initial.** A device without a name shows a profile icon. Opening the bot form shrinks and dims the list, keeps sign-in in the list, and leaves space between the bot preview and its name.
 
