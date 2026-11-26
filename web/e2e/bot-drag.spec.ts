@@ -106,7 +106,7 @@ async function capture(page: Page, name: string) {
   const dir = process.env.BOT_SCREENSHOTS;
   if (!dir) return;
   await mkdir(dir, { recursive: true });
-  await page.screenshot({ path: join(dir, test.info().project.name + "-" + name + ".png") });
+  await page.screenshot({ animations: "disabled", path: join(dir, test.info().project.name + "-" + name + ".png") });
 }
 
 async function sampleFooter(page: Page) {
@@ -176,7 +176,8 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
     return page.getByRole("dialog");
   }
   let dialog = await menu(); await expect(dialog).toBeVisible();
-  await page.waitForTimeout(290); await capture(page, "workspace");
+  await expect(dialog.locator(".bot-sheet")).toHaveCSS("transform", "none");
+  await capture(page, "workspace");
   expect((await footer.boundingBox())!.y).toBe(bottom);
   await dialog.getByRole("button", { name: "Mover" }).click();
   await dialog.getByLabel("Posición").selectOption({ value: "2" });

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureSnapshot, fixtureWalkyAgent } from "@/test/handlers";
+import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureLaunchersWithAgents, fixtureSnapshot, fixtureWalkyAgent } from "@/test/handlers";
 import type { AgentView } from "@/lib/types";
 import { installApiStub, installLauncherWorld, installPaneWorld, paneCapture, pinLocale } from "./fixtures/api";
 
@@ -33,13 +33,15 @@ async function settledSheet(page: Page) {
     const form = el.querySelector("form")!;
     return { gap: field.top - face.bottom, faceSize: face.height,
       centerOffset: (field.left + field.right - face.left - face.right) / 2,
-      transform: getComputedStyle(form).transform, surface: getComputedStyle(form).backgroundColor };
+      transform: getComputedStyle(form).transform, surface: getComputedStyle(form).backgroundColor,
+      filter: getComputedStyle(form).getPropertyValue("backdrop-filter") || getComputedStyle(form).getPropertyValue("-webkit-backdrop-filter") };
   });
   expect(geometry.gap).toBeGreaterThan(0);
   expect(geometry.faceSize).toBeGreaterThan(0);
   expect(Math.abs(geometry.centerOffset)).toBeLessThan(1);
   expect(geometry.transform).toBe("none");
-  expect(geometry.surface).toBe("rgb(28, 28, 30)");
+  expect(geometry.surface).toBe("rgba(27, 27, 31, 0.7)");
+  expect(geometry.filter).toContain("blur(24px)");
   if (process.env.BOT_SCREENSHOTS) {
     const dir = process.env.BOT_SCREENSHOTS;
     await mkdir(dir, { recursive: true });
@@ -51,6 +53,17 @@ async function settledSheet(page: Page) {
 test("workspace list, chat input and bot creation", async ({ page }) => {
   await installApiStub(page);
   const launch = await installLauncherWorld(page);
+  const agents = [
+    { id: "codexp", harness: "codex", efforts: ["low", "medium", "high", "xhigh"] },
+    { id: "claudep", harness: "claude", efforts: ["low", "medium", "high", "xhigh", "max"] },
+    { id: "kimi", harness: "claude", efforts: ["low", "medium", "high"] },
+  ];
+  let holdCatalog: Promise<void> = Promise.resolve();
+  await page.route(url => url.pathname === "/api/launchers", async route => {
+    await holdCatalog;
+    await route.fulfill({ json: { ...fixtureLaunchersWithAgents,
+      botCreate: { agents, last: launch.launches.at(-1)?.body.botCreate ?? null } } });
+  });
   const now = Date.now();
   const names = ["Kanban · Orquestador", "Kanban · Menú y Updates", "Kanban · Puente OpenBot", "Kanban · Multicuenta", "Duck Race · Rooms", "Orquestador Duck", "Duck Race · Backend", "Duck Race · Diseño", "Duck Race · Plan", "Viajes", "Itinerario", "Reservas", "Rutas", "Hoteles", "Equipaje", "Calendario", "Guías", "Archivo"];
   const previews = ["¿Subo el nuevo menú de Kanban a producción?", "¿Cómo lo pasamos a producción?", "Ya le avisé a Kanban · Orquestador del cierre.", "Mensaje de Aviso de agentes", "El diseño de las salas ya está listo.", "Le escribió a Duck Race · Rooms", "La revisión terminó.", "Ya está lista la propuesta.", "Revisamos las reglas de juego.", "Reunión del domingo"];
@@ -85,6 +98,14 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   expect(await page.locator(".bot-featured").evaluate(el => el.getBoundingClientRect().bottom)).toBeLessThan(0);
   await expect(page.locator(".bot-user")).toBeInViewport();
   await expect(page.locator(".bot-bar").first().locator(".bot-pill")).toHaveCount(0);
+  const chrome = await page.locator(".bot-index").evaluate(index => {
+    const bar = index.querySelector(".bot-bar")!.getBoundingClientRect();
+    const list = index.querySelector(".bot-scroll")!.getBoundingClientRect();
+    const styles = getComputedStyle(index.querySelector(".bot-row")!);
+    return { overlap: bar.bottom - list.top, filter: styles.getPropertyValue("backdrop-filter") || styles.getPropertyValue("-webkit-backdrop-filter") };
+  });
+  expect(chrome.overlap).toBeGreaterThanOrEqual(57);
+  expect(chrome.filter).toBe("none");
   await screenshot(page, "lista-scroll");
   await page.locator(".bot-scroll").evaluate(el => el.scrollTo(0, 0));
   await page.getByRole("button", { name: sections[0], exact: true }).click();
@@ -116,6 +137,14 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
     }));
     expect(covered).toBe(true);
   }
+  const underBars = await page.locator(".bot-detail").evaluate(detail => {
+    const reader = detail.querySelector('[data-slot="session-stream"]')!.getBoundingClientRect();
+    const header = detail.querySelector(".bot-chat-bar")!.getBoundingClientRect();
+    const box = detail.querySelector('[data-slot="composer-box"]')!.getBoundingClientRect();
+    return { top: header.bottom - reader.top, bottom: reader.bottom - box.top };
+  });
+  expect(underBars.top).toBeGreaterThan(0);
+  expect(underBars.bottom).toBeGreaterThan(0);
   await screenshot(page, "conversacion");
   const input = page.locator('[data-slot="composer-box"] textarea').first();
   await input.fill("Recibido");
@@ -131,7 +160,11 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
   const dialog = await settledSheet(page);
   await expect(dialog.getByRole("button", { name: "Crear", exact: true })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "codexp", pressed: true })).toBeEnabled();
+  await expect(dialog.getByRole("button", { name: "high", exact: true, pressed: true })).toBeEnabled();
   await screenshot(page, "crear");
+  await dialog.getByRole("button", { name: "claudep" }).click();
+  await dialog.getByRole("button", { name: "medium" }).click();
   await dialog.getByRole("button", { name: "Forma 4", exact: true }).click();
   await dialog.getByRole("button", { name: "Verde", exact: true }).click();
   await dialog.getByRole("textbox").fill("Bitácora");
@@ -140,6 +173,42 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await expect(page.locator(".bot-chat-bar strong")).toHaveText("Bitácora");
   expect(launch.launches[0]?.body.paneId).toBe(panes[0]!.paneId);
   await expect(page).toHaveURL(new RegExp(encodeURIComponent(fixtureLaunchedTab.pane.paneId)));
+  expect(launch.launches[0]?.body).toMatchObject({ harness: "claude", botCreate: { agent: "claudep", effort: "medium" } });
+  const cacheKey = "collie:bot-create:v1:";
+  expect(await page.evaluate(key => localStorage.getItem(key), cacheKey)).toBe(JSON.stringify({ agent: "claudep", effort: "medium" }));
+  // Simulate another device's stale cache. Hold GET so the first paint is observable.
+  await page.evaluate(key => localStorage.setItem(key, JSON.stringify({ agent: "kimi", effort: "low" })), cacheKey);
+  await page.goto("/");
+  let release!: () => void;
+  holdCatalog = new Promise(resolve => { release = resolve; });
+  await page.getByRole("button", { name: "Crear nuevo", exact: true }).click();
+  await expect(page.getByRole("button", { name: "kimi", pressed: true })).toBeDisabled();
+  release();
+  await expect(page.getByRole("button", { name: "claudep", pressed: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "medium", pressed: true })).toBeEnabled();
+  await screenshot(page, "crear-recordado");
+
+});
+
+test("reducir transparencia conserva barras opacas sin desenfoque", async ({ page, browserName }) => {
+  if (browserName === "chromium") {
+    const client = await page.context().newCDPSession(page);
+    await client.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
+  } else {
+    // Playwright WebKit has no OS transparency switch. Activate the shipped media block.
+    await page.route(/\.css$/, async route => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: (await response.text()).replaceAll(/\(prefers-reduced-transparency:\s*reduce\)/g, "(min-width:0px)") });
+    });
+  }
+  await installApiStub(page);
+  await page.goto("/");
+  const search = page.locator(".bot-search");
+  await expect(search).toHaveCSS("background-color", "rgb(27, 27, 31)");
+  expect(await search.evaluate(el => {
+    const css = getComputedStyle(el);
+    return css.getPropertyValue("backdrop-filter") || css.getPropertyValue("-webkit-backdrop-filter");
+  })).toBe("none");
 });
 
 for (const pairedGate of [false, true]) {
