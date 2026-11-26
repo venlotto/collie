@@ -597,8 +597,8 @@ test("shifts: load timeline, arrival slide, a new row", async ({ browser }) => {
   await close();
 });
 
-// ── 5. DEAD TIME: the glide wait, and the idle cover ───────────────────────────────────────────
-test("dead time: the pane read wait and the idle cover", async ({ browser }) => {
+// ── 5. DEAD TIME: the glide wait ───────────────────────────────────────────
+test("dead time: the pane read wait", async ({ browser }) => {
   // Time from the finger's lift to the URL changing, with the pane's read answered after `d` ms.
   const waits: Record<string, number | null> = {};
   for (const d of [0, 100, 300, 1000, 3000]) {
@@ -658,48 +658,7 @@ test("dead time: the pane read wait and the idle cover", async ({ browser }) => 
     await close();
   }
 
-  // The idle cover: 31 minutes of no input, then a tap on a row, with the snapshot answered after `d` ms.
-  const cover: Record<string, { navigatedOnFirstTap: boolean; coverMsAfterTap: number | null; secondTapNavigated: boolean }> = {};
-  for (const d of [0, 800, 3000, 9000]) {
-    const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: 3, isMobile: true, hasTouch: true, serviceWorkers: "block", baseURL: `http://127.0.0.1:${process.env.HITBOX_PORT ?? "5301"}` });
-    const page = await context.newPage();
-    await page.clock.install();
-    const control = await installWorld(page);
-    await page.goto("/");
-    await page.waitForSelector('[data-glide-origin="pane"]');
-    await page.clock.runFor(1500);
-    const rowBox = await page.locator('[data-glide-origin="pane"]').nth(1).boundingBox();
-    await page.clock.fastForward(31 * 60_000);
-    await page.clock.runFor(1000);
-    const locked = (await page.locator('[role="dialog"][aria-label]').count()) > 0;
-    control.delay = d;
-    const g = await finger(page);
-    const box = rowBox;
-    if (box === null || !locked) {
-      cover[String(d)] = { navigatedOnFirstTap: false, coverMsAfterTap: null, secondTapNavigated: false };
-      await context.close();
-      continue;
-    }
-    await press(g, box.x + box.width / 2, box.y + box.height / 2, { holdMs: 60 });
-    await page.clock.runFor(300);
-    const navigated = /\/pane\//.test(page.url());
-    // How long the cover stays after that tap.
-    let gone: number | null = null;
-    for (let t = 0; t <= 9500; t += 250) {
-      if ((await page.locator('[role="dialog"][aria-label]').count()) === 0) {
-        gone = t;
-        break;
-      }
-      await page.clock.runFor(250);
-    }
-    await page.clock.runFor(500);
-    const box2 = rowBox;
-    if (box2 !== null) await press(g, box2.x + box2.width / 2, box2.y + box2.height / 2, { holdMs: 60 });
-    await page.clock.runFor(600);
-    cover[String(d)] = { navigatedOnFirstTap: navigated, coverMsAfterTap: gone, secondTapNavigated: /\/pane\//.test(page.url()) };
-    await context.close();
-  }
-  part1.set("idleCover", cover);
+  // The current bot list exercises idle resume in bot-idle-resume.spec.ts.
 });
 
 // ── 6. WHAT LIES OVER THE LIST: the floating button and the bottom bar, at the foot of the herd ───

@@ -516,7 +516,6 @@ export const es: Dictionary = {
   "composer.tap.sending": "Otro envío desde este teléfono sigue en curso. Espera a que termine.",
   "composer.tap.noCard": "La tarjeta de la pregunta no está en pantalla. Abre Pantalla para responderla en la terminal.",
   "composer.tap.typeBusy": "Escribir se activa cuando termina el envío o la subida.",
-  "composer.tap.typeWait": "Collie se está poniendo al día con el panel. Toca Escribir de nuevo en un momento.",
   "composer.tap.beltOff": "Este botón no tiene nada que hacer ahora en este panel.",
   "composer.tap.fileType": "Collie no puede adjuntar este tipo de archivo.",
   "composer.tap.clearBusy": "Puedes borrar el borrador cuando termine el envío.",
@@ -895,6 +894,7 @@ export const es: Dictionary = {
   "chat.stream.empty": "Envía un mensaje para empezar.",
   "chat.empty.sharedFolder":
     "Dos sesiones de {harness} comparten esta carpeta, así que Collie no puede saber cuál es la de este panel. Inicia el agente con su comando de reanudar y el ID de sesión, y Collie leerá la correcta.",
+  "chat.stream.stoppedOnError": "El agente se detuvo por un error.",
   "chat.stream.working": "Sigue trabajando…",
   "chat.stream.questionPending": "Hay una pregunta en espera en la terminal. El próximo mensaje la responde.",
   "chat.stream.queued": "En espera de envío",
@@ -964,6 +964,8 @@ export const es: Dictionary = {
   "chat.run.searches.other": "{count} búsquedas",
   "chat.run.agents.one": "{count} agente",
   "chat.run.agents.other": "{count} agentes",
+  "chat.run.steps.one": "{count} paso",
+  "chat.run.steps.other": "{count} pasos",
   "chat.run.others.one": "{count} paso más",
   "chat.run.others.other": "{count} pasos más",
   "chat.run.earlier.one": "{count} paso anterior · {summary}",
@@ -1822,15 +1824,6 @@ export const es: Dictionary = {
   "error.root.title": "Error en la aplicación",
   "error.root.unknown": "Error desconocido",
   "error.root.reload": "Recargar",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie en pausa",
-  "idle.catchingUp.title": "Sincronizando",
-  "idle.catchingUp.body": "Obteniendo el estado actual de la manada.",
-  "idle.paused.title": "En pausa",
-  "idle.paused.body":
-    "Las actualizaciones en tiempo real se detuvieron por inactividad en la pantalla. La vista de fondo está congelada. Reanuda para continuar donde lo dejaste.",
-  "idle.resume": "Pulsa para reanudar",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "Nueva versión. Toca para actualizar.",

@@ -111,7 +111,7 @@ import { useHoldReload } from "@/lib/reload-guard";
 import { isSelfEcho, normalizeDraft } from "@/hooks/use-terminal-draft";
 import { adapterFor } from "@/lib/harness";
 import { useLive } from "@/lib/liveness";
-import { useCatchingUp, useLocked } from "@/lib/idle";
+import { useLocked } from "@/lib/idle";
 import { ClearNotice, OfflineDraftNote, TerminalDraftPreview } from "@/components/terminal-draft-preview";
 import { ReportCard } from "@/components/report-card";
 import { SEND_SLOW_MS, SendToast, useHeldThroughExit, useSendToastFade } from "@/components/send-toast";
@@ -1371,11 +1371,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const fileRef = useRef<HTMLInputElement>(null);
   // The camera-roll half of the picker. See the two inputs below.
   const photoRef = useRef<HTMLInputElement>(null);
-  // The idle cover leaves this composer mounted. Its inert wrapper blocks new DOM input, but
-  // cannot revoke keys already waiting in direct mode's sender; the mode must disarm explicitly.
+  // Revoke any armed terminal sender when polling pauses. A new explicit choice can arm it on return.
   const idleLocked = useLocked();
-  const catchingUp = useCatchingUp();
-  const directSuspended = locked || idleLocked || catchingUp;
   // SEND PAST THIS SCREEN (M102 spec 03, spec 01's override): the rows hash of the screen the card showed at
   // the tap, read fresh by a `prepare`. The next send from the field carries it with `override`, so the
   // bridge types only while the screen still hashes the same. One send; any answer disarms it.
@@ -1393,18 +1390,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     inputRef,
     // The ref, not `input`: the password-prompt handoff clears the draft and arms in one tick.
     replyDraft: () => inputValueRef.current,
-    canActivate: () => !(directSuspended || sending || uploading),
-    // Why a tap on Type armed nothing (M102 spec 11): the lock's words, a send or an upload that runs, or the
-    // idle cover and the catch-up after it.
     refusalWords: () => {
       if (locked) return lockWords ?? unreachableWords;
       if (sending || uploading) return translate("composer.tap.typeBusy");
-      return translate("composer.tap.typeWait");
+      return null;
     },
-    // Field locks and the idle cover both revoke direct mode. A LOST CONNECTION is deliberately
-    // not added here: the mode already disarms on a failed batch, the same event observed directly
-    // rather than inferred from a timer, whether or not a banner has declared the connection lost.
-    suspended: directSuspended,
+    suspended: locked || idleLocked,
     sendKeys: pressKeys,
     onActivate: () => {
       sendConfirm.reset();
@@ -4380,7 +4371,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               prompt={noEcho.prompt}
               typed={noEcho.typed}
               // Withdrawn, not disabled, when the mode can't be armed at all: a gone pane, a
-              // read-only device, the idle pause. Offering a control that would refuse is worse
+              // read-only device. Offering a control that would refuse is worse
               // than offering none.
               onUseType={
                 locked

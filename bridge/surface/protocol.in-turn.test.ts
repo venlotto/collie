@@ -82,8 +82,8 @@ describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)
     expect(pane.keysSeen.filter((key) => key === "Tab" || key === "Enter")).toEqual([]);
   });
 
-  test("a running turn: probed, Tab, and the queued row with the text makes the receipt say queued", async () => {
-    const { pane, send } = codex();
+  test.each(["0.163.0", "0.172.0"])("a running turn on %s queues the message with Tab", async (version) => {
+    const { pane, send } = codex({ version });
     pane.over = [CODEX_RUNNING];
     const answer = await send("then add a short summary");
     expect(answer.receipt).toMatchObject({ outcome: "sent", queued: true, keys: ["probe", "Backspace", "Tab"] });

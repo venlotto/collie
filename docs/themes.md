@@ -620,7 +620,7 @@ These are the characters today. More may follow.
   [Try a theme](#try-a-theme-before-you-keep-it) is on, the header shows the character of the tried theme.
 - **A character downloads when it is needed.** A device that never wears a theme with one never fetches it.
 - **Only the header changes.** The favicon, the home-screen icon and the splash stay Collie under every
-  theme. So do the boot screen, the idle lock and the tour.
+  theme. So do the boot screen and the tour.
 - **An older Collie refuses the file.** A version 4 file needs Collie 1.28.0 or newer. Collie 1.27
   refuses the whole file with two causes: "The file is version 4. This Collie reads version 1, 2 and 3."
   and "character" is not part of a theme file. To share a theme that an older Collie can read, leave

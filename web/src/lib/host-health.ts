@@ -42,10 +42,8 @@
 // the snapshot like every other crew fact. Two implementations of the same idea, one of which needs a
 // clock — so this side keeps none.
 //
-// Consequence worth naming: with polling paused (the idle lock, ADR 0007) `ts` freezes along with
-// `lastSeenAt`, so ages stop advancing rather than drifting into a false alarm. That is safe because
-// the lock COVERS the screen and its release refetches before uncovering (`beginCatchUp` in
-// hooks/use-polling.ts) — nobody ever reads a paused tier-2 state.
+// While polling is paused, both timestamps describe the last snapshot. The first returning
+// gesture requests a fresh snapshot and updates the ages on arrival.
 
 import { timeAgoShort } from "./format";
 import type { ServerSummary } from "./types";

@@ -81,7 +81,7 @@ export const ENTRIES: readonly SectionEntry[] = [
     load: () => import("./sections/tour").then((m) => ({ default: m.TourSection })),
   },
   {
-    def: { id: "idle", group: "First run and system", title: "Idle & resume", keywords: ["IdleLock", "lock", "resume", "cover"] },
+    def: { id: "idle", group: "First run and system", title: "Idle & resume", keywords: ["idle", "resume", "polling"] },
     load: () => import("./sections/idle").then((m) => ({ default: m.IdleSection })),
   },
   {

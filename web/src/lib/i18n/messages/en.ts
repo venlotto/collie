@@ -558,7 +558,6 @@ export const en = {
   "composer.tap.sending": "Another send from this phone is still running. Wait for it to end.",
   "composer.tap.noCard": "The question's card is not on screen. Open the Screen to answer it in the terminal.",
   "composer.tap.typeBusy": "Type turns on when the send or the upload ends.",
-  "composer.tap.typeWait": "Collie is catching up with the pane. Tap Type again in a moment.",
   "composer.tap.beltOff": "This button has nothing to do on this pane now.",
   "composer.tap.fileType": "Collie cannot attach this kind of file.",
   "composer.tap.clearBusy": "You can clear the draft when the send ends.",
@@ -998,6 +997,7 @@ export const en = {
   "chat.stream.empty": "Send a message to start.",
   "chat.empty.sharedFolder":
     "Two {harness} sessions share this folder, so Collie cannot tell which one is this pane's. Start the agent with the flag that names its session id, then Collie reads the right one.",
+  "chat.stream.stoppedOnError": "The agent stopped after an error.",
   "chat.stream.working": "Still working…",
   "chat.stream.questionPending": "A question is waiting in the terminal. Your next message answers it.",
   "chat.stream.queued": "Waiting to send",
@@ -1093,6 +1093,8 @@ export const en = {
   "chat.run.searches.other": "{count} searches",
   "chat.run.agents.one": "{count} agent",
   "chat.run.agents.other": "{count} agents",
+  "chat.run.steps.one": "{count} step",
+  "chat.run.steps.other": "{count} steps",
   "chat.run.others.one": "{count} other step",
   "chat.run.others.other": "{count} other steps",
   "chat.run.earlier.one": "{count} earlier step · {summary}",
@@ -1964,15 +1966,6 @@ export const en = {
   "error.root.title": "Something went wrong",
   "error.root.unknown": "Unknown error",
   "error.root.reload": "Reload",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Koperca Agent Hub paused",
-  "idle.catchingUp.title": "Catching up",
-  "idle.catchingUp.body": "Fetching the herd's current state.",
-  "idle.paused.title": "Paused",
-  "idle.paused.body":
-    "Live updates stopped while this screen sat idle. What's behind this is frozen. Resuming picks up right where you left off.",
-  "idle.resume": "Tap to resume",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "New version, tap to update",

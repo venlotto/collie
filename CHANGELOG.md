@@ -34,6 +34,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Drag a chat to arrange it within its workspace.** Drop it on another workspace or the trash. Hold a workspace heading to rename, move or trash the group. Restore the group from Trash within seven days.
 
+- **Detached agent runs stream in their workspace chats.** Open a run to follow its conversation, check its elapsed time or stop it. Runs without a launch pane appear together.
+- **The bridge remembers which workspaces you fold.** Renaming, reordering or restoring a workspace keeps its saved preference. New workspaces open expanded.
+- **The chat list opens as you left it.** Your folded workspaces and Trash follow you between devices. Searching temporarily reveals matching chats.
+
 ### Changed
 
 - **Chat controls float over the conversation in dark glass.** Headers, search, reply controls and action sheets share a translucent surface. Reducing transparency gives them an opaque background.
@@ -47,11 +51,15 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Renaming a workspace selects its name for editing.** Type a replacement directly in the workspace sheet.
 
+- **Bot chats group each turn’s work behind one tap.** Open the step count to read commands and reasoning. Failed steps and questions stay visible, and the terminal uses the full reading area.
+
+- **Wide windows show the chat list beside the conversation.** The terminal fills the conversation panel, and resizing keeps the current chat and draft in place.
+
 ### Fixed
 
 - **On macOS, a linked Claude Code session takes your phone messages by data.** After `collie harness link claude`, the Collie plugin inside Claude Code could not read its process id on a Mac, so it never bound and every message was typed into the terminal. The plugin now names its Claude Code session instead, and Collie takes the process id from the hook events of that session (`collie hooks install claude` sends them). The first answer often says that it does not know the session yet, because the hook event comes a moment later, so the plugin asks again after 1, 3, 10 and 30 seconds. Linux is unchanged. `collie harness unlink claude` turns the link off. Thanks @wraithyy (#864).
 
-- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the list in place, including on a desktop where the same phone-width column is centered.
+- **Search and reply stay anchored as a chat slides.** Opening a chat and returning keeps the phone list in place.
 
 - **The chat list shows the paired device’s initial.** A device without a name shows a profile icon. Opening the bot form shrinks and dims the list, keeps sign-in in the list, and leaves space between the bot preview and its name.
 
@@ -60,6 +68,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **A tap restores a workspace immediately after its deletion.** The completed hold consumes only its own click.
 
 - **Only moving rows need a transform during a drag.** Resting chats keep their ordinary rendering as a sheet opens or closes.
+- **Collie refreshes in place when you return.** After half an hour unattended, the app pauses polling and animations. Your first tap or keystroke works immediately and refreshes the screen.
+
+- **Messages reach idle Codex chats with the agents hint.** On Codex 0.172.0 the phone checks the input box and submits the message when the shortcut hint disappears. A refused queued message shows the reason and keeps its resend action.
 
 - **Glass controls stay readable over bright content.** Action labels and placeholders retain contrast as avatars and messages pass underneath.
 

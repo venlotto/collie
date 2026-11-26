@@ -492,7 +492,6 @@ export const zh: Dictionary = {
   "composer.tap.sending": "这部手机上的另一次发送仍在进行。请等它结束。",
   "composer.tap.noCard": "该问题的卡片不在屏幕上。请打开“屏幕”，在终端中回答。",
   "composer.tap.typeBusy": "发送或上传结束后，“输入”才会开启。",
-  "composer.tap.typeWait": "Collie 正在跟上窗格的状态。请稍后再点按“输入”。",
   "composer.tap.beltOff": "此按钮现在对该窗格没有作用。",
   "composer.tap.fileType": "Collie 无法附加这种文件。",
   "composer.tap.clearBusy": "发送结束后，你才能清除草稿。",
@@ -869,6 +868,7 @@ export const zh: Dictionary = {
   "chat.stream.empty": "发送一条消息即可开始。",
   "chat.empty.sharedFolder":
     "此文件夹中有两个 {harness} 会话，Collie 无法判断哪个属于当前窗格。请用恢复命令加会话 ID 启动该 Agent，Collie 就会读取正确的会话。",
+  "chat.stream.stoppedOnError": "代理因错误而停止。",
   "chat.stream.working": "仍在处理…",
   "chat.stream.questionPending": "终端中有一个提问正在等待。您的下一条消息将用于回答该提问。",
   "chat.stream.queued": "等待发送",
@@ -938,6 +938,8 @@ export const zh: Dictionary = {
   "chat.run.searches.other": "{count} 次搜索",
   "chat.run.agents.one": "{count} 个代理",
   "chat.run.agents.other": "{count} 个代理",
+  "chat.run.steps.one": "{count} 步",
+  "chat.run.steps.other": "{count} 步",
   "chat.run.others.one": "{count} 个其他步骤",
   "chat.run.others.other": "{count} 个其他步骤",
   "chat.run.earlier.one": "更早的 {count} 个步骤 · {summary}",
@@ -1790,14 +1792,6 @@ export const zh: Dictionary = {
   "error.root.title": "发生错误",
   "error.root.unknown": "未知错误",
   "error.root.reload": "重新加载",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie 连接已挂起",
-  "idle.catchingUp.title": "同步中",
-  "idle.catchingUp.body": "正在拉取当前集群状态。",
-  "idle.paused.title": "已暂停",
-  "idle.paused.body": "页面闲置已停止实时同步，后台数据暂时冻结。恢复后将自动拉取最新状态。",
-  "idle.resume": "点击恢复连接",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "发现新版本，点击以应用更新",

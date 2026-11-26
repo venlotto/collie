@@ -61,6 +61,14 @@ export class BotTrash {
     }
   }
 
+  hasWorkspaceEntries(session: string, workspaceId: string): boolean {
+    for (const row of this.rows.values()) {
+      if (row.session === session && (row.originalWorkspaceId === workspaceId ||
+          row.previousTrash?.originalWorkspaceId === workspaceId)) return true;
+    }
+    return false;
+  }
+
   lookup(session: string, terminalId: string) {
     const row = this.rows.get(key(session, terminalId));
     if (!row) return undefined;

@@ -1,13 +1,14 @@
 import { createRef, useState, type ComponentProps, type RefObject } from "react";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __resetBeltIntents, queueBeltIntent } from "@/lib/belt-intent";
+import { useIdleLock } from "@/hooks/use-idle-lock";
 import { saveDraft } from "@/lib/drafts";
-import { beginCatchUp, endCatchUp, setLocked } from "@/lib/idle";
+import { setLocked } from "@/lib/idle";
 import { markLive, resetLiveness } from "@/lib/liveness";
 import { __resetOperatorCommands } from "@/lib/operator-config";
 import { paneScopeKey } from "@/lib/scope";
@@ -52,7 +53,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   setLocked(false);
-  endCatchUp();
   uninstallFakeMediaRecorder();
 });
 
@@ -386,36 +386,18 @@ describe("composer taps: Type, when arming refuses (fix 7)", () => {
     await waitFor(() => expect(document.querySelector("[data-slot='composer-primary'] .animate-spin")).toBeNull());
   });
 
-  it("no tap vanishes: Type under the idle cover says Collie is catching up", async () => {
-    const user = userEvent.setup();
+  it("arms terminal typing on the same tap that resumes polling", () => {
     mount();
+    const wake = vi.fn();
+    renderHook(() => useIdleLock(wake));
     act(() => setLocked(true));
-    await expectTapAnswers(() => user.click(screen.getByRole("button", { name: "Type into terminal" })));
-    expect(status()).toBe("Collie is catching up with the pane. Tap Type again in a moment.");
-  });
-
-  it("no tap vanishes: Type while the page catches up says the same", async () => {
-    const user = userEvent.setup();
-    mount();
-    act(() => beginCatchUp());
-    await expectTapAnswers(() => user.click(screen.getByRole("button", { name: "Type into terminal" })));
-    expect(status()).toBe("Collie is catching up with the pane. Tap Type again in a moment.");
-  });
-
-  it("no tap vanishes: Use Type in the password notice, refused, keeps the draft and says why", async () => {
-    const user = userEvent.setup();
-    server.use(...sendHandler((request) => sendAnswer(request.id, "refused", "unconfirmed", { offers: ["commit", "keys"], rowsHash: "5ad0", surface: SHELL })));
-    mount({ isShell: true, agent: undefined, surface: SHELL, text: "$ sudo systemctl restart collie\n[sudo] password for altan:" });
-    await user.type(screen.getByRole("textbox"), "hunter2hunter2");
-    await user.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByRole("button", { name: /use type/i });
-    act(() => beginCatchUp());
-    await expectTapAnswers(() => user.click(screen.getByRole("button", { name: /use type/i })));
-    expect(status()).toBe("Collie is catching up with the pane. Tap Type again in a moment.");
-    // The draft went only when Type armed: it is still there, and so is the notice.
-    expect(screen.getByRole("textbox")).toHaveValue("hunter2hunter2");
-    expect(screen.getByRole("button", { name: /use type/i })).toBeInTheDocument();
-  });
+    const type = screen.getByLabelText("Type into terminal", { selector: "button" });
+    fireEvent.pointerDown(type);
+    fireEvent.pointerUp(type);
+    fireEvent.click(type);
+    expect(wake).toHaveBeenCalledWith(true);
+    expect(type).toHaveAttribute("aria-pressed", "true");
+  }, 20_000);
 
   it("no tap vanishes: Use Type that arms takes the draft away", async () => {
     const user = userEvent.setup();

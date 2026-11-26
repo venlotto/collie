@@ -1,3 +1,5 @@
+import type { AgentRuns } from "./agent-runs.ts";
+import { sectionChanges, type UiSections } from "./ui-sections.ts";
 import type { BotTrash } from "./bot-trash.ts";
 import { chatOrderId } from "../web/src/lib/chat-order.ts";
 import { ChatOrderStore } from "./chat-order.ts";
@@ -1307,6 +1309,8 @@ export type TelemetryDeps = Pick<Telemetry, "view" | "choose" | "trouble">;
 
 export function startServer(opts: {
   botTrash?: BotTrash;
+  agentRuns?: AgentRuns;
+  uiSections?: UiSections;
   cfg: Config;
   registry: SessionRegistry;
   push: Push;
@@ -2092,7 +2096,10 @@ export function startServer(opts: {
       // The pane's held sends (M56 spec 15), only when there is one; the text takes the mirror's mask.
       // A held send is the send queue's, a hold is a permission's (spec 12): both may stand at once.
       const held = from.send?.heldOf(from.name, wire.paneId) ?? [];
-      const shown = cfg.redact ? held.map((row) => ({ ...row, text: redactText(row.text) })) : held;
+      const shown = cfg.redact ? held.map((row) => {
+        const safeRow = { ...row, text: redactText(row.text) };
+        return row.detail === undefined ? safeRow : { ...safeRow, detail: redactText(row.detail) };
+      }) : held;
       // M69: a pane the phone may steer says so (paneCanSteer).
       const steered: PaneWire = paneCanSteer(from, wire.paneId) ? { ...withHold, sendProtocol: true as const, canSteer: true as const } : { ...withHold, sendProtocol: true as const };
       // M102 spec 14: a terminal pane whose ask book answers a screen card's tap by id says so, so a lead
@@ -3414,6 +3421,46 @@ export function startServer(opts: {
         return localRuntime(sessionName, req.headers.get("accept-encoding"));
       };
 
+      const runRoute = /^\/api\/pane\/agent-run(?:%3a|:)([a-zA-Z0-9._-]+)\/(chat|stop-run)$/iu.exec(pathname);
+      if (runRoute && opts.agentRuns) {
+        const stopping = runRoute[2] === "stop-run";
+        if (req.method !== (stopping ? "POST" : "GET")) return text("method not allowed", 405);
+        const denied = guard(req, cfg, stopping ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        if (isLocalRequest(req, pairingGate)) return localKeyRefusal();
+        if (host.kind !== "local" || url.searchParams.has("host") || !registry.get(sessionName)?.isPrimary)
+          return text("local session required", 400);
+        const id = runRoute[1]!;
+        if (stopping) {
+          if (!await opts.agentRuns.stop(id)) return text("run is not active", 409);
+          audit.record({ action: "agent-run.stop", device: whois(req).device, detail: { id } });
+          return json({ ok: true }, null);
+        }
+        const paneId = "agent-run:" + id;
+        const result = live && journals && cfg.transcript && await opts.agentRuns.chat(id, journals, live, chatParams(url));
+        if (!result) return json({ paneId, available: false, reason: "no-log" }, null);
+        return json({ paneId, available: true, ...maskChatBody(result) }, req.headers.get("accept-encoding"));
+      }
+
+      if (pathname === "/api/ui-sections") {
+        if (req.method !== "GET" && req.method !== "PUT") return text("method not allowed", 405);
+        const denied = guard(req, cfg, req.method === "PUT" ? "write" : "read", pairingGate);
+        if (denied) return denied;
+        const store = opts.uiSections;
+        // Authenticated accounts use their own /api/user-settings route. The legacy ledger is private.
+        if (!store || store.sso) return text("unavailable", 404);
+        if (req.method === "GET") return json(store.read("local"), null);
+        const bytes = await readCappedBody(new Response(req.body), 1024 * 1024);
+        if (!bytes) return text("body too large", 413);
+        const changes = sectionChanges(new TextDecoder().decode(bytes));
+        if (!changes) return text("invalid section changes", 400);
+        try {
+          return json(store.update("local", changes), null);
+        } catch {
+          return text("could not save section preferences", 503);
+        }
+      }
+
       if (pathname === "/api/bot-action") {
         if (req.method !== "POST") return text("method not allowed", 405);
         const denied = guard(req, cfg, "write", pairingGate);
@@ -3483,6 +3530,9 @@ export function startServer(opts: {
         const plan = snapshotPlan(host.kind === "member" ? host.id : null, selectView(url));
         const body = localSnapshot(plan.local.session, device.enforced ? device : null, plan.local.widen);
         if (!body) return unknownSession();
+        if (opts.agentRuns && host.kind === "local" && registry.get(plan.local.session)?.isPrimary && !isLocalRequest(req, pairingGate)) {
+          await opts.agentRuns.attach(body, registry.get(plan.local.session)!.name);
+        }
         // The ONE place the lead re-serialises (§9.2). With no crew this is the identity function's
         // absence: `body` goes out as assembled, same keys, same order, same bytes, same ETag.
         // The merged body's ETag is then the lead's own assertion about its own merged view — a

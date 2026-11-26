@@ -1594,8 +1594,7 @@
    `document.visibilityState` is hidden; this pauses every animation, pseudo-elements included, and a
    paused animation resumes where it stopped. Important, because it must beat every rule that sets
    an `animation` shorthand, and the shorthand resets the play state.
-   The second pair is the app under a veil (App.tsx, `data-app-covered`): the idle lock and the update
-   screen blur or dim the app behind them, and an animation under a veil keeps the veil redrawing. */
+   The app wrapper also pauses animation on an unattended screen and behind a blocking update. */
 :root[data-page-hidden] *,
 :root[data-page-hidden] *::before,
 :root[data-page-hidden] *::after,

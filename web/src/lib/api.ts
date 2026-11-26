@@ -2185,6 +2185,10 @@ export function focusPane(paneId: string, scope?: Scope): Promise<ActionResponse
 }
 
 export type BotAction = "move" | "trash" | "restore" | "purge";
+export function stopAgentRun(id: string, scope: Scope) {
+  return req<{ ok: boolean }>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/stop-run`, scope), { method: "POST" });
+}
+
 export function actOnBot(action: BotAction, pane: AgentView, scope: Scope, workspaceId?: string) {
   return req<{ ok: boolean }>(withScope("/api/bot-action", scope), {
     method: "POST", body: JSON.stringify({ action, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),
@@ -2201,6 +2205,38 @@ export function renamePane(
     method: "POST",
     body: JSON.stringify({ label }),
   });
+}
+
+export interface SectionAccount { userId: string; sub?: string; role?: string }
+export interface SectionPreferences { userId: string; folded: string[] }
+
+// The SSO bridge scopes its settings route to the authenticated account. Its PATCH merges
+// individual settings, so two devices changing different workspaces retain both changes.
+export async function requestBotSections(account: SectionAccount, signal: AbortSignal, changes?: Record<string, boolean>): Promise<SectionPreferences> {
+  const init: RequestInit = { signal, cache: "no-store" };
+  if (account.sub !== undefined) {
+    const prefix = "bot-section:v1:";
+    init.headers = { "X-Collie-Subject": encodeURIComponent(account.sub), "X-Collie-Role": account.role ?? "" };
+    if (changes) {
+      const set: Record<string, string> = {};
+      const remove: string[] = [];
+      for (const [id, closed] of Object.entries(changes)) {
+        if (closed) set[prefix + id] = "1"; else remove.push(prefix + id);
+      }
+      init.method = "PATCH";
+      init.body = JSON.stringify({ set, remove });
+      init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+    }
+    const settings = await doReq<Record<string, string>>("/api/user-settings", init);
+    const folded = Object.keys(settings).filter(key => key.startsWith(prefix) && settings[key] === "1");
+    return { userId: account.userId, folded: folded.map(key => key.slice(prefix.length)) };
+  }
+  if (changes) {
+    init.method = "PUT";
+    init.body = JSON.stringify({ changes });
+    init.keepalive = new TextEncoder().encode(init.body).length < 60_000;
+  }
+  return doReq<SectionPreferences>("/api/ui-sections", init);
 }
 
 export function fetchChatOrder(scope: Scope, signal: AbortSignal) {

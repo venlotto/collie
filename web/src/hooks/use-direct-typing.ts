@@ -96,10 +96,8 @@ interface DirectTypingOptions {
    *  the SAME tick: a value captured at render would still be the secret the operator just typed, and
    *  the refusal below would block the very remedy being offered. */
   replyDraft: () => string;
-  canActivate: () => boolean;
-  /** The words a refused arming shows (M102 spec 11): why `canActivate` said no. Absent, the catch-up
-   *  words stand. A tap on Type never ends with nothing on screen. */
-  refusalWords?: () => string;
+  /** The reason to refuse the current arming gesture, or null when it can proceed. */
+  refusalWords: () => string | null;
   /** True while the view the mode belongs to has stopped being live: a gone pane, a read-only
    *  device, or the idle pause. Arming survives none of them — see the disarm effect below. */
   suspended: boolean;
@@ -178,7 +176,6 @@ export function useDirectTyping({
   paneKey,
   inputRef,
   replyDraft,
-  canActivate,
   refusalWords,
   suspended,
   // Bound under another name: it is the composer's pressKeys, already a lib/api write, and a bare
@@ -227,8 +224,9 @@ export function useDirectTyping({
    * pane never took, so it is no reason to refuse, and it is dropped only once the mode has armed.
    */
   function activate(opts: { discardDraft?: () => void } = {}): boolean {
-    if (!canActivate()) {
-      setStatus(refusalWords?.() ?? t("composer.tap.typeWait"), "info");
+    const refusal = refusalWords();
+    if (refusal !== null) {
+      setStatus(refusal, "info");
       return false;
     }
     // A buffered reply and live keystrokes cannot safely share one field. Keep the durable draft

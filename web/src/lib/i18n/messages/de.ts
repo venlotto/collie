@@ -519,7 +519,6 @@ export const de: Dictionary = {
   "composer.tap.sending": "Ein anderes Senden von diesem Telefon läuft noch. Warte, bis es endet.",
   "composer.tap.noCard": "Die Karte der Frage ist nicht auf dem Bildschirm. Öffne den Bildschirm, um sie im Terminal zu beantworten.",
   "composer.tap.typeBusy": "Tippen wird aktiv, wenn das Senden oder der Upload endet.",
-  "composer.tap.typeWait": "Collie holt den Stand des Panes noch auf. Tippe gleich noch einmal auf Tippen.",
   "composer.tap.beltOff": "Diese Schaltfläche hat in diesem Pane jetzt nichts zu tun.",
   "composer.tap.fileType": "Collie kann diese Art von Datei nicht anhängen.",
   "composer.tap.clearBusy": "Du kannst den Entwurf löschen, wenn das Senden endet.",
@@ -898,6 +897,7 @@ export const de: Dictionary = {
   "chat.stream.empty": "Zum Starten eine Nachricht senden.",
   "chat.empty.sharedFolder":
     "Zwei {harness}-Sitzungen teilen sich diesen Ordner, daher kann Collie nicht erkennen, welche zu diesem Pane gehört. Den Agenten mit seinem Resume-Befehl und der Sitzungs-ID starten, dann liest Collie die richtige.",
+  "chat.stream.stoppedOnError": "Der Agent wurde wegen eines Fehlers angehalten.",
   "chat.stream.working": "Arbeitet noch…",
   "chat.stream.questionPending": "Im Terminal wartet eine Frage. Deine nächste Nachricht beantwortet sie.",
   "chat.stream.queued": "Wartet auf Senden",
@@ -967,6 +967,8 @@ export const de: Dictionary = {
   "chat.run.searches.other": "{count} Suchen",
   "chat.run.agents.one": "{count} Agent",
   "chat.run.agents.other": "{count} Agenten",
+  "chat.run.steps.one": "{count} Schritt",
+  "chat.run.steps.other": "{count} Schritte",
   "chat.run.others.one": "{count} weiterer Schritt",
   "chat.run.others.other": "{count} weitere Schritte",
   "chat.run.earlier.one": "{count} früherer Schritt · {summary}",
@@ -1823,15 +1825,6 @@ export const de: Dictionary = {
   "error.root.title": "Fehler aufgetreten",
   "error.root.unknown": "Unbekannter Fehler",
   "error.root.reload": "Neu laden",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie pausiert",
-  "idle.catchingUp.title": "Synchronisierung",
-  "idle.catchingUp.body": "Ruft den aktuellen Zustand der Herde ab.",
-  "idle.paused.title": "Pausiert",
-  "idle.paused.body":
-    "Live-Updates wurden während der Inaktivität gestoppt. Die Ansicht im Hintergrund ist eingefroren. Beim Fortsetzen wird der letzte Stand geladen.",
-  "idle.resume": "Zum Fortsetzen tippen",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "Neue Version verfügbar. Zum Aktualisieren tippen.",

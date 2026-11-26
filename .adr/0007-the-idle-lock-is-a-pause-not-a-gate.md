@@ -80,3 +80,10 @@ the app's one chrome-less full-viewport screen, so it states whose it is and wha
   amended — the resumption gesture would be authenticating something, not just dismissing a cover.
 - Evidence of alerts genuinely lost to the locked-visible overlap — that argues for the service-worker
   liveness round-trip, not for reverting the auto-resume.
+
+### Amendment — invisible resume (2026-11-26)
+
+The 30-minute pause still saves polling and animation work. The router stays mounted and interactive
+throughout. Foreground visibility, window focus, page restoration or the first pointer, touch or key
+event resumes the app and revalidates the current view in place. This retires the cover and its
+dismissal gesture. The device and tailnet retain their existing roles.

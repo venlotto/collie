@@ -1001,8 +1001,8 @@ condition clears or the operator dismisses it, and the header's mark keeps the b
 
 **The z ladder the band sits on.** `z-20` is the top of everything in flow: the sticky header, the
 composer dock, the Changes file bar, the chat docks. The band is `z-30`, so it covers all of them.
-`z-40` is the toasts and the anchored menu's dismiss surface, `z-50` the sheets, the update screen and
-the idle lock, so all of those cover the band. A new in-flow surface stays at `z-20` or below.
+`z-40` is the toasts and the anchored menu's dismiss surface, `z-50` the sheets and the update screen.
+Both cover the band. A new in-flow surface stays at `z-20` or below.
 
 ### Where the priority table lives
 

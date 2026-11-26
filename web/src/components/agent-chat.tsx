@@ -13,7 +13,7 @@ import { usePaneNavigation } from "@/components/pane-nav";
 import { besideOf, useNewTabOrSheet } from "@/hooks/use-new-tab-or-sheet";
 import { useShortcutHandler } from "@/hooks/use-shortcut-handler";
 import { tabCreateKey, useSpaceActions } from "@/hooks/use-spaces";
-import { isQuestion, isUnseen, shownStatus } from "@/lib/triage";
+import { isErrorBlocked, isQuestion, isUnseen, shownStatus } from "@/lib/triage";
 import { useNav } from "@/hooks/use-nav";
 import { useNewEntry } from "@/hooks/use-new-entry";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
@@ -2622,7 +2622,7 @@ export function AgentChat({
           right edge. app-header.tsx's `wide` claim carries the identical ladder, or the header and
           the mirror stop sharing that edge. */}
       {/* In a large screen's column the column is the bound (ADR 0120), so the ladder stands down there. */}
-      <div ref={chatRootRef} className={cn("flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden", !inStrip && "mx-auto max-w-[100dvw] md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-[1400px]")}>
+      <div ref={chatRootRef} className={cn("flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-x-hidden", !inStrip && !mobileShell && "mx-auto max-w-[100dvw] md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-[1400px]")}>
         {/* Header — this route's contribution to the ONE header shell, which is mounted above the
             outlet in RootLayout and is the same element on every screen (so the Collie mark is not
             only identical, it is literally the same drawing, still turning). The pane's own bits are
@@ -3469,7 +3469,10 @@ export function AgentChat({
                       ? undefined
                       : handleReturned
                   }
-                  tail={trickCards}
+                  tail={mobileShell && agent && isErrorBlocked(agent) ? <>
+                    <p role="status" className="bot-turn bot-turn-error">{t("chat.stream.stoppedOnError")}</p>
+                    {trickCards}
+                  </> : trickCards}
                   hasNew={trickWaiting}
                 />
               </CardWaitingCtx.Provider>
@@ -3594,7 +3597,9 @@ export function AgentChat({
                   )}
                   {mobileShell && !!agent?.lastActiveAt && <p className="bot-date">{botTime(agent.lastActiveAt, true)}</p>}
                   {mobileShell && unreadSince !== undefined && <div className="bot-new-line"><span>Nuevos</span></div>}
-                  <div className={mobileShell ? "bot-terminal" : undefined}><AnsiOutput
+                  <div className={mobileShell ? "bot-terminal" : undefined}>
+                    {mobileShell && <p className="bot-terminal-label">{t("chat.mode.option.terminal")}</p>}
+                    <AnsiOutput
                     text={display}
                     logicalText={shown.logicalText}
                     wrap={prefs.wrap}

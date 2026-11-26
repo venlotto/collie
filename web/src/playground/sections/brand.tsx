@@ -35,8 +35,8 @@ export function BrandSection() {
         <Card
           state="mark-header-weight"
           label="the mark, header weight"
-          reach="every screen. 40px in the header bar, 64px on the boot splash and the idle cover."
-          note="`paper` is the ground the mark sits on: it is --background here, --muted in the header, --card on the idle cover."
+          reach="every screen. 40px in the header bar, 64px on the boot splash."
+          note="`paper` is the ground the mark sits on: it is --background here, --muted in the header."
         >
           <Stage>
             <div className="flex flex-wrap items-end gap-6 p-4">

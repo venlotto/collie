@@ -1,9 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureLaunchersWithAgents, fixtureSnapshot, fixtureWalkyAgent } from "@/test/handlers";
+import { fixtureAgents, fixtureKiroChat, fixtureLaunchedTab, fixtureLaunchersWithAgents, fixtureSnapshot, fixtureWalkyAgent, paneTextWithDraft } from "@/test/handlers";
 import type { AgentView } from "@/lib/types";
 import { installApiStub, installLauncherWorld, installPaneWorld, paneCapture, pinLocale } from "./fixtures/api";
+import { botMotionMidpoint } from "./fixtures/bot-motion";
+import { expectBotSheetPosition } from "./fixtures/bot-sheet";
 
 test.use({ serviceWorkers: "block" });
 
@@ -19,14 +21,14 @@ async function screenshot(page: Page, label: string) {
   const project = test.info().project.name;
   const prefix = project.includes("desktop") ? "escritorio" : project.includes("webkit") ? "iphone-webkit" : project.includes("phone") ? "movil" : "escritorio";
   await mkdir(dir, { recursive: true });
-  await page.screenshot({ path: join(dir, prefix + "-" + label + ".png"), animations: "disabled" });
+  await page.screenshot({ path: join(dir, prefix + "-" + label + ".png"), scale: "css", animations: "disabled" });
 }
 
 async function settledSheet(page: Page) {
   const dialog = page.getByRole("dialog", { name: "Crear nuevo Bot" });
   await expect(dialog).toBeVisible();
   // WebKit can defer the first animation frame. Wait for the resting form itself.
-  await expect(dialog.locator("form")).toHaveCSS("transform", "none");
+  await expectBotSheetPosition(dialog);
   const geometry = await dialog.evaluate(el => {
     const face = el.querySelector(".bot-preview .bot-avatar")!.getBoundingClientRect();
     const field = el.querySelector("input")!.getBoundingClientRect();
@@ -116,8 +118,10 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   await search.fill("");
   await page.getByRole("button", { name: sections[0], exact: true }).click();
   await rows.first().click();
-  await expect(page.getByText(messages[3]!, { exact: true })).toBeVisible();
-  await expect(page.getByText("Nuevos", { exact: true })).toBeVisible();
+  // The list preview can already show this message while the pane loader is pending.
+  const detail = page.locator(".bot-detail");
+  await expect(detail.getByText(messages[3]!, { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(detail.getByText("Nuevos", { exact: true })).toBeVisible();
   await expect(page.getByText("4 mensajes con 2 Bots")).toBeAttached();
   await expect(page.getByText("Mensaje de Avisos de agentes", { exact: true })).toBeAttached();
   await expect(page.locator(".bot-attribution").filter({ hasText: "Mensaje de" }).last()).toBeVisible();
@@ -146,6 +150,13 @@ test("workspace list, chat input and bot creation", async ({ page }) => {
   expect(underBars.top).toBeGreaterThan(0);
   expect(underBars.bottom).toBeGreaterThan(0);
   await screenshot(page, "conversacion");
+  if (process.env.BOT_SCREENSHOTS && test.info().project.name === "desktop") {
+    for (const [width, height] of [[768, 1024], [1920, 1080]] as const) {
+      await page.setViewportSize({ width, height });
+      await screenshot(page, "chat-" + width);
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+  }
   const input = page.locator('[data-slot="composer-box"] textarea').first();
   await input.fill("Recibido");
   const posted = page.waitForRequest(r => r.method() === "POST" && /\/(reply|send)$/.test(r.url()));
@@ -274,7 +285,8 @@ for (const pairedGate of [false, true]) {
 }
 
 for (const inset of [0, 34]) {
-  test(`chat and sheet keep the footers in place (inset ${inset || "native"})`, async ({ page, browserName }) => {
+  test(`phone stack and sheet keep the footers in place (inset ${inset || "native"})`, async ({ page, browserName }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     if (inset && browserName === "chromium") {
       const client = await page.context().newCDPSession(page);
       await client.send("Emulation.setSafeAreaInsetsOverride", { insets: { bottom: inset } });
@@ -289,12 +301,15 @@ for (const inset of [0, 34]) {
     const panes = Array.from({ length: 18 }, (_, i) => ({
       ...fixtureAgents[0]!, paneId: "w1:p" + (i + 1), paneLabel: "Kanban " + (i + 1),
     }));
-    await page.route(url => url.pathname === "/api/snapshot", route => route.fulfill({
-      json: { ...fixtureSnapshot, agents: panes, shellPanes: [] },
-    }));
+    const pane = panes[0]!;
+    await installPaneWorld(page, {
+      paneId: pane.paneId, snapshot: { ...fixtureSnapshot, agents: panes, shellPanes: [], ts: Date.now() },
+      chat: { paneId: pane.paneId, available: false, reason: "no-session" },
+      start: "idle", screens: { idle: paneTextWithDraft() },
+    });
     await page.goto("/");
-    const row = page.locator(".bot-row").first();
-    await expect(row).toBeVisible();
+    const row = page.locator(".bot-row").filter({ has: page.getByText(pane.paneLabel, { exact: true }) });
+    await expect(row).toBeVisible({ timeout: 20_000 });
     await page.locator(".bot-scroll").evaluate(el => { el.scrollTop = 60; });
     const shell = await page.locator("[data-bots]").elementHandle();
     const list = await page.locator(".bot-scroll").elementHandle();
@@ -348,7 +363,7 @@ for (const inset of [0, 34]) {
     };
     await row.click();
     const field = page.locator('[data-slot="composer-box"] textarea').first();
-    await expect(field).toBeInViewport();
+    await expect(field).toBeInViewport({ timeout: 20_000 });
     await page.waitForFunction(() => document.querySelector(".bot-detail")!.getBoundingClientRect().left === document.querySelector(".bot-layout")!.getBoundingClientRect().left);
     const composer = await field.elementHandle();
     await back();
@@ -372,17 +387,30 @@ for (const inset of [0, 34]) {
     expect(await shell?.evaluate(el => el.isConnected)).toBe(true);
     expect(await list?.evaluate(el => el.isConnected)).toBe(true);
     expect(await composer?.evaluate(el => el.isConnected)).toBe(true);
-    for (const open of [true, false]) {
-      const moving = frames.filter(f => f.open === open && f.x > 0 && f.x < width);
-      expect(moving.length).toBeGreaterThan(0);
-      expect(moving.every(f => f.composer !== null)).toBe(true);
+    const slides = [true, false].map(open => frames.filter(f => f.open === open && f.x > 0 && f.x < width));
+    for (const moving of slides) expect(moving.every(f => f.composer !== null)).toBe(true);
+    if (slides.some(moving => moving.length === 0)) {
+      const panel = page.locator(".bot-detail");
+      for (const action of [() => row.click(), back]) {
+        const mid = await botMotionMidpoint(panel, action);
+        expect(mid.x).toBeGreaterThan(0);
+        expect(mid.x).toBeLessThan(width);
+        expect(mid.composerHeight).toBeGreaterThan(0);
+      }
     }
     expect(frames[0]!.scroll).toBeGreaterThan(0);
     expect(new Set(frames.map(f => f.scroll)).size).toBe(1);
     expect(new Set(frames.map(f => f.search)).size).toBe(1);
     expect(new Set(frames.map(f => f.searchTop)).size).toBe(1);
-    for (const phase of ["open", "closing"]) {
-      expect(frames.some(f => f.sheet === phase && f.scale > .961 && f.scale < .999)).toBe(true);
+    const sampled = ["open", "closing"].every(phase =>
+      frames.some(f => f.sheet === phase && f.scale > .961 && f.scale < .999));
+    if (!sampled) {
+      for (const action of [openSheet, closeSheet]) {
+        const mid = await botMotionMidpoint(surface, action);
+        expect(mid.scale).toBeGreaterThan(.961);
+        expect(mid.scale).toBeLessThan(.999);
+      }
+      await expect(page.getByRole("dialog")).toHaveCount(0);
     }
     const composerTops = frames.flatMap(f => f.composerTop === null ? [] : [f.composerTop]);
     expect(Math.max(...composerTops) - Math.min(...composerTops)).toBeLessThan(0.51);
@@ -416,38 +444,122 @@ for (const inset of [0, 34]) {
   });
 }
 
-test("desktop paints the same list and chat as a 390px column", async ({ page }) => {
+test("the same open terminal, draft and selection cross the split breakpoint", async ({ page }) => {
   await installApiStub(page);
+  const pane = { ...fixtureAgents[0]!, agent: "kiro", paneLabel: "Revisión de rutas", hasSession: true };
+  const rows = Array.from({ length: 18 }, (_, i) => ({
+    ...pane, paneId: "w1:p" + (i + 1), hasSession: i === 0,
+    terminalId: "ruta-" + i, paneLabel: i === 0 ? pane.paneLabel : "Itinerario " + i,
+  }));
+  // Short lines keep the same reading position across widths. More than a screenful
+  // makes scrolling back measurable even on the 1080px monitor.
+  const stops = ["Maracay", "Mérida", "Barinas", "Valencia", "Caracas", "Maturín"];
+  const output = ["$ itinerarios verificar", " ", "   RUTA     DESTINO     ESTADO", ...Array.from({ length: 120 }, (_, i) => {
+    const route = String(i + 1).padStart(3, "0");
+    return "   Ruta " + route + "   " + stops[i % stops.length]!.padEnd(10) + "  \x1b[32m✓ lista\x1b[0m";
+  })].join("\n");
+  await installPaneWorld(page, {
+    paneId: pane.paneId, chat: fixtureKiroChat,
+    snapshot: { ...fixtureSnapshot, agents: rows, shellPanes: [], ts: Date.now(),
+      device: { enforced: true, authorized: true, device: "Prueba" } },
+    screens: { idle: output + "\n" + paneCapture("kiro--v3-idle-w120") }, start: "idle",
+  });
+  await page.route("**/api/chat-order*", route => route.fulfill({ json: [] }));
+  const otherPane = rows[1]!;
+  await page.route(url => url.pathname === "/api/pane/" + encodeURIComponent(otherPane.paneId),
+    route => route.fulfill({ json: { paneId: otherPane.paneId, text: output, truncated: false, revision: 1 } }));
+  await page.route(url => url.pathname === "/api/pane/" + encodeURIComponent(otherPane.paneId) + "/chat",
+    route => route.fulfill({ json: { ...fixtureKiroChat, paneId: otherPane.paneId } }));
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
-  const row = page.locator(".bot-row").first();
-  await expect(row).toBeVisible();
-  const column = page.locator(".bot-layout");
-  async function compare(view: string) {
-    const boxes = column.locator(".bot-index header, .bot-featured, .bot-row, .bot-search, .bot-chat-bar, .bot-terminal, [data-slot=composer-box], [data-slot=composer-box] button");
-    const geometry = () => boxes.evaluateAll(elements => elements.map(el => {
-      const { x, y, width, height } = el.getBoundingClientRect();
-      return { x: x - el.closest(".bot-layout")!.getBoundingClientRect().left, y, width, height };
-    }));
-    const dir = process.env.BOT_SCREENSHOTS;
-    const save = async (size: string) => {
-      if (!dir) return;
-      await mkdir(dir, { recursive: true });
-      await column.screenshot({ path: join(dir, `${test.info().project.name}-${view}-columna-${size}.png`), scale: "css", animations: "disabled" });
-    };
-    await page.setViewportSize({ width: 390, height: 800 });
-    const narrow = await geometry();
-    await save("390");
+  const sidebar = page.locator(".bot-sidebar");
+  const detail = page.locator(".bot-detail");
+  const empty = page.locator(".bot-detail-empty");
+  const footer = page.locator(".bot-search-foot");
+  await expect(empty).toBeInViewport();
+  await expect(empty).toContainText("Selecciona un chat");
+  const first = sidebar.locator(".bot-row").filter({ hasText: pane.paneLabel });
+  const other = sidebar.locator(".bot-row").filter({ has: page.getByText("Itinerario 1", { exact: true }) });
+  await other.click();
+  await expect(detail.locator(".bot-chat-bar")).toContainText(otherPane.paneLabel, { timeout: 20_000 });
+  await expect(other).toHaveAttribute("aria-current", "true");
+  await first.click();
+  await expect(detail.locator(".bot-chat-bar")).toContainText(pane.paneLabel, { timeout: 20_000 });
+  await expect(first).toHaveAttribute("aria-current", "true");
+  await expect(other).not.toHaveAttribute("aria-current", "true");
+  const pickerButton = sidebar.getByRole("button", { name: "Ir a un workspace" });
+  await pickerButton.click();
+  const pickerBox = (await sidebar.locator(".bot-picker").boundingBox())!;
+  expect(pickerBox.x + pickerBox.width).toBeLessThanOrEqual((await detail.boundingBox())!.x);
+  await pickerButton.click();
+  const menu = page.getByRole("button", { name: "Opciones del chat" });
+  await menu.click();
+  const menuBox = (await detail.locator(".bot-popup").boundingBox())!;
+  expect(menuBox.x).toBeGreaterThanOrEqual((await detail.boundingBox())!.x);
+  expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.getByRole("button", { name: "Ver terminal" }).click();
+  const terminal = detail.locator(".bot-terminal");
+  await expect(terminal).toContainText("Ruta 120");
+  const reader = terminal.locator("..");
+  if (process.env.BOT_SCREENSHOTS && test.info().project.name === "desktop") {
+    await reader.evaluate(el => { el.scrollTop = 0; });
+    await screenshot(page, "terminal-1280");
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await screenshot(page, "terminal-1920");
     await page.setViewportSize({ width: 1280, height: 800 });
-    const rect = await column.boundingBox();
-    expect(rect?.width).toBe(390);
-    expect(rect?.x).toBe(445);
-    expect(await geometry()).toEqual(narrow);
-    await save("1280");
   }
-  await compare("lista");
-  await row.click();
-  await expect(page.locator('[data-slot="composer-box"]')).toBeInViewport();
-  await page.waitForFunction(() => document.querySelector(".bot-detail")!.getBoundingClientRect().left === document.querySelector(".bot-layout")!.getBoundingClientRect().left);
-  await page.mouse.move(0, 0);
-  await compare("chat");
+  const screen = await terminal.locator("pre").first().elementHandle();
+  const input = detail.locator('[data-slot="composer-box"] textarea').first();
+  const url = page.url();
+  await input.fill("Conservar este borrador");
+  await first.click({ button: "right" });
+  await expect(first).toBeChecked();
+  const field = await input.elementHandle();
+
+  const list = sidebar.locator(".bot-scroll");
+  for (const scroller of [list, reader]) {
+    await scroller.evaluate(el => { el.scrollTop = 65; });
+    await expect.poll(() => scroller.evaluate(el => el.scrollTop)).toBe(65);
+  }
+
+  // The scroll event changes the terminal from following its tail to reading history.
+  await expect(reader.locator("..").getByRole("button", { name: "Desplazarse a lo más reciente" })).toBeVisible();
+
+  for (const [width, height] of [[768, 1024], [390, 844], [1280, 800], [1920, 1080]] as const) {
+    await page.setViewportSize({ width, height });
+    await expect(detail).toBeInViewport();
+    await expect(input).toHaveValue("Conservar este borrador");
+    await expect(first).toHaveAttribute("aria-checked", "true");
+    await expect(page).toHaveURL(url);
+    expect(await screen!.evaluate(el => el.isConnected)).toBe(true);
+    expect(await field!.evaluate(el => el.isConnected)).toBe(true);
+    expect(await list.evaluate(el => el.scrollTop), `sidebar at ${width}px`).toBe(65);
+    expect(await reader.evaluate(el => el.scrollTop), `terminal at ${width}px`).toBe(65);
+
+    const box = (await detail.boundingBox())!;
+    if (width === 390) {
+      await expect(sidebar).toHaveAttribute("inert", "");
+      expect(box.x).toBe(0);
+      expect(box.width).toBe(width);
+      continue;
+    }
+    await expect(sidebar).not.toHaveAttribute("inert", "");
+    const side = (await sidebar.boundingBox())!;
+    expect(side.x).toBe(0);
+    expect(side.width).toBeGreaterThanOrEqual(width === 768 ? 224 : 280);
+    expect(side.width).toBeLessThanOrEqual(340);
+    expect(box.x).toBeCloseTo(side.width, 0);
+    expect(box.x + box.width).toBeCloseTo(width, 0);
+    expect(box.height).toBeGreaterThan(height - 48);
+    const controls = (await footer.boundingBox())!;
+    expect(controls.x + controls.width).toBeLessThanOrEqual(side.width);
+    const terminalBox = (await terminal.boundingBox())!;
+    const scrollbar = await reader.evaluate(el => el.getBoundingClientRect().width - el.clientWidth);
+    expect(terminalBox.x).toBeCloseTo(box.x, 0);
+    expect(terminalBox.width + scrollbar).toBeCloseTo(box.width, 0);
+    const composer = (await detail.locator('[data-slot="composer-box"]').boundingBox())!;
+    expect(composer.width).toBeGreaterThan(box.width - 90);
+    expect(composer.x).toBeGreaterThanOrEqual(box.x);
+    expect(composer.x + composer.width).toBeLessThanOrEqual(width);
+  }
 });

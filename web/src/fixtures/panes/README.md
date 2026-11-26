@@ -4275,3 +4275,9 @@ the probe tells them apart). The tests that read them name the folder.
 | `omp--v18-22-0-suggestion-probe-dark--w120.txt` | `draft` | One probe character `⌁` typed into the dark box: the suggestion is gone, the box shows `⌁` alone in the typed colour `rgb(229,229,231)`. One Backspace brings `Mountains.` back |
 | `omp--v18-22-0-suggestion-typed-light--w120.txt` | `draft` | `hey` typed in the light theme, in `rgb(0,0,0)`: a typed draft, the suggestion gone |
 | `omp--v18-22-0-suggestion-under-typed-dark--w120.txt` | `draft` | `Moun` typed (it starts the suggestion), so omp keeps the rest `tains.` after it in the `dim` colour: `Moun` in `rgb(229,229,231)`, `tains.` in `rgb(95,102,115)`. A real draft: a probe after `Moun` keeps `Moun` |
+
+### Codex 0.172.0 agents hint on a narrow Herdr pane
+
+`codex--v0172-agent-hint-idle.txt` and `codex--v0172-agent-hint-probe.txt` are ANSI reads from
+the same throwaway chat on coder1. At the first character the left-hand agents hint disappears
+and the F2 warning stays. The prompt, wrapped status and transcript come from the real TUI.

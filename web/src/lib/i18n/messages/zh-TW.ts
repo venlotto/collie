@@ -491,7 +491,6 @@ export const zhTW: Dictionary = {
   "composer.tap.sending": "這支手機上的另一次傳送仍在進行。請等它結束。",
   "composer.tap.noCard": "該問題的卡片不在螢幕上。請開啟「螢幕」，在終端機中回答。",
   "composer.tap.typeBusy": "傳送或上傳結束後，「輸入」才會開啟。",
-  "composer.tap.typeWait": "Collie 正在跟上窗格的狀態。請稍後再點按「輸入」。",
   "composer.tap.beltOff": "這個按鈕現在對這個窗格沒有作用。",
   "composer.tap.fileType": "Collie 無法附加這種檔案。",
   "composer.tap.clearBusy": "傳送結束後，你才能清除草稿。",
@@ -868,6 +867,7 @@ export const zhTW: Dictionary = {
   "chat.stream.empty": "傳送一則訊息即可開始。",
   "chat.empty.sharedFolder":
     "此資料夾中有兩個 {harness} 工作階段，Collie 無法判斷哪一個屬於目前窗格。請用恢復指令加上工作階段 ID 啟動該 Agent，Collie 就會讀取正確的工作階段。",
+  "chat.stream.stoppedOnError": "代理程式因錯誤而停止。",
   "chat.stream.working": "仍在處理…",
   "chat.stream.questionPending": "終端機中有一個等待回答的問題。你的下一則訊息將作為回答。",
   "chat.stream.queued": "等待傳送",
@@ -937,6 +937,8 @@ export const zhTW: Dictionary = {
   "chat.run.searches.other": "{count} 次搜尋",
   "chat.run.agents.one": "{count} 個代理",
   "chat.run.agents.other": "{count} 個代理",
+  "chat.run.steps.one": "{count} 步",
+  "chat.run.steps.other": "{count} 步",
   "chat.run.others.one": "{count} 個其他步驟",
   "chat.run.others.other": "{count} 個其他步驟",
   "chat.run.earlier.one": "較早的 {count} 個步驟 · {summary}",
@@ -1786,14 +1788,6 @@ export const zhTW: Dictionary = {
   "error.root.title": "發生錯誤",
   "error.root.unknown": "未知錯誤",
   "error.root.reload": "重新載入",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie 連線已暫停",
-  "idle.catchingUp.title": "同步中",
-  "idle.catchingUp.body": "正在取得目前叢集狀態。",
-  "idle.paused.title": "已暫停",
-  "idle.paused.body": "頁面閒置已停止即時同步，背景資料暫時凍結。恢復後會自動取得最新狀態。",
-  "idle.resume": "點擊恢復連線",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "發現新版本，點擊以套用更新",

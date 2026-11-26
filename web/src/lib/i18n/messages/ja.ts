@@ -502,7 +502,6 @@ export const ja: Dictionary = {
   "composer.tap.sending": "このスマートフォンからの別の送信がまだ実行中です。終わるまでお待ちください。",
   "composer.tap.noCard": "質問のカードが画面にありません。「画面」を開いて、ターミナルで回答してください。",
   "composer.tap.typeBusy": "送信またはアップロードが終わると、「入力」が使えるようになります。",
-  "composer.tap.typeWait": "Collie はペインに追いついている途中です。少し待ってから、もう一度「入力」をタップしてください。",
   "composer.tap.beltOff": "いま、このボタンはこのペインでは何もしません。",
   "composer.tap.fileType": "Collie はこの種類のファイルを添付できません。",
   "composer.tap.clearBusy": "送信が終わると、下書きを消去できます。",
@@ -880,6 +879,7 @@ export const ja: Dictionary = {
   "chat.stream.empty": "メッセージを送信して始めましょう。",
   "chat.empty.sharedFolder":
     "このフォルダーでは {harness} のセッションが 2 つ動いているため、Collie はどちらがこのペインのものか判断できません。再開コマンドとセッション ID を付けてエージェントを起動すると、Collie は正しいセッションを読み込みます。",
+  "chat.stream.stoppedOnError": "エラーによりエージェントが停止しました。",
   "chat.stream.working": "処理中…",
   "chat.stream.questionPending": "ターミナルで質問への回答を待機しています。次のメッセージが回答になります。",
   "chat.stream.queued": "送信待ち",
@@ -949,6 +949,8 @@ export const ja: Dictionary = {
   "chat.run.searches.other": "検索 {count} 件",
   "chat.run.agents.one": "エージェント {count} 件",
   "chat.run.agents.other": "エージェント {count} 件",
+  "chat.run.steps.one": "{count} ステップ",
+  "chat.run.steps.other": "{count} ステップ",
   "chat.run.others.one": "その他の操作 {count} 件",
   "chat.run.others.other": "その他の操作 {count} 件",
   "chat.run.earlier.one": "以前の操作 {count} 件 · {summary}",
@@ -1801,14 +1803,6 @@ export const ja: Dictionary = {
   "error.root.title": "エラーが発生しました",
   "error.root.unknown": "不明なエラー",
   "error.root.reload": "再読み込み",
-
-  // --- idle (the idle-pause cover) ---
-  "idle.dialogAria": "Collie 一時停止中",
-  "idle.catchingUp.title": "最新状態を取得中",
-  "idle.catchingUp.body": "群れの最新状態を取得しています。",
-  "idle.paused.title": "一時停止中",
-  "idle.paused.body": "無操作のためライブ更新を停止しました。背後の画面は静止しています。再開すると中断した箇所から処理を続行します。",
-  "idle.resume": "再開",
 
   // --- pwa (self-update banner) ---
   "pwa.updateAvailable": "新しいバージョンがあります。タップして更新してください。",

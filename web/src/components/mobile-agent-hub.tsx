@@ -1,4 +1,6 @@
+import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useBotSections } from "@/lib/bot-sections";
 import { chatOrderId } from "@/lib/chat-order";
 import { WorkspaceMenu } from "./bot-workspace-menu";
 import { dragScope, sectionKey, useBotOrganization } from "./bot-organization";
@@ -72,7 +74,7 @@ const segmenter = graphemeSegmenter();
 
 export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, deviceName = "", accessNotice }: Props) {
   const [query, setQuery] = useState("");
-  const [folded, setFolded] = useState<Set<string>>(new Set());
+  const { folded, toggle, setClosed } = useBotSections();
   const [mode, setMode] = useState<"chats" | "trash" | null>(null);
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [sheet, setSheet] = useState<"move" | "restore" | "purge" | null>(null);
@@ -171,15 +173,12 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       onChanged();
     }
   }
-  function toggle(key: string) {
-    setFolded((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
-  }
   const groupRows = [...groups.values()].flatMap(group => group.rows);
   const selectable = (p: AgentView) => writable && !!p.terminalId && !scopeOf(p).host;
   const choices = (mode === "trash" ? trashRows : groupRows).filter(selectable);
   const rowId = (p: AgentView) => JSON.stringify([scopeOf(p).session, p.terminalId, p.trash?.trashedAt]);
   const chosen = choices.filter(p => selection.has(rowId(p)));
-  const destinations = [...groups.values()].filter(g => chosen.length > 0 && chosen.every(p =>
+  const destinations = [...groups.values()].filter(g => g.id !== "agent-runs" && chosen.length > 0 && chosen.every(p =>
     scopeOf(p).session === g.scope.session && !g.scope.host));
   function select(p: AgentView, add: boolean) {
     if (!selectable(p) || busy) return;
@@ -243,7 +242,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       <span className="bot-copy">
         <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
         {days !== undefined ? <span className="bot-line">Se elimina en {days} {days === 1 ? "día" : "días"}</span> :
-          <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
+          <span className="bot-row-preview">{p.agentRun ? <span className="bot-line">{runProgress(p.agentRun)}</span> : <Preview pane={p} scope={scope} active={current} />}{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
       </span>
     </BotRow></li>;
   }
@@ -267,13 +266,13 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
-        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={!group.scope.host || undefined} data-drag-scope={dragScope(group.scope)}>
+        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
           <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}
         {(trashRows.length > 0 || trashedSpaces.length > 0) && <section data-workspace="trash">
-          <button className="bot-group" aria-expanded={!folded.has("trash")} onClick={() => toggle("trash")}>Papelera<ChevronDown size={14} /></button>
-          {!folded.has("trash") && <ul>{trashedSpaces.map(space =>
+          <button className="bot-group" aria-expanded={!folded.has("trash") || !!needle} disabled={!!needle} onClick={() => toggle("trash")}>Papelera<ChevronDown size={14} /></button>
+          {(!folded.has("trash") || !!needle) && <ul>{trashedSpaces.map(space =>
             <li className="bot-trashed-workspace" key={sectionKey(space.scope, space.id)}>
               <FolderInput size={22} aria-hidden /><span><strong>{space.title}</strong>
                 <small>{space.count} {space.count === 1 ? "chat" : "chats"} · Se elimina en {Math.max(0, Math.ceil(7 - (Date.now() - space.at) / 86_400_000))} días</small></span>
@@ -304,7 +303,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         <div className="bot-picker" id={picker} popover="auto">{Array.from(groups, ([key, section]) =>
           <button key={key} popoverTarget={picker} popoverTargetAction="hide" onClick={() => {
             setQuery("");
-            setFolded(prev => { const next = new Set(prev); next.delete(key); return next; });
+            setClosed(key, false);
             requestAnimationFrame(() => Array.from(scroll.current?.querySelectorAll("section") ?? []).find(el => el.dataset.workspace === key)?.scrollIntoView({ block: "start" }));
           }}>{section.title}</button>)}</div></>}
       <label className="bot-search"><Search size={18} /><input type="search" aria-label="Buscar" placeholder="Buscar" value={query} onChange={e => setQuery(e.target.value)} /></label></>}</div>
