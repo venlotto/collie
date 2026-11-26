@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { AgentView } from "@/lib/types";
 import { fixtureAgents, fixtureSnapshot } from "@/test/handlers";
 import { installApiStub, pinLocale } from "./fixtures/api";
+import { expectBotSheetPosition } from "./fixtures/bot-sheet";
 
 test.use({ serviceWorkers: "block" });
 
@@ -142,6 +143,11 @@ async function sampleFooter(page: Page) {
 
 test("arrastrar filas, cambiar de workspace y soltar en Papelera", async ({ page }) => {
   const { writes, trash } = await world(page);
+  // In split view, organize the sidebar while another pane remains open.
+  if (page.viewportSize()!.width >= 768) {
+    await page.locator(".bot-row").filter({ hasText: "Libros" }).click();
+    await expect(page.locator(".bot-chat-bar")).toContainText("Libros");
+  }
   const rows = page.locator(".bot-scroll .bot-row");
   const source = rows.filter({ hasText: "Notas" });
   const footer = page.locator(".bot-search-foot");
@@ -182,7 +188,7 @@ test("long press, posición, renombrado y confirmación de workspace", async ({ 
   }
   let dialog = await menu(); await expect(dialog).toBeVisible();
   await expect(headers.nth(1)).toHaveAttribute("aria-expanded", "true");
-  await page.waitForTimeout(290); await capture(page, "workspace");
+  await expectBotSheetPosition(dialog); await capture(page, "workspace");
   expect((await footer.boundingBox())!.y).toBe(bottom);
   await dialog.getByRole("button", { name: "Mover" }).click();
   await dialog.getByLabel("Posición").selectOption({ value: "2" });
