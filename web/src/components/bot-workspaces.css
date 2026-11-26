@@ -90,11 +90,18 @@
 .bot-date { text-align: center; margin: 16px 0 10px; font: 12px/18px -apple-system,BlinkMacSystemFont,"Inter",sans-serif; color: #8e8e93; }
 .bot-new-line { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
 .bot-new-line::before,.bot-new-line::after { content: ""; height: 1px; background: #1c3248; flex: 1; }
-.bot-terminal, .bot-turn { min-width: 0; width: fit-content; max-width: min(92%,760px); background: #1c1c1e; padding: 10px 13px; border-radius: 16px; overflow-wrap: anywhere; }
+.bot-turn { min-width: 0; width: fit-content; max-width: min(92%,760px); background: #1c1c1e; padding: 10px 13px; border-radius: 16px; overflow-wrap: anywhere; }
 .bot-turn { margin: 8px 0; }
 .bot-turn { font-size: 15px; line-height: 1.42; }
 .bot-turn-user { margin-left: auto; background: #27272a; }
-.bot-terminal { max-width: 100%; overflow: auto; margin: 4px 6px; }
+.bot-activity { min-width: 0; margin-block: 2px; color: #a1a1a6; }
+.bot-activity > div > button { width: fit-content; font-size: 13px; color: inherit; }
+.bot-activity-detail { display: grid; gap: 8px; padding: 0 8px 8px 12px; border-inline-start: 2px solid #39393c; color: #d1d1d6; }
+.bot-turn-error { background: #331e20; border-inline-start: 3px solid #ff6961; }
+.bot-turn-question { background: #182b43; border-inline-start: 3px solid #64a9ff; }
+.bot-detail [data-slot="stream-question-pending"] { color: #82baff; }
+.bot-terminal { width: 100%; min-width: 0; overflow-x: auto; margin-block: 4px; }
+.bot-terminal-label { margin-block: 4px 8px; font-size: 12px; font-weight: 600; color: #a1a1a6; }
 .bot-detail [data-slot="pane-reading"], .bot-detail [data-slot="chrome-block"] { border: none; background: #000; }
 .bot-detail [data-slot="composer-box"] { border: 0; border-radius: 24px; background: #272729; box-shadow: none; }
 .bot-detail [data-slot="composer-box"][data-box="rest"] > button { width: 32px; height: 32px; }

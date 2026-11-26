@@ -868,6 +868,7 @@ export const zh: Dictionary = {
   "chat.stream.empty": "发送一条消息即可开始。",
   "chat.empty.sharedFolder":
     "此文件夹中有两个 {harness} 会话，Collie 无法判断哪个属于当前窗格。请用恢复命令加会话 ID 启动该 Agent，Collie 就会读取正确的会话。",
+  "chat.stream.stoppedOnError": "代理因错误而停止。",
   "chat.stream.working": "仍在处理…",
   "chat.stream.questionPending": "终端中有一个提问正在等待。您的下一条消息将用于回答该提问。",
   "chat.stream.queued": "等待发送",
@@ -937,6 +938,8 @@ export const zh: Dictionary = {
   "chat.run.searches.other": "{count} 次搜索",
   "chat.run.agents.one": "{count} 个代理",
   "chat.run.agents.other": "{count} 个代理",
+  "chat.run.steps.one": "{count} 步",
+  "chat.run.steps.other": "{count} 步",
   "chat.run.others.one": "{count} 个其他步骤",
   "chat.run.others.other": "{count} 个其他步骤",
   "chat.run.earlier.one": "更早的 {count} 个步骤 · {summary}",

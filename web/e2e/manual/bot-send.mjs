@@ -24,7 +24,7 @@ async function checkDevice(phone) {
   try {
     // Read each submitted line without executing it. An unsubmitted edit cannot reach the file.
     const rc = join(root, "bashrc");
-    writeFileSync(rc, `while IFS= read -er -p 'Conversación > ' line; do printf '%s\\n' "$line" >> "$HOME/lines"; done\nexit\n`);
+    writeFileSync(rc, `while IFS= read -er -p 'fixture$ ' line; do printf '%s\\n' "$line" >> "$HOME/lines"; done\nexit\n`);
     writeFileSync(received, "");
     await mux.start(root, "exec /bin/bash --rcfile " + shellWord(rc) + " -i", env);
     bridge = await ScratchBridge.start({
@@ -144,6 +144,14 @@ async function checkDevice(phone) {
     await expect.poll(readLines).toBe(message + "\n");
     await expect(wave).toBeVisible();
     const mirror = page.locator(".bot-terminal");
+    await expect(mirror.locator(".bot-terminal-label")).toHaveText("Terminal");
+    measured.terminal = await mirror.evaluate(el => {
+      const parent = el.parentElement;
+      const style = getComputedStyle(parent);
+      return { width: el.getBoundingClientRect().width,
+        available: parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) };
+    });
+    expect(Math.abs(measured.terminal.width - measured.terminal.available)).toBeLessThan(1);
     await expect.poll(() => mirror.innerText().then(t => t.replace(/\s/gu, ""))).toContain(message.replace(/\s/gu, ""));
     await expect(pending).toHaveCount(0);
 

@@ -832,6 +832,7 @@ export const ru: Dictionary = {
   "chat.stream.empty": "Отправьте сообщение, чтобы начать.",
   "chat.empty.sharedFolder":
     "Две сессии {harness} используют эту папку, поэтому Collie не может понять, какая из них принадлежит этой панели. Запустите агента командой возобновления с ID сессии, и Collie прочитает нужную.",
+  "chat.stream.stoppedOnError": "Агент остановился из-за ошибки.",
   "chat.stream.working": "Выполняется…",
   "chat.stream.questionPending": "В терминале ожидает вопрос. Ваше следующее сообщение ответит на него.",
   "chat.stream.queued": "Ожидание отправки",
@@ -915,6 +916,10 @@ export const ru: Dictionary = {
   "chat.run.agents.other": "Агентов: {count}",
   "chat.run.agents.few": "{count} агента",
   "chat.run.agents.many": "{count} агентов",
+  "chat.run.steps.one": "{count} шаг",
+  "chat.run.steps.other": "{count} шага",
+  "chat.run.steps.few": "{count} шага",
+  "chat.run.steps.many": "{count} шагов",
   "chat.run.others.one": "еще {count} шаг",
   "chat.run.others.other": "Еще шагов: {count}",
   "chat.run.others.few": "еще {count} шага",
