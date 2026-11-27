@@ -3,14 +3,12 @@ import { fetchLaunchers, renamePane, type SpaceTarget } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
 import { cacheBotPrefs, readBotPrefs } from "@/lib/bot-create-prefs";
 import { randomBotName } from "@/lib/bot-default-names";
-import { saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { randomBotAppearance, saveBot } from "@/lib/bot-identity";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { mintRequestId } from "@/lib/worktree-name";
 import type { Scope } from "@/lib/scope";
 import type { BotCreatePrefs } from "@/lib/types";
 
-// The palette a bot nobody dressed gets in the list (bot-identity.tsx `identityOf`): no white, no grey.
-const quickColors = [8, 5, 3, 9, 7, 6, 2, 4];
 const unconfirmed = "No se pudo confirmar la creación. Vuelve a intentar.";
 
 /**
@@ -47,8 +45,7 @@ export function useQuickBot({ canRename }: { canRename: boolean }) {
       const name = randomBotName(taken);
       saveBot(scope, outcome.paneId, {
         name,
-        silhouette: Math.floor(Math.random() * silhouetteCount),
-        color: quickColors[Math.floor(Math.random() * quickColors.length)]!,
+        ...randomBotAppearance(),
       });
       // `auto`: a placeholder, so the bridge renames the bot once its agent titles the work.
       if (canRename) void renamePane(outcome.paneId, name, scope, true).catch(() => undefined);

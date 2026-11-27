@@ -57,3 +57,23 @@ it("moves to the chosen workspace and keeps a failed move open", async () => {
   expect(screen.getByRole("dialog")).not.toHaveAttribute("data-leaving", "true");
   expect(start).not.toHaveBeenCalled();
 });
+
+
+it("starts creation with random appearance, keeps manual edits, and picks again on reopening", () => {
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  const props = { scope: {}, spaces: fixtureWorkspaces, writable: true, close: vi.fn() };
+  const page = render(<CreateBot {...props} />);
+  expect(screen.getByRole("button", { name: "Forma 1" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Violeta" })).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Forma 2" }));
+  fireEvent.click(screen.getByRole("button", { name: "Azul" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "Nombre del bot" }), { target: { value: "My chosen bot" } });
+  page.rerender(<CreateBot {...props} />);
+  expect(screen.getByRole("button", { name: "Forma 2" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Azul" })).toHaveAttribute("aria-pressed", "true");
+  page.unmount();
+  random.mockReturnValue(0.999);
+  render(<CreateBot {...props} />);
+  expect(screen.getByRole("button", { name: "Forma 13" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Naranja" })).toHaveAttribute("aria-pressed", "true");
+});

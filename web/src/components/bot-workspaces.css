@@ -63,7 +63,7 @@
 [data-activity=error] { --bot-accent: #dda792; }
 [data-activity=done] { --bot-accent: #94c7ac; }
 .bot-line[data-activity] { color: var(--bot-accent); }
-.bot-activity-avatar:not([data-activity=idle])::after {
+.bot-activity-avatar:is([data-activity=working], [data-activity=blocked], [data-activity=error])::after {
   content: "";
   position: absolute;
   inset: -2px;

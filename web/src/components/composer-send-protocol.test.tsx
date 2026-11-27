@@ -540,7 +540,6 @@ describe("Steer or queue on the Send button (M69)", () => {
     const user = userEvent.setup();
     const { sends } = bridge([{ status: 500 }]);
     renderComposer({ starting: true });
-    const field = () => screen.getByRole("textbox");
     await user.type(field(), "keep these words");
     fireEvent.keyDown(field(), { key: "Enter", ctrlKey: true });
     expect(field()).toHaveValue("");

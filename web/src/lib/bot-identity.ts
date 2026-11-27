@@ -5,6 +5,15 @@ export const colors = ["#fff", "#85552f", "#ff273f", "#ff6200", "#ff9500", "#00c
 export const colorNames = ["Blanco", "Marrón", "Rojo", "Mandarina", "Naranja", "Verde", "Turquesa", "Azul", "Violeta", "Rosa", "Gris"];
 export const silhouetteCount = 13;
 
+/** Shared defaults for quick creation and the editable creation sheet. */
+export function randomBotAppearance() {
+  const palette = [8, 5, 3, 9, 7, 6, 2, 4];
+  return {
+    silhouette: Math.floor(Math.random() * silhouetteCount),
+    color: palette[Math.floor(Math.random() * palette.length)]!,
+  };
+}
+
 export interface BotIdentity { name: string; silhouette: number; color: number }
 
 const prefix = "collie:bot:v1:";

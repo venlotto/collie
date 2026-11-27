@@ -43,3 +43,17 @@ it("says why when the machine offers no agent, and starts nothing", async () => 
   expect(error).toBe("No hay agentes disponibles.");
   expect(start).not.toHaveBeenCalled();
 });
+
+
+it("saves a new random appearance for every quick creation", async () => {
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  try {
+    const { result } = renderHook(() => useQuickBot({ canRename: true }));
+    await act(async () => { await result.current.quick({}, { label: "Sin asignar" }, new Set()); });
+    expect(savedBot({}, "p9")).toMatchObject({ silhouette: 0, color: 8 });
+    random.mockReturnValue(0.999);
+    start.mockResolvedValue({ kind: "done", paneId: "p10" });
+    await act(async () => { await result.current.quick({}, { label: "Sin asignar" }, new Set()); });
+    expect(savedBot({}, "p10")).toMatchObject({ silhouette: 12, color: 4 });
+  } finally { random.mockRestore(); }
+});

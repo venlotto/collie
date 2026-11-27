@@ -66,7 +66,7 @@ async function capture(page: Page, state: string) {
 }
 
 // The pseudo-element has no accessible role. Inspect the browser's animation actually applied to it.
-function ringStyle(owner: Locator, property: "animationPlayState" | "animationName") {
+function ringStyle(owner: Locator, property: "animationPlayState" | "animationName" | "content") {
   return owner.locator("[data-activity][aria-hidden=true]").evaluate((el, key) => getComputedStyle(el, "::after")[key], property);
 }
 
@@ -197,4 +197,11 @@ test("working motion respects reduced motion, visibility and the silent idle dea
   await expect.poll(() => ringStyle(first, "animationPlayState")).toBe("paused");
   await page.getByRole("searchbox", { name: "Buscar" }).click();
   await expect.poll(() => ringStyle(first, "animationPlayState")).toBe("running");
+});
+
+
+test("ready avatars have no circular outline while working avatars keep their indicator", async ({ page }) => {
+  const { rows, first } = await openActivityFixture(page);
+  await expect.poll(() => ringStyle(rows.filter({ hasText: "Bitácora" }), "content")).toBe("none");
+  await expect.poll(() => ringStyle(first, "content")).toBe('""');
 });

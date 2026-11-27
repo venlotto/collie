@@ -130,6 +130,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **A second long message to Claude Code is sent too, not only the first.** On a window about 23 rows tall, once your first long message stayed in view above Claude's input box, Collie took that earlier message for a menu, typed the next long one without pressing Enter and left it as a draft that blocked later messages. Collie now reads your earlier messages above the box as conversation, and still stops before Enter when a real menu or question opens.
 - **Chat keeps its working indicator below progress messages.** Grouped activity no longer hides the status at the end of a running conversation, so an interim reply does not look like completion.
 
+- **Recent bots lead their workspaces and creation offers varied appearances.** Workspaces and their chats sort newest first, ready bots have no avatar ring, and each creation sheet starts with a random editable icon and color, like quick creation.
+
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

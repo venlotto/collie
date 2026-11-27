@@ -14,7 +14,7 @@ import { type SpaceTarget } from "@/lib/api";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 import { BlobAvatar, identityOf } from "./bot-identity";
-import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { colorNames, colors, randomBotAppearance, saveBot, silhouetteCount } from "@/lib/bot-identity";
 import { setBotDisplay } from "@/lib/bot-display";
 import { randomBotName } from "@/lib/bot-default-names";
 
@@ -42,8 +42,9 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close, 
   const dialog = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState(original?.name ?? "");
   const [fallbackName] = useState(() => randomBotName());
-  const [silhouette, setSilhouette] = useState(original?.silhouette ?? 12);
-  const [color, setColor] = useState(original?.color ?? 8);
+  const [appearance] = useState(() => original ?? randomBotAppearance());
+  const [silhouette, setSilhouette] = useState(appearance.silhouette);
+  const [color, setColor] = useState(appearance.color);
   const [error, setError] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [catalog, setCatalog] = useState<LaunchersResponse>();

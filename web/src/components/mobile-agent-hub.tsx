@@ -145,10 +145,10 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     return () => observer.disconnect();
   }, []);
   const needle = query.trim().toLocaleLowerCase();
-  const groups = new Map<string, { title: string; id: string; scope: Scope; rows: AgentView[] }>();
+  const groups = new Map<string, { title: string; id: string; scope: Scope; rows: AgentView[]; updatedAt: number }>();
   function sectionFor(host: string | undefined, session: string | undefined, id: string, label: string) {
     const key = JSON.stringify([host, session, id]);
-    if (!groups.has(key)) groups.set(key, { title: label || id, id, scope: { host, session }, rows: [] });
+    if (!groups.has(key)) groups.set(key, { title: label || id, id, scope: { host, session }, rows: [], updatedAt: 0 });
     return groups.get(key)!;
   }
   for (const w of workspaces) sectionFor(w.host ?? listScope.host, listScope.session, w.workspaceId, w.label);
@@ -169,6 +169,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       continue;
     }
     const section = sectionFor(scopeOf(p).host, scopeOf(p).session, p.workspaceId, p.workspaceLabel);
+    section.updatedAt = Math.max(section.updatedAt, p.lastActiveAt ?? 0);
     if (!needle || [identityOf(p, scopeOf(p)).name, section.title, p.agent, p.subtitle].join(" ").toLocaleLowerCase().includes(needle)) section.rows.push(p);
   }
   for (const key of removed.keys()) {
@@ -176,6 +177,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     if (!panes.some(p => !p.trash && sectionKey(scopeOf(p), p.workspaceId) === key)) groups.delete(key);
   }
   const organize = useBotOrganization(groups, scroll, writable && !needle && !mode && !busy, onChanged);
+  // Recency takes priority over saved drag positions; ties keep that order.
+  for (const group of groups.values()) group.rows.sort((a, b) => (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0));
+  const recentGroups = [...groups].toSorted(([, a], [, b]) => b.updatedAt - a.updatedAt);
   const trashedSpaces = [...removed.values()].filter(s => !needle || s.title.toLocaleLowerCase().includes(needle));
   async function recover(space: typeof trashedSpaces[number]) {
     if (lock.current || !writable) return;
@@ -286,7 +290,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
-        {Array.from(groups, ([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
+        {recentGroups.map(([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
           <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}
@@ -320,7 +324,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <button disabled={!chosen.length || busy} onClick={() => openSheet("purge")}><Trash2 size={18} />Eliminar</button>
         </>}
       </div> : <>{groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
-        <div className="bot-picker" id={picker} popover="auto">{Array.from(groups, ([key, section]) =>
+        <div className="bot-picker" id={picker} popover="auto">{recentGroups.map(([key, section]) =>
           <button key={key} popoverTarget={picker} popoverTargetAction="hide" onClick={() => {
             setQuery("");
             setClosed(key, false);
