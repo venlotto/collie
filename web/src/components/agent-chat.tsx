@@ -141,7 +141,7 @@ import { writeRefusal } from "@/lib/host-health";
 import { StatusArea } from "@/components/status-area";
 import { ToastViewport } from "@/components/ui/toast-viewport";
 import { StatusDot } from "@/components/status-badge";
-import { submitPromptFeedback, submitPromptOption } from "@/lib/prompt-action";
+import { confirmPromptFeedback, submitPromptFeedback, submitPromptOption } from "@/lib/prompt-action";
 import { submitWizardAnswer, submitWizardKeys } from "@/lib/wizard-action";
 import { submitPreviewKeys, submitPreviewNote, submitPreviewOption } from "@/lib/preview-action";
 import { submitMultiSelectIntent, type MultiSelectIntent } from "@/lib/multi-select-action";
@@ -1822,7 +1822,9 @@ export function AgentChat({
       const result =
         action.kind === "option"
           ? await submitPromptOption({ ...base, option: action.option })
-          : await submitPromptFeedback({ ...base, text: action.text });
+          : action.kind === "confirm-feedback"
+            ? await confirmPromptFeedback({ ...base, text: action.text })
+            : await submitPromptFeedback({ ...base, text: action.text });
       // An option the guard or the bridge refused, or that got no word, opens the exit (M102 spec 10). A
       // typed feedback text keeps today's ending: the card holds the person's draft, and the exit would
       // stand in for that card.

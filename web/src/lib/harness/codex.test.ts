@@ -73,6 +73,13 @@ const DIALOG = [
   "codex--v0172-async-other-focused--w52.txt",
   "codex--v0172-async-other-typed--w52.txt",
   "codex--v0172-async-other-sent--w52.txt",
+  // The same run on a 23-row pane (scratch tmux, 52x23): the transcript's question cell scrolled away.
+  "codex--v0172-async-two-panel-23rows--w52.txt",
+  "codex--v0172-async-other-focused-23rows--w52.txt",
+  "codex--v0172-async-other-typed-23rows--w52.txt",
+  "codex--v0172-async-other-sent-23rows--w52.txt",
+  "codex--v0172-async-other-day-focused-23rows--w52.txt",
+  "codex--v0172-async-other-day-typed-long-23rows--w52.txt",
 ];
 
 // A notice over the live box (a reminder that a question waits): the box keeps the keyboard, so the

@@ -240,18 +240,41 @@ export async function submitPromptFeedback(
     return { status: "error", error: t("promptAction.feedback.boxNotOpened") };
   }
 
+  let typed: Awaited<ReturnType<typeof sendReply>>;
   try {
-    const typed = await sendReply(args.paneId, text, false, args.scope);
-    if (!typed.ok) return { status: "error", error: describeApiError(typed) };
-    // Wait for our words to render, then match them EXACTLY. The row re-flows rather than windowing,
-    // and the grammar rejoins its wrapped lines, so the whole value is readable — there is no reason to
-    // accept a partial match, and every reason not to: this is the evidence the irreversible Enter is
-    // sent on. Anything the terminal did to our text that we can't account for (a mid-word wrap seam, a
-    // truncation) shows up as inequality and stops the flow with the box unsubmitted.
-    const landed = (m: PromptModel) =>
-      promptsSameIdentity(m, args.prompt) &&
-      (m.feedback?.focused ?? false) &&
-      m.feedback?.text === text;
+    typed = await sendReply(args.paneId, text, false, args.scope);
+  } catch (e) {
+    return { status: "error", error: describeThrownError(e) };
+  }
+  if (!typed.ok) return { status: "error", error: describeApiError(typed) };
+  // From here our words may be in the field. Codex's `Other` row is the question's answer, so a stop
+  // here leaves the answer typed and unsent: say so, in words the card can stand behind.
+  const result = await commitTypedFeedback(args, text);
+  return row.purpose === "other" && result.status !== "sent" ? strandedOther(result) : result;
+}
+
+/**
+ * The last step of the feedback recipe, after the words were typed: wait for them to render, match
+ * them EXACTLY, and send `Enter` bound to the read that showed them. Also the retry of a Codex `Other`
+ * answer the recipe typed and could not send (`confirmPromptFeedback`).
+ *
+ * The match is the evidence the irreversible Enter is sent on: the row re-flows rather than windowing,
+ * and the grammar rejoins its wrapped lines, so the whole value is readable, and anything the terminal
+ * did to our text that we can't account for (a mid-word wrap seam, a truncation) shows up as inequality
+ * and stops the flow with the box unsubmitted. The field must be the tapped dialog's (same question,
+ * same answers, the same key and so the same row above the footer). A Codex `Other` row the screen
+ * cannot prove on its own (`unproven`: the transcript's cell scrolled away, so a third answer would read
+ * the same) passes only on that position and those exact words, which nobody but this recipe typed.
+ */
+async function commitTypedFeedback(args: GuardArgs, text: string): Promise<PromptActionResult> {
+  const key = args.prompt.feedback?.key;
+  const landed = (m: PromptModel) =>
+    promptsSameIdentity(m, args.prompt) &&
+    m.feedback !== undefined &&
+    m.feedback.key === key &&
+    m.feedback.focused &&
+    m.feedback.text === text;
+  try {
     if ((await pollDialog(target(args), landed)).status !== "ok") {
       return { status: "error", error: t("promptAction.feedback.notArrived") };
     }
@@ -262,7 +285,7 @@ export async function submitPromptFeedback(
     // screen that has moved. (The sibling flows send their last key unbound; this one carries more.)
     const fresh = await readDialog(target(args));
     if (!fresh.model || !landed(fresh.model)) return { status: "changed" };
-    return sendBoundKeys(
+    return await sendBoundKeys(
       args,
       ["Enter"],
       fresh.model.signature,
@@ -273,6 +296,26 @@ export async function submitPromptFeedback(
   } catch (e) {
     return { status: "error", error: describeThrownError(e) };
   }
+}
+
+/** A Codex `Other` answer that was typed and not sent: the words wait in the terminal's field. */
+function strandedOther(result: PromptActionResult): PromptActionResult {
+  if (result.status === "changed" && result.why !== undefined) console.info("collie: Other not sent", result.why);
+  return { status: "error", error: t("promptAction.feedback.other.notSent") };
+}
+
+/**
+ * Send a Codex `Other` answer this phone typed and could not send: `text` is the words the recipe
+ * typed (the card remembers them), and `prompt` the card now on screen, its field holding them. Only
+ * `Enter`, bound to a fresh read that shows exactly those words in the field at the same row; anything
+ * else sends nothing.
+ */
+export async function confirmPromptFeedback(args: GuardArgs & { text: string }): Promise<PromptActionResult> {
+  const row = args.prompt.feedback;
+  const text = sanitizeTypedText(args.text, FEEDBACK_MAX_LENGTH);
+  if (row?.purpose !== "other" || !row.focused || text.length === 0 || row.text !== text) return { status: "changed" };
+  const result = await commitTypedFeedback(args, text);
+  return result.status === "sent" ? result : strandedOther(result);
 }
 
 /** How the answer recipe reads a single AskUserQuestion: its `answer` row, against the tapped dialog. */

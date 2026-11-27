@@ -120,8 +120,22 @@ locked, here and in the bridge's ask route, because a digit there would be typed
 
 A pointed last row that is not the faint `Other` could be the field holding text or a third answer.
 The transcript's cell for the question decides: one answer fewer than the panel's rows means the last
-row is the field. With no such cell in reach, a pointed row lifts nothing and an unpointed one reads as
-an answer, as before `Other` was read.
+row is the field. With no such cell in reach an unpointed row reads as an answer, as before `Other` was
+read, and a pointed one is lifted as the field marked `unproven`: every answer locks, here and in the
+bridge's ask route.
+
+**A 23-row pane has no cell in reach** (probed 2026-11-27, a scratch tmux server at 52x23, the
+`*-23rows--w52` captures; the same failure was read live on a Herdr pane with `viewport_rows: 23`).
+The opened panel takes 12 rows, so `? Pet?` scrolls away as soon as `shift+Left` opens it. The recipe
+then proves the typed row by its place and its words alone: the same question and answers as the card
+the person tapped, the field's own key (so the same row, the last above the footer), focused, and the
+exact words the recipe typed, continuations rejoined. Only that read earns the bound `Enter`. Other
+words, another row, a closed panel or a plain label in the field's place send nothing.
+
+When the recipe typed and could not send (no such read, or the bridge refused the bound `Enter`), the
+words wait in the field. The card stays, says so, and offers to send them again: `Enter` alone, bound to
+a fresh read that shows exactly the words this phone typed (remembered per pane, in memory only). No
+clear is offered: no key that empties the field has been probed.
 
 The probes ran over tmux, whose `send-keys -l` writes raw bytes as Herdr's `pane.send_text` does
 (HERDR_API.md). The whole recipe has not yet been run through Herdr and a bridge against a live Codex.

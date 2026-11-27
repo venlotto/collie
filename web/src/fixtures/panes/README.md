@@ -4331,3 +4331,19 @@ match those reads. No secret is on screen.
 | `codex--v0172-async-other-sent--w52.txt` | A moment after `Enter`: `↪ Re: Pet? / Fish 42, maybe 3`, `Day?` open alone |
 | `codex--v0172-async-two-next--w60.txt` | The first run: a moment after `1` answered `Color?`, `Size?` opened alone, no `1 of 2` |
 
+### The same run on a 23-row pane (captured 2026-11-27, a scratch tmux server, 52x23)
+
+`tmux -L <scratch> -f /dev/null new-session -x 52 -y 23`, Codex with a scratch `CODEX_HOME` in an empty
+folder under `/tmp`, the same throwaway prompt. The opened panel takes 12 rows, so the transcript's
+`? Pet?` cell has already scrolled away when it opens: the typed row is proven by its place and the
+recipe's own words alone (`unproven`). Read with `tmux capture-pane -e -p`, CRLF added.
+
+| Fixture | State |
+| --- | --- |
+| `codex--v0172-async-two-panel-23rows--w52.txt` | `shift+Left` opened the first: `1 of 2`, `Pet?`, `3. Other`; no `? Pet?` cell on screen |
+| `codex--v0172-async-other-focused-23rows--w52.txt` | `3` on it: the pointer on `3. Other`, the label faint |
+| `codex--v0172-async-other-typed-23rows--w52.txt` | `Fish 42, maybe 3` typed: the row the live failure was read on |
+| `codex--v0172-async-other-sent-23rows--w52.txt` | A moment after `Enter`: `↪ Re: Pet?`, `Day?` open alone |
+| `codex--v0172-async-other-day-focused-23rows--w52.txt` | `3` on `Day?`: the pointer on its faint `Other` |
+| `codex--v0172-async-other-day-typed-long-23rows--w52.txt` | A 54-character answer typed on `Day?`: the row wraps onto a continuation |
+

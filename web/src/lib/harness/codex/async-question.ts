@@ -41,8 +41,9 @@
 //    row as a text field (`PromptFeedback`, purpose `other`), never as a button, and types into it only
 //    while it is empty, by the same digit → focus → type → Enter recipe as Claude's plan field
 //    (lib/prompt-action.ts). A pointed last row whose label is not the faint placeholder is the field
-//    only when the transcript's cell for the question proves it (one answer fewer than rows); with no
-//    such proof it could be a third answer, and nothing is lifted.
+//    when the transcript's cell for the question proves it (one answer fewer than rows). With the cell
+//    scrolled away (a 23-row pane) it could be a third answer: the field is lifted marked `unproven`,
+//    every answer locks, and only the recipe's Enter over the words it typed at that row may follow.
 //
 // Anything off these shapes stays raw. Pure; no pane access.
 
@@ -241,10 +242,10 @@ function labelFaint(line: StyledLine): boolean {
 
 /**
  * The last row as Codex's `Other` field, `"none"` when the question has no such row, or null when the
- * screen cannot say which (nothing is lifted then). The label `Other` is the empty field (faint while
- * the pointer is on it). Any other last row is the field only when the transcript's cell for this
- * question lists one answer fewer than the panel has rows: what the person typed stands in the label's
- * place, and a third answer looks the same. A pointed row with no such proof is not read.
+ * screen contradicts itself (nothing is lifted then). The label `Other` is the empty field (faint while
+ * the pointer is on it). Any other last row is the field when the transcript's cell for this question
+ * lists one answer fewer than the panel has rows: what the person typed stands in the label's place,
+ * and a third answer looks the same. A pointed row with no cell in reach is the field marked unproven.
  */
 function otherRow(
   lines: StyledLine[],
@@ -265,6 +266,9 @@ function otherRow(
     return null;
   }
   // No cell in reach: an unpointed row reads as an answer, as before `Other` was read (its digit only
-  // moves the pointer, it submits nothing); a pointed one may be the field holding text, so no card.
-  return last.pointed ? null : "none";
+  // moves the pointer, it submits nothing). A pointed one may be the field holding text or a third
+  // answer. A short pane scrolls the cell away as soon as the question opens (23 rows: the panel alone
+  // takes 12), so the card stays, as the field marked unproven: every answer locks, and only the typing
+  // recipe's Enter over the exact words it typed at this row may follow (lib/prompt-action.ts).
+  return last.pointed ? { ...field(last.label), unproven: true } : "none";
 }

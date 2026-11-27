@@ -194,12 +194,83 @@ describe("`Other` (its digit focuses a text field in the row; typing fills it; E
     expect(text).toContain("Fish 42, maybe 3");
   });
 
-  it("a pointed last row that is not faint and that no history cell proves to be `Other` is not read", () => {
+  it("a pointed last row that is not faint, with no history cell in reach, is the field marked unproven", () => {
     // The transcript's `? Pet?` cell is what says the question has two answers and the third row is the
-    // field; without it, a pointed third row could be a third answer, so nothing is lifted.
+    // field; without it, a pointed third row could be a third answer. The card stays (the panel is still
+    // open) with every answer locked, and the field is marked so nothing treats those words as ours.
     const at = OTHER_TYPED.findIndex((line) => lineText(line) === "? Pet?");
     expect(at).toBeGreaterThanOrEqual(0);
     const cut = OTHER_TYPED.map((line, i) => (i === at ? linesOf("• Ran ls")[0]! : line));
-    expect(detectAsyncPanel(cut)).toBeNull();
+    const model = detectAsyncPanel(cut)!.model;
+    expect(model.feedback).toEqual({ key: "3", focused: true, text: "Fish 42, maybe 3", purpose: "other", unproven: true });
+    expect(model.options.map((o) => o.label)).toEqual(["Cat", "Dog"]);
+  });
+
+  it("the proven field carries no `unproven` mark", () => {
+    expect(detectAsyncPanel(OTHER_TYPED)!.model.feedback?.unproven).toBeUndefined();
+  });
+});
+
+// The same run on a 23-row pane (Codex 0.172.0, a scratch tmux server, 52x23, 2026-11-27): the opened
+// panel takes 12 rows, so the transcript's `? Pet?` cell has already scrolled away when it opens.
+const PANEL_23 = linesOf(capture("codex--v0172-async-two-panel-23rows--w52.txt"));
+const FOCUSED_23 = linesOf(capture("codex--v0172-async-other-focused-23rows--w52.txt"));
+const TYPED_23 = linesOf(capture("codex--v0172-async-other-typed-23rows--w52.txt"));
+const SENT_23 = linesOf(capture("codex--v0172-async-other-sent-23rows--w52.txt"));
+const DAY_FOCUSED_23 = linesOf(capture("codex--v0172-async-other-day-focused-23rows--w52.txt"));
+const DAY_TYPED_LONG_23 = linesOf(capture("codex--v0172-async-other-day-typed-long-23rows--w52.txt"));
+
+describe("`Other` on a 23-row pane (the question's transcript cell out of reach)", () => {
+  it("the cell is gone from the screen once the panel is open", () => {
+    expect(capture("codex--v0172-async-two-panel-23rows--w52.txt").split("\r\n").length - 1).toBe(23);
+    expect(PANEL_23.some((line) => lineText(line) === "? Pet?")).toBe(false);
+  });
+
+  it("opened: Cat and Dog, `1 of 2`, and the unpointed `Other` as the empty field", () => {
+    const model = detectAsyncPanel(PANEL_23)!.model;
+    expect(model.question).toBe("Pet?");
+    expect(model.options.map((o) => o.label)).toEqual(["Cat", "Dog"]);
+    expect(model.step).toEqual({ index: 1, total: 2 });
+    expect(model.feedback).toEqual({ key: "3", focused: false, text: "", purpose: "other" });
+  });
+
+  it("focused: the faint label is the empty field, no proof needed", () => {
+    expect(detectAsyncPanel(FOCUSED_23)!.model.feedback).toEqual({ key: "3", focused: true, text: "", purpose: "other" });
+  });
+
+  it("typed: the card stays, the field holds the words, marked unproven", () => {
+    const model = detectAsyncPanel(TYPED_23)!.model;
+    expect(model.options.map((o) => o.label)).toEqual(["Cat", "Dog"]);
+    expect(model.feedback).toEqual({ key: "3", focused: true, text: "Fish 42, maybe 3", purpose: "other", unproven: true });
+  });
+
+  it("a long answer that wrapped reads back whole, its continuation joined", () => {
+    const model = detectAsyncPanel(DAY_TYPED_LONG_23)!.model;
+    expect(model.question).toBe("Day?");
+    expect(model.feedback?.text).toBe("Tuesday afternoon works best for the whole team review");
+    expect(model.feedback?.unproven).toBe(true);
+  });
+
+  it("one dialog through the whole run, so the recipe's polls hold", () => {
+    const panel = detectAsyncPanel(PANEL_23)!.model;
+    expect(promptsSameIdentity(panel, detectAsyncPanel(FOCUSED_23)!.model)).toBe(true);
+    expect(promptsSameIdentity(panel, detectAsyncPanel(TYPED_23)!.model)).toBe(true);
+    const day = detectAsyncPanel(SENT_23)!.model;
+    expect(promptsSameIdentity(day, detectAsyncPanel(DAY_FOCUSED_23)!.model)).toBe(true);
+    expect(promptsSameIdentity(day, detectAsyncPanel(DAY_TYPED_LONG_23)!.model)).toBe(true);
+  });
+
+  it("an unproven field locks every answer here and in the bridge's ask", () => {
+    const ask = liftAsk(readerBlocks(TYPED_23, "codex"), 0);
+    expect(ask).not.toBeNull();
+    const model = detectAsyncPanel(TYPED_23)!.model;
+    expect(model.feedback?.focused).toBe(true);
+  });
+
+  it("after Enter: `Day?` opens alone, its `Other` row the empty field", () => {
+    const model = detectAsyncPanel(SENT_23)!.model;
+    expect(model.question).toBe("Day?");
+    expect(model.step).toBeUndefined();
+    expect(model.feedback).toEqual({ key: "3", focused: false, text: "", purpose: "other" });
   });
 });
