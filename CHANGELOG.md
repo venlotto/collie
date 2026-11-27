@@ -117,6 +117,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **A Codex draft that ends in a mention no longer gets a stray character.** When the box still held a draft such as "mira @READ", Collie typed its check character after it, Codex reopened its file list and the character stayed in the box. Collie now leaves such a draft alone and offers Replace or Cancel; Replace empties it first and then sends your message.
 - **Codex shell mode no longer blocks every message.** A "!" command now runs and is confirmed. If the box is left in shell mode, Collie leaves it before typing your message so the message is never run as a shell command, and says how to leave it on the key pad when it cannot.
 - **Codex photo attachments keep their preview and filename in chat.** Messages now recognises upload paths wrapped onto several terminal lines, and the immediate sent-message bubble uses the same photo and filename display as the saved conversation. If the saved name is no longer available, a short file label replaces the long server path.
+- **Codex photos stay readable after you reload Messages.** When no saved conversation is available, Messages now recognises the terminal's echoed upload turn, including a path wrapped by Codex's input box, and shows the same thumbnail, filename and caption as the sent bubble instead of the server path. Explicit Terminal remains verbatim.
 
 ## [1.31.0] - 2026-11-24
 

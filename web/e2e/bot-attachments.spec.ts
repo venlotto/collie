@@ -2,20 +2,25 @@ import { readFileSync } from "node:fs";
 import { expect as baseExpect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { TranscriptEntry } from "@/lib/types";
+import type { PaneChatResponse, TranscriptEntry } from "@/lib/types";
 import { fixtureAgents, fixtureKiroChat, fixtureSnapshot, sendAnswer } from "@/test/handlers";
 import { installApiStub, installPaneWorld, pinLocale } from "./fixtures/api";
 const expect = baseExpect.configure({ timeout: 15_000 });
 const PNG = readFileSync(new URL("./fixtures/attachments/photo-small.png", import.meta.url));
+const codexHistoryPane = readFileSync(new URL("./fixtures/attachments/codex-history-pane.txt", import.meta.url), "utf8");
+const codexHistoryWrap = readFileSync(new URL("./fixtures/attachments/codex-history-well-wrap.txt", import.meta.url), "utf8");
 const saved = "/home/ubuntu/.local/state/collie/uploads/term.fixture.mwz50y8g-12345678.png";
-async function open(page: Page, status = 200, entries: TranscriptEntry[] = [], harness = "kiro") {
+async function open(page: Page, status = 200, entries: TranscriptEntry[] = [], harness = "kiro",
+  screen = "Kiro> ", chat?: Extract<PaneChatResponse, { available: false }>) {
   await pinLocale(page, "es");
   await installApiStub(page);
   const agent = { ...fixtureAgents[0]!, agent: harness, hasSession: true, status: "idle" as const,
     surface: { revision: 1, turn: "idle" as const, modal: "none" as const, composer: "empty" as const } };
+  const liveChat: PaneChatResponse = chat ?? { ...fixtureKiroChat, page: "live", rev: 1,
+    head: entries.length, oldest: 1, upserts: entries.map((entry, i) => ({ ...entry, seq: i + 1 })) };
   await installPaneWorld(page, { paneId: agent.paneId,
     snapshot: { ...fixtureSnapshot, agents: [agent], shellPanes: [] },
-    chat: { ...fixtureKiroChat, ...(entries && { head: entries.length, oldest: 1, upserts: entries.map((entry, i) => ({ ...entry, seq: i + 1 })) }) }, screens: { idle: "Kiro> " }, start: "idle" });
+    chat: liveChat, screens: { idle: screen }, start: "idle" });
   await page.route("**/api/config*", route => route.fulfill({ json: { push: false, vapidPublicKey: "",
     upload: { maxBytes: 10 * 1024 * 1024, imageTypes: ["png"], textTypes: ["txt"] } } }));
   const sizes: number[] = [];
@@ -143,6 +148,43 @@ test("Codex Mensajes uses a short chip when the attachment sidecar is gone", asy
   await expect(bubble).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
   await expect(bubble).toContainText("COL-21 retest: describe la foto adjunta y para.");
   await shot(page, "codex-history-fallback");
+});
+
+test("Codex Mensajes lifts a persisted upload echo out of the terminal after reload", async ({ page }) => {
+  await open(page, 200, [], "codex", codexHistoryPane,
+    { paneId: fixtureAgents[0]!.paneId, available: false, reason: "no-log" });
+  await page.reload();
+  const bubble = page.locator(".bot-turn-user").last();
+  await expect(bubble).toBeVisible();
+  await expect(bubble.getByRole("img", { name: "photo-small.png" })).toBeVisible();
+  await expect.poll(() => bubble.getByRole("img", { name: "photo-small.png" })
+    .evaluate((img) => img instanceof HTMLImageElement ? img.naturalWidth : 0)).toBeGreaterThan(0);
+  await expect(bubble).toContainText("photo-small.png");
+  await expect(bubble).toContainText("COL-21: responde OK y para.");
+  await expect(page.locator(".bot-detail")).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
+  await expect(page.locator(".bot-terminal")).toContainText("• OK");
+  await shot(page, "codex-terminal-history");
+  await page.getByRole("button", { name: "Opciones del chat" }).click();
+  await page.getByRole("radiogroup", { name: "Vista", exact: true })
+    .getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".bot-terminal")).toContainText("/home/ubuntu/.local/state/collie/uploads/");
+  await expect(page.locator(".bot-turn-user")).toHaveCount(0);
+});
+
+test("Codex Mensajes reassembles a persisted upload echo wrapped by the input well", async ({ page }) => {
+  await open(page, 200, [], "codex", codexHistoryWrap.trimEnd(),
+    { paneId: fixtureAgents[0]!.paneId, available: false, reason: "no-log" });
+  await page.reload();
+  const bubble = page.locator(".bot-turn-user").last();
+  await expect(bubble).toBeVisible();
+  await expect(bubble.getByRole("img", { name: "photo-small.png" })).toBeVisible();
+  await expect.poll(() => bubble.getByRole("img", { name: "photo-small.png" })
+    .evaluate((img) => img instanceof HTMLImageElement ? img.naturalWidth : 0)).toBeGreaterThan(0);
+  await expect(bubble).toContainText("photo-small.png");
+  await expect(bubble).toContainText("COL-21: responde OK y para.");
+  await expect(page.locator(".bot-detail")).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
+  await shot(page, "codex-terminal-history-wrap");
 });
 
 test("a pending Codex send in Terminal uses the same attachment renderer", async ({ page }) => {

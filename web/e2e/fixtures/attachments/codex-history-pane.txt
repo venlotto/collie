@@ -1,0 +1,9 @@
+  use
+  /review - review any changes and find issues
+⚠ Heads up, you have less than 25% of your weekly
+  limit left. Run /status for a breakdown.
+› /home/ubuntu/.local/state/collie/uploads/term.1e7bca815913e3eec25fadc43d380d4b4d6c6db3cbde92c596ddcaab946e0502.mwzaaknp-011048d0.png COL-21: responde OK y para.
+
+• OK
+  Worked for 3s • 17:57
+  ⚠ weekly limit: 18% left

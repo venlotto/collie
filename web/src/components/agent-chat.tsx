@@ -3635,6 +3635,7 @@ export function AgentChat({
                     grammars={grammarsOn}
                     nativeMirror={mirrorOverride}
                     blocks={blocks}
+                    codexUploadHistory={chatChosen && agent?.agent === "codex"}
                     hideLeadingLines={hiddenMirrorLines}
                     images={mirrorImages.images}
                     onImageClusterCount={setImageClusterCount}

@@ -36,6 +36,8 @@ import { findFilePaths } from "@/lib/file-paths";
 import { isPlainClick, useFileLinks, type FileLinkOpener } from "@/components/file-links";
 import { useWalkyLog } from "@/components/walky-log";
 import { findWalkyIds } from "@/lib/walky";
+import { liftCodexUploadEchoes } from "@/lib/harness/codex/upload-history";
+import { UserMessageText } from "@/components/user-message-text";
 
 /**
  * A link in the mirror: an autolinked URL (opens a new tab), or a path the agent printed that
@@ -142,6 +144,9 @@ export interface AnsiOutputProps {
    * more: inside the scroller its bottom edge moved with the text above it.
    */
   blocks?: readonly Block[];
+  /** In Codex's terminal-derived Messages fallback only, draw echoed server uploads as user turns.
+   * Explicit Terminal and every other harness leave this off and keep the verbatim mirror. */
+  codexUploadHistory?: boolean;
 }
 
 // Stable empty result so the "not searching" path keeps the same `matches` reference across polls
@@ -351,6 +356,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   blocks: builtBlocks,
   images,
   onImageClusterCount,
+  codexUploadHistory = false,
 }: AnsiOutputProps) {
   // The mirror is agent output and is not translated — but the two strings the image cluster
   // renders are Collie's own words, so this subscribes for the same reason every t() caller does.
@@ -366,7 +372,7 @@ export const AnsiOutput = memo(function AnsiOutput({
     [builtBlocks, text, agent, grammars, nativeMirror],
   );
 
-  const rawBlocks = useMemo(() => {
+  const mirrorBlocks = useMemo(() => {
     const visible = dropLeadingLines(
       blocks.filter((b): b is RawBlock => b.kind === "raw"),
       hideLeadingLines,
@@ -377,6 +383,16 @@ export const AnsiOutput = memo(function AnsiOutput({
     if (!prepareDisplay || !grammars || !wrap) return visible;
     return visible.map((block) => ({ kind: block.kind, lines: prepareDisplay(block.lines) }));
   }, [blocks, hideLeadingLines, agent, grammars, wrap]);
+  const historyParts = useMemo(
+    () => codexUploadHistory ? liftCodexUploadEchoes(mirrorBlocks) : mirrorBlocks,
+    [codexUploadHistory, mirrorBlocks],
+  );
+  // Lifted turns are chat content, not raw mirror text: like a dialog card, they leave Find's
+  // haystack instead of reporting matches for a path the person can no longer see.
+  const rawBlocks = useMemo(
+    () => historyParts.filter((part): part is RawBlock => part.kind === "raw"),
+    [historyParts],
+  );
   // The table runs of each raw block, by block index. Only while wrapping: with Wrap off the whole
   // <pre> already pans column-faithfully, and a nested scroller would just trap the gesture — so
   // that branch computes nothing at all and every block falls through to NO_RUNS below.
@@ -663,10 +679,21 @@ export const AnsiOutput = memo(function AnsiOutput({
     );
   };
 
-  if (rawBlocks.length === 0) return null;
+  if (historyParts.length === 0) return null;
+  let historyRawIndex = 0;
   return (
     <pre className={preClass(wrap, className, agent, nativeMirror)} style={{ fontSize: `${fontSize}px` }}>
-      {rawBlocks.map(renderBlock)}
+      {historyParts.map((part, index) => part.kind === "raw" ? (
+        <Fragment key={`raw:${index}`}>{renderBlock(part, historyRawIndex++)}</Fragment>
+      ) : (
+        <Fragment key={`upload:${index}`}>
+          {"\n"}
+          <span data-slot="terminal-user-upload" className="bot-turn bot-turn-user block whitespace-pre-wrap font-content text-left">
+            <UserMessageText text={part.text} />
+          </span>
+          {"\n"}
+        </Fragment>
+      ))}
     </pre>
   );
 });

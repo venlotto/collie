@@ -1,0 +1,14 @@
+{
+  "source": "Live re-test after PR #31 deploy, 2026-11-27 1:57 p.m. America/Caracas",
+  "paneId": "w2D:pK",
+  "tab": "codex-hist-retest",
+  "sendId": "d0a2f84e-d4a5-4165-9ea3-ccc4a37c4340",
+  "harness": "codex",
+  "codexVersion": "0.172.0",
+  "collie": "1.31.0-dev+2a9916a7c5",
+  "caption": "COL-21: responde OK y para.",
+  "originalName": "photo-small.png",
+  "line": "/home/ubuntu/.local/state/collie/uploads/term.1e7bca815913e3eec25fadc43d380d4b4d6c6db3cbde92c596ddcaab946e0502.mwzaaknp-011048d0.png COL-21: responde OK y para.",
+  "textLength": 160,
+  "note": "line is the exact composeLine text from ~/.local/state/collie/sends/<id>.json (phase settled, outcome sent). The pane tab was closed after the test, so the ANSI scrollback was not preserved; the sibling .txt is the terminal-derived history as it appeared in Vista Mensajes after reload (desktop-codex-mensajes-clean.png / iphone-codex-mensajes-clean.png), including the \u203a user block and the reply OK."
+}
