@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const tr: Dictionary = {
+  "bot.edit.title": "Botu düzenle",
   "settings.language.title": "Dil",
   "settings.language.description": "Uçbirim yansısı hiçbir zaman çevrilmez.",
   "settings.title": "Ayarlar",
@@ -438,6 +439,7 @@ export const tr: Dictionary = {
   "composer.expand": "Genişlet",
   "composer.collapse": "Daralt",
   "composer.attach.title": "Ekle",
+  "composer.attach.videos": "Videolar",
   "composer.attach.photos": "Fotoğraflar",
   "composer.attach.files": "Dosyalar",
   "composer.attach.listAria": "Ekler",
@@ -1799,6 +1801,11 @@ export const tr: Dictionary = {
   "dialog.menu.moveUp": "Yukarı taşı",
   "dialog.menu.moveDown": "Aşağı taşı",
   "dialog.menu.noticeDraft": "Önce kutuyu boşaltın: Bir rakam oradaki metne eklenir.",
+  "dialog.queuedQuestion.one": "Ajan size bir soru sordu",
+  "dialog.queuedQuestion.many": "Ajan size {n} soru sordu",
+  "dialog.queuedQuestion.hint": "Seçenekleri görmek için Yanıtla'ya dokunun.",
+  "dialog.queuedQuestion.answer": "Yanıtla",
+  "bot.desk.questionWaiting": "Sizi bekleyen bir soru var · Yanıtla",
   "dialog.menu.leftAria": "Sol: {verb} ({label})",
   "dialog.menu.rightAria": "Sağ: {verb} ({label})",
   "dialog.menu.levelAria": "{label} hedefine {verb}",

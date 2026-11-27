@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
+  "bot.edit.title": "編輯機器人",
   "settings.language.title": "語言",
   "settings.language.description": "終端機鏡像輸出不會被翻譯。",
 
@@ -470,6 +471,7 @@ export const zhTW: Dictionary = {
   "composer.expand": "展開",
   "composer.collapse": "摺疊",
   "composer.attach.title": "附加",
+  "composer.attach.videos": "影片",
   "composer.attach.photos": "照片",
   "composer.attach.files": "檔案",
   "composer.attach.listAria": "附件",
@@ -1891,6 +1893,11 @@ export const zhTW: Dictionary = {
   "dialog.menu.moveUp": "上移",
   "dialog.menu.moveDown": "下移",
   "dialog.menu.noticeDraft": "請先清空輸入框：數字會接在框裡的文字後面。",
+  "dialog.queuedQuestion.one": "代理向你提了一個問題",
+  "dialog.queuedQuestion.many": "代理向你提了 {n} 個問題",
+  "dialog.queuedQuestion.hint": "點按「回答」查看選項。",
+  "dialog.queuedQuestion.answer": "回答",
+  "bot.desk.questionWaiting": "有一個問題在等你 · 回答",
   "dialog.menu.leftAria": "向左：{verb}（{label}）",
   "dialog.menu.rightAria": "向右：{verb}（{label}）",
   "dialog.menu.levelAria": "{verb}至 {label}",

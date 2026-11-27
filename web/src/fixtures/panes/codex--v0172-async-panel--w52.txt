@@ -1,0 +1,23 @@
+[0m[38;2;238;238;238m[48;2;68;68;68m [0m[48;2;68;68;68m                                                    [0m
+ 
+[0m[2m• [0mI’ll ask your preference, then run the command
+  immediately.
+ 
+[0m[38;2;99;168;248m? Tabs or spaces?[0m
+ 
+  [0m[38;2;148;226;213m• [0mTabs
+  [0m[38;2;148;226;213m• [0mSpaces
+ 
+[0m[1m[38;2;128;128;128m• [0m[2mWorking (13s • [0m[1mesc[0m[2m to interrupt) · 1 background te…[0m
+ 
+[0m[2m• [0mQueued follow-up inputs
+ 
+ 
+  [0m[38;2;99;168;248mTabs or spaces?[0m
+ 
+  [0m[1m[7m› 1. Tabs                                        [0m
+    2. Spaces
+    3. Other
+ 
+  [0m[1menter[0m submit   [0m[1m^] [0mskip   [0m[1mshift+→ [0mmain prompt
+ 

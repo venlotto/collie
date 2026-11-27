@@ -177,7 +177,7 @@ import type { Push, PushMessage, PushSubscription } from "./push.ts";
 import { RefreshCoalescer } from "./refresh.ts";
 import { herdTagFor, selectView, type SessionRegistry, type SessionRuntime, widenedPanes } from "./sessions.ts";
 import type { Snooze } from "./snooze.ts";
-import { IMAGE_EXTS, TEXT_EXTS, TEXT_SNIFF_BYTES, uploadExt } from "./uploads.ts";
+import { IMAGE_EXTS, VIDEO_EXTS, TEXT_EXTS, TEXT_SNIFF_BYTES, uploadExt } from "./uploads.ts";
 import { compareSemver, type UpdateMonitor } from "./update.ts";
 import { readStagingLog } from "./staging-log.ts";
 import {
@@ -4332,6 +4332,7 @@ export function startServer(opts: {
             upload: {
               maxBytes: cfg.maxUploadBytes,
               imageTypes: [...IMAGE_EXTS],
+              videoTypes: [...VIDEO_EXTS],
               textTypes: [...TEXT_EXTS, ...cfg.uploadExtraTypes],
             },
             // The lead's own switch, for the lead's own answer only. A member-scoped read leaves the
@@ -9744,7 +9745,7 @@ function uploadLimitDetail(cfg: Config) {
 // Save an uploaded attachment to a host file and return its absolute path. The client then
 // references that path in a message; Claude Code / Codex read images and text files by path (the
 // terminal can't take a pasted file over the socket). What may be written is `uploadExt`'s decision
-// — bytes for an image, name plus a binary veto for a text file — and the filename is
+// — bytes for images/videos, name plus a binary veto for a text file — and the filename is
 // server-generated, so nothing the client sent becomes a path component.
 async function uploadPane(
   cfg: Config,

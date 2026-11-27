@@ -4296,3 +4296,20 @@ the probe tells them apart). The tests that read them name the folder.
 `codex--v0172-agent-hint-idle.txt` and `codex--v0172-agent-hint-probe.txt` are ANSI reads from
 the same throwaway chat on coder1. At the first character the left-hand agents hint disappears
 and the F2 warning stays. The prompt, wrapped status and transcript come from the real TUI.
+
+## Codex 0.172.0 async question and folder trust (captured 2026-11-27, a scratch Herdr session, 52 columns)
+
+A disposable Herdr session of its own (`herdr --session <scratch>` under a scratch
+`XDG_CONFIG_HOME`), so no pane of the operator's was read or written. Codex ran at low effort in
+empty folders under `/tmp`; the prompts were throwaway questions. Read with
+`herdr pane read --source visible --format ansi --raw`, CRLF as read. No secret is on screen; the
+footer names the model and the folder only.
+
+| Fixture | State |
+| --- | --- |
+| `codex--v0172-async-question--w52.txt` | Turn running, the queue's `? 1 question` / `shift+← to answer` reminder over a live box; Herdr reported `blocked` |
+| `codex--v0172-async-panel--w52.txt` | The question that `shift+Left` opened: `› 1. Tabs`, `2. Spaces`, `3. Other`, `enter submit` footer |
+| `codex--v0172-async-answered--w52.txt` | A moment after `1` answered it: the turn runs, nothing is queued; Herdr back to `working` |
+| `codex--v0172-trust--w52.txt` | The folder-trust prompt in a new folder; Herdr reported `idle` |
+
+Keystroke probes: [`codex/ASYNC_QUESTION_NOTES.md`](../../lib/harness/codex/ASYNC_QUESTION_NOTES.md).

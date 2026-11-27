@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const ru: Dictionary = {
+  "bot.edit.title": "Изменить бота",
   "settings.language.title": "Язык",
   "settings.language.description": "Зеркало терминала не переводится.",
   "settings.title": "Настройки",
@@ -440,6 +441,7 @@ export const ru: Dictionary = {
   "composer.expand": "Развернуть",
   "composer.collapse": "Свернуть",
   "composer.attach.title": "Прикрепить",
+  "composer.attach.videos": "Видео",
   "composer.attach.photos": "Фото",
   "composer.attach.files": "Файлы",
   "composer.attach.listAria": "Вложения",
@@ -1877,6 +1879,11 @@ export const ru: Dictionary = {
   "dialog.menu.moveUp": "Вверх",
   "dialog.menu.moveDown": "Вниз",
   "dialog.menu.noticeDraft": "Сначала очистите поле: цифра добавится к тексту в нём.",
+  "dialog.queuedQuestion.one": "Агент задал вам вопрос",
+  "dialog.queuedQuestion.many": "Агент задал вам вопросов: {n}",
+  "dialog.queuedQuestion.hint": "Нажмите «Ответить», чтобы увидеть варианты.",
+  "dialog.queuedQuestion.answer": "Ответить",
+  "bot.desk.questionWaiting": "Вас ждёт вопрос · Ответить",
   "dialog.menu.leftAria": "Влево: {verb} ({label})",
   "dialog.menu.rightAria": "Вправо: {verb} ({label})",
   "dialog.menu.levelAria": "{verb} в {label}",

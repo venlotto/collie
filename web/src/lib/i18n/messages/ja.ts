@@ -3,6 +3,7 @@ import type { Dictionary } from "./en";
 // Japanese. See de.ts for the typing contract. One plural category, so both suffixes match.
 
 export const ja: Dictionary = {
+  "bot.edit.title": "ボットを編集",
   "settings.language.title": "言語",
   "settings.language.description": "ターミナル出力は翻訳されません。",
 
@@ -480,6 +481,7 @@ export const ja: Dictionary = {
   "composer.expand": "展開",
   "composer.collapse": "折りたたむ",
   "composer.attach.title": "添付",
+  "composer.attach.videos": "動画",
   "composer.attach.photos": "写真",
   "composer.attach.files": "ファイル",
   "composer.attach.listAria": "添付ファイル",
@@ -1906,6 +1908,11 @@ export const ja: Dictionary = {
   "dialog.menu.moveUp": "上へ移動",
   "dialog.menu.moveDown": "下へ移動",
   "dialog.menu.noticeDraft": "先に入力欄を空にしてください。数字は入力中の文字に付け足されます。",
+  "dialog.queuedQuestion.one": "エージェントから質問があります",
+  "dialog.queuedQuestion.many": "エージェントから{n}件の質問があります",
+  "dialog.queuedQuestion.hint": "「回答」をタップすると選択肢が表示されます。",
+  "dialog.queuedQuestion.answer": "回答",
+  "bot.desk.questionWaiting": "質問が待っています · 回答",
   "dialog.menu.leftAria": "左: {verb}（{label}）",
   "dialog.menu.rightAria": "右: {verb}（{label}）",
   "dialog.menu.levelAria": "{label}に{verb}",
