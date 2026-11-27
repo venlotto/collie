@@ -612,6 +612,7 @@ export const zh: Dictionary = {
   "composer.protocol.busy": "发往此窗格的另一次发送仍在进行。它结束后，请再次发送这一条。",
   "composer.protocol.notFree": "输入框未空闲，所以没有输入任何内容。请回答或关闭那里打开的内容，然后再次发送。",
   "composer.protocol.notEmptied": "Collie 无法清空草稿，所以你的消息没有输入。消息仍在这里。请检查输入框，然后再次发送。",
+  "composer.protocol.shellMode": "代理的输入框处于 Shell 模式，你的文本会被当作 shell 命令运行，而 Collie 无法退出该模式。没有输入任何内容。请打开按键，在空输入框中按 Backspace，然后再次发送。",
   "composer.detail.probeLeft": "输入框中可能还留有 Collie 的测试字符。输入前请先查看窗格。",
   "composer.detail.shortPane": "窗格太矮，无法显示输入框。请在电脑上把窗格拉高，然后再次发送。",
   "composer.detail.lateKeys": "代理较晚才显示 Collie 的测试按键。请稍等，然后再次发送。",

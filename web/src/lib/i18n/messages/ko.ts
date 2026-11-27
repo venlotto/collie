@@ -624,6 +624,7 @@ export const ko: Dictionary = {
   "composer.protocol.busy": "이 창으로 보낸 다른 전송이 아직 진행 중입니다. 끝나면 이 메시지를 다시 전송하세요.",
   "composer.protocol.notFree": "입력란이 비어 있지 않아 아무것도 입력되지 않았습니다. 그곳에 열려 있는 것에 답하거나 닫은 뒤 다시 전송하세요.",
   "composer.protocol.notEmptied": "Collie가 초안을 비우지 못해 메시지가 입력되지 않았습니다. 메시지는 여기에 그대로 있습니다. 입력란을 확인한 뒤 다시 전송하세요.",
+  "composer.protocol.shellMode": "에이전트 입력란이 셸 모드라서 텍스트가 셸 명령으로 실행됩니다. Collie가 이 모드를 빠져나오지 못했습니다. 아무것도 입력되지 않았습니다. 키를 열고 빈 입력란에서 Backspace를 누른 뒤 다시 전송하세요.",
   "composer.detail.probeLeft": "Collie의 테스트 문자가 아직 입력란에 남아 있을 수 있습니다. 입력하기 전에 창을 확인하세요.",
   "composer.detail.shortPane": "창이 너무 낮아 입력란을 표시할 수 없습니다. 컴퓨터에서 창을 높인 뒤 다시 전송하세요.",
   "composer.detail.lateKeys": "에이전트가 Collie의 테스트 키를 늦게 표시했습니다. 잠시 기다린 뒤 다시 전송하세요.",

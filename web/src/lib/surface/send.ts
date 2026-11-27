@@ -566,9 +566,11 @@ export interface SendAnswer {
  * bridge's detail says to wait and send again, and the phone shows it under its sentence.
  * `not_emptied`: a Replace whose clear did not leave the box empty (the harness was still taking the
  * Backspaces, the box went away, a read failed); the person's text was never typed, so the answer is a
- * refusal, `draft_present` over what is left of the draft, else `not_free` (2026-11-27).
+ * refusal, `draft_present` over what is left of the draft, else `not_free` (2026-11-27). `shell_mode`: the
+ * box stayed in the harness's shell mode, where Enter runs the text as a shell command, after Collie
+ * pressed the profile's exit keys; nothing was typed, and the answer is `not_free` (2026-11-27).
  */
-export const SEND_CAUSES = ["notice_key", "stale_screen", "short_pane", "late_keys", "not_emptied"] as const;
+export const SEND_CAUSES = ["notice_key", "stale_screen", "short_pane", "late_keys", "not_emptied", "shell_mode"] as const;
 export type SendCause = (typeof SEND_CAUSES)[number];
 
 /**

@@ -689,6 +689,7 @@ export const en = {
   "composer.protocol.busy": "Another send to this pane is still running. Send this one again when it ends.",
   "composer.protocol.notFree": "The input box is not free, so nothing was typed. Answer or close what is open there, then send again.",
   "composer.protocol.notEmptied": "Collie could not empty the draft, so your message was not typed. It is still here. Check the box, then send again.",
+  "composer.protocol.shellMode": "The agent's input box is in shell mode, where your text would run as a shell command, and Collie could not leave it. Nothing was typed. Tap Open Keys, press Backspace on the empty box, then send again.",
   "composer.detail.probeLeft": "A Collie test character may still be in the box. Check the pane before you type.",
   "composer.detail.shortPane": "The pane is too short to show the input box. Make it taller on the computer, then send again.",
   "composer.detail.lateKeys": "The agent showed Collie's test keys late. Wait a moment, then send again.",

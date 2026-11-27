@@ -160,6 +160,13 @@
 // A probe that fails, goes out again with one Backspace and leaves text in the box proves a real
 // draft that is not Collie's (a stale row painted over the live box row): the send ends
 // `draft_present` with the draft's offers, never held (2026-10-26).
+// A draft that ends in a token the harness completes in a popup (`probe.popupTails`: Codex's `@file` and
+// `$skill`, 2026-11-27) is the one draft no probe proves: any key in that token, the probe's Backspace too,
+// opens the popup again and echoes the character in it. A send or a command there is refused
+// `draft_present` with no key and no Add; Replace empties the box first and probes the empty box. A box
+// in the harness's shell mode (`idle.shellMode`) is left with the profile's exit keys before a write when
+// it is empty (a box that stays ends `not_free`, cause `shell_mode`), and a text that is no shell line
+// never gets a submit key while a read shows the mode.
 // A box whose whole text is Collie's own probe characters is the one exception to the stale verdict
 // (#623, 2026-10-31): the agent took those keys and drew them, only later than the probe looked. A
 // harness that is busy for seconds (Claude Code 2.1.314 with a subagent running under its agents
@@ -607,6 +614,9 @@ const CLEAR_DRAIN_MS_PER_KEY = 10;
 const NOT_EMPTIED: SendCause = "not_emptied";
 /** The detail of that refusal. */
 const NOT_EMPTIED_DETAIL = "Collie could not empty the draft, so your message was not typed. Check the box, then send again.";
+/** The cause of a refusal at a box that stayed in the harness's shell mode (`idle.shellMode`, 2026-11-27). */
+const SHELL_MODE: SendCause = "shell_mode";
+const SHELL_MODE_DETAIL = "The box is in the agent's shell mode, where Enter would run your text as a shell command, and it did not leave it. Nothing was typed. Leave shell mode on the key pad (Backspace on the empty box), then send again.";
 /** The longest draft one request empties: 64 batches, about 33 s. A longer one is refused before any key. */
 const CLEAR_MAX_CHARS = 16_384;
 /** The detail of a Replace or Discard refused on a box that hides the head of a draft Collie cannot measure. */
@@ -2023,6 +2033,31 @@ function answersQuestion(match: ProfileMatch | null, snap: Snap): boolean {
   if (source === undefined || snap.frame === null) return false;
   const row = snap.texts[snap.frame.interior.prompt];
   return row !== undefined && new RegExp(source, "u").test(row);
+}
+
+/**
+ * Whether a draft ends where no probe may follow (the profile's `probe.popupTails`): a token the harness
+ * completes in a popup. Any key there opens the popup again, the probe's and its Backspace's (Codex 0.172.0,
+ * lab 2026-11-27: `mira @READ⌁` drew `READ⌁ no matches` over the box), so a probe could neither pass nor
+ * be taken back.
+ */
+function popupTail(match: ProfileMatch | null, draft: string): boolean {
+  const tails = match?.profile.probe.popupTails;
+  return tails !== undefined && draft.length > 0 && tails.some((source) => new RegExp(source, "u").test(draft));
+}
+
+/** Whether the read's box is in the harness's shell mode (`idle.shellMode`): Enter there runs the box as a shell command. */
+function inShellMode(match: ProfileMatch | null, snap: Snap): boolean {
+  const source = match?.profile.idle.shellMode?.prompt;
+  if (source === undefined || snap.frame === null) return false;
+  const row = snap.texts[snap.frame.interior.prompt];
+  return row !== undefined && new RegExp(source, "u").test(row);
+}
+
+/** Whether the request is a shell line: a command whose text starts with the lead of the harness's shell mode. */
+function isShellLine(state: RunState): boolean {
+  const lead = state.match?.profile.idle.shellMode?.lead;
+  return lead !== undefined && state.command && (sendLines(state.request.text)[0] ?? "").trimStart().startsWith(lead);
 }
 
 /**
@@ -5055,6 +5090,30 @@ export class SendProtocol {
     return back.snap;
   }
 
+  /**
+   * Leaves the harness's shell mode from an empty box (`idle.shellMode`, 2026-11-27): the profile's exit
+   * keys, then reads until the ordinary box shows, empty, with no modal. That read is where the request
+   * goes on from. A box that stays in shell mode ends `refused(not_free)` with the cause `shell_mode`, and
+   * nothing is typed.
+   */
+  private async leaveShellMode(state: RunState): Promise<Snap> {
+    const { match } = state;
+    const exit = match?.profile.idle.shellMode?.exit ?? [];
+    const stayed = (snap: Snap | null): Ended => new Ended("refused", "not_free", sawNote(snap, { detail: SHELL_MODE_DETAIL, framed: true, offers: ["keys"], cause: SHELL_MODE }));
+    this.stretch(state, BOUNDS.probe.ms);
+    try {
+      await this.keysThroughGate(state, exit, "refused");
+    } catch (err) {
+      if (err instanceof Ended && err.outcome === "refused") throw stayed(state.lastRead);
+      throw err;
+    }
+    const back = await this.poll(state, "s0", { reads: BOUNDS.probe.reads, ms: BOUNDS.probe.ms }, (snap) =>
+      snap.frame !== null && !inShellMode(match, snap) && snap.surface.modal === "none" && boxText(snap.frame) === "" ? "pass" : "wait",
+    );
+    if (back.verdict !== "pass" || back.snap === null) throw stayed(back.snap);
+    return back.snap;
+  }
+
   /** Tell {@link SendDeps.blindSent} a blind send went out. Never throws, and never changes the answer. */
   private noteBlindSent(state: RunState): void {
     try {
@@ -5413,6 +5472,14 @@ export class SendProtocol {
       // A Discard is for what Collie typed: the box held only Collie's probe characters, and they are out.
       if (request.mode === "discard") return;
     }
+    // An empty box in the harness's shell mode (`idle.shellMode`, 2026-11-27): Enter there would run the
+    // text as a shell command, so the box leaves the mode first, proven by a read of the ordinary box. A
+    // box in shell mode that holds text is a draft, and the draft rules below refuse it.
+    if (writes && s0.frame !== null && boxText(s0.frame).length === 0 && inShellMode(match, s0)) {
+      s0 = await this.leaveShellMode(state);
+      state.marks.s0 = s0;
+      this.atS0(state, s0);
+    }
 
     switch (request.mode) {
       case "submit": {
@@ -5444,6 +5511,9 @@ export class SendProtocol {
       }
       case "append": {
         const frame = this.draftFrame(state, s0);
+        // Add to a draft that ends in a token the harness completes would extend the token, and Add to a box
+        // in shell mode would run as a shell command: refused with the draft's other offers, no key.
+        if (popupTail(match, boxText(frame)) || inShellMode(match, s0)) throw draftRefusal(state, s0);
         // Add to it on a box the person emptied since the phone saw its draft: the key would stand
         // alone in the box, and the notice would take it.
         if (boxText(frame).trim().length === 0 && this.answersNotice(state, s0)) throw noticeRefusal(s0);
@@ -5464,6 +5534,27 @@ export class SendProtocol {
     // after the clear could fail (a dialog that opens in a running turn) and leave the box empty and the
     // text not typed. So the probe goes after the draft, as Add to it's does, and the clear follows it.
     const clears = request.mode === "replace" && s0.frame !== null && boxText(s0.frame).length > 0;
+    // A draft no probe may follow (`probe.popupTails`) is emptied before the probe, which then goes into the
+    // empty box: a failed probe there leaves the box empty, which is what Replace was asked for.
+    const clearFirst = clears && popupTail(match, boxText(s0.frame!));
+    // The draft is the person's (or one a refusal left there): Collie knows only what the box shows.
+    // Emptying the box is its own step with its own bound. A clear that ends without an empty box ends
+    // before the text: the receipt says so, never that the message may have arrived (2026-11-27).
+    const empty = async (from: Snap): Promise<Snap> => {
+      let read: Snap;
+      try {
+        read = await this.clear(state, from, null);
+      } catch (err) {
+        if (err instanceof Ended && err.outcome === "unknown") throw await this.notEmptied(state, from, err);
+        throw err;
+      }
+      // A shell line's draft emptied leaves the box in shell mode: it leaves the mode before the text goes in.
+      if (inShellMode(match, read)) read = await this.leaveShellMode(state);
+      state.marks.s0 = read;
+      this.lap(state, "clear");
+      return read;
+    };
+    if (clearFirst) s0 = await empty(s0);
     const prefix = request.mode === "append" && s0.frame !== null ? boxText(s0.frame) : "";
     const text = lines.join("");
     // A manual send (the person confirmed a screen that is not free) is always probed, and so is any
@@ -5486,7 +5577,7 @@ export class SendProtocol {
     let landing: Landing | null = null;
     try {
       if (state.probed) {
-        const probed = await this.probe(state, s0, clears && s0.frame !== null ? boxText(s0.frame) : prefix);
+        const probed = await this.probe(state, s0, clears && !clearFirst && s0.frame !== null ? boxText(s0.frame) : prefix);
         landing = probed.landing;
         // A late probe's second chance went from a fresh S0 (the header): the request goes on from it.
         if (probed.base !== s0) {
@@ -5500,19 +5591,7 @@ export class SendProtocol {
     }
     // The probe showed in the box and went again: the starting harness reads keys, its window ends.
     if (state.starting && state.probed) this.noteFramed(state);
-    if (clears) {
-      // The draft is the person's (or one a refusal left there): Collie knows only what the box shows.
-      // Emptying the box is its own step with its own bound. A clear that ends without an empty box ends
-      // before the text: the receipt says so, never that the message may have arrived (2026-11-27).
-      try {
-        s0 = await this.clear(state, s0, null);
-      } catch (err) {
-        if (err instanceof Ended && err.outcome === "unknown") throw await this.notEmptied(state, s0, err);
-        throw err;
-      }
-      state.marks.s0 = s0;
-      this.lap(state, "clear");
-    }
+    if (clears && !clearFirst) s0 = await empty(s0);
 
     if (!state.command && !state.noticeKey) {
       // A lone upload path is one paste on every multiplexer (the write per line), so the harness may attach it there too (uploadAlone).
@@ -5723,6 +5802,10 @@ export class SendProtocol {
     // asks for it only once the box text held still between two polls (tickHolds).
     if (state.request.draftHolds === true && !mayShowPlaceholder) return false;
     if (surface.turn !== "idle" || surface.modal !== "none" || surface.composer !== "draft" || boxText(frame).length === 0) return false;
+    // A draft that ends in a token the harness completes (`probe.popupTails`) takes no probe: the probe and
+    // its Backspace would open the harness's popup again (2026-11-27). A send or a command there is refused
+    // `draft_present` with no key, and Replace empties the box before its own probe.
+    if (popupTail(state.match, boxText(frame))) return false;
     switch (state.request.mode) {
       case "send":
       case "command":
@@ -7076,9 +7159,15 @@ export class SendProtocol {
     // it decide (2026-10-17 decision). Where Enter would steer or interrupt a turn and no queue key
     // exists, rows above that moved may be a turn Collie did not see, so the full compare stays.
     const boxOnly = s0.frame !== null && !command && !manual && queuesInTurn(state.match);
+    const shellLine = isShellLine(state);
     const judge = (snap: Snap): Verdict => {
       if (belowMovedAlone(earlier, snap)) state.belowMoved = true;
       earlier = snap;
+      // A text that is no shell line, read in the harness's shell mode: Enter would run it as a shell command.
+      if (!shellLine && inShellMode(state.match, snap)) {
+        why = "modal_cue";
+        return "wait";
+      }
       if (boxOnly) {
         const verdict = typedBoxVerdict(s0, snap, prefix, lines, collapse, state.whole);
         if (verdict === "other_screen") {
@@ -7716,7 +7805,10 @@ function draftRefusal(state: RunState, s0: Snap): Ended {
   const framed = s0.frame !== null;
   // A Replace whose text is a command answers a command's offer, which has no Add to it.
   const command = draftCommand(state.request, state.match) || (state.request.mode === "replace" && state.command);
-  const offers = offersFor("refused", "draft_present", framed, command);
+  // Add to a draft that ends in a token the harness completes, or to a box in shell mode, is no message
+  // anybody means: Replace and Cancel only, as for a command.
+  const noAdd = s0.frame !== null && (popupTail(state.match, boxText(s0.frame)) || inShellMode(state.match, s0));
+  const offers = offersFor("refused", "draft_present", framed, command || noAdd);
   // The rows hash binds Add to it and Replace to this draft (ADR 0166, offerDraftSeen), and the draft's
   // text from the same read lets the phone show what Replace would delete.
   const note: EndNote = { surface: s0.surface, framed, rowsHash: s0.rowsHash, offers, detail: "The box already holds a draft." };

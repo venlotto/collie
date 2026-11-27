@@ -317,6 +317,7 @@ export type SendNote =
   | "draftCommand"
   | "draftUnseen"
   | "notEmptied"
+  | "shellMode"
   | "typed"
   | "overrideTyped"
   | "menuOpen"
@@ -621,6 +622,8 @@ function noteAndOffers(reply: SendReply, offers: readonly SendOffer[]): Verdict 
   if (reply.outcome === "refused" && reply.cause === "stale_screen") return { clear: false, note: reply.detail === null || reply.detail === STALE_SCREEN ? "staleScreen" : "staleScreenProbe", offers };
   // A Replace whose draft did not empty (2026-11-27): the text was never typed, whatever the box holds now.
   if (reply.outcome === "refused" && reply.cause === "not_emptied") return { clear: false, note: "notEmptied", offers };
+  // A box that stayed in the agent's shell mode (2026-11-27): nothing was typed, and the note says how to leave it.
+  if (reply.outcome === "refused" && reply.cause === "shell_mode") return { clear: false, note: "shellMode", offers };
   const note = sendNote(reply.outcome, reply.reason);
   // A discard has its own outcome: the box emptied, but nothing went to the agent, so the phone's draft stays.
   // A send queued behind the running turn went out all the same: it clears, and its sentence says it waits.
@@ -748,6 +751,8 @@ function ownSentence(reply: SendReply): boolean {
   if (reply.cause === "stale_screen") return true;
   // A draft that did not empty: the note says it, and the bridge's line only names the step that stopped.
   if (reply.cause === "not_emptied") return true;
+  // A box left in shell mode: the note names the mode and the key, the bridge's line says it again.
+  if (reply.cause === "shell_mode") return true;
   if (reply.cause === "short_pane") return false;
   if (REPEATS_THE_NOTE.has(reply.reason)) return true;
   // A full hold queue names its count under the sentence; only the plain "still running" repeats it.

@@ -611,6 +611,7 @@ export const zhTW: Dictionary = {
   "composer.protocol.busy": "傳往這個窗格的另一次傳送仍在進行。它結束後，請再次傳送這一則。",
   "composer.protocol.notFree": "輸入框不是空閒的，所以沒有輸入任何內容。請回答或關閉那裡開啟的內容，然後再次傳送。",
   "composer.protocol.notEmptied": "Collie 無法清空草稿，所以你的訊息沒有輸入。訊息仍在這裡。請檢查輸入框，然後再次傳送。",
+  "composer.protocol.shellMode": "代理的輸入框處於 Shell 模式，你的文字會被當作 shell 指令執行，而 Collie 無法離開該模式。沒有輸入任何內容。請開啟按鍵，在空白輸入框按 Backspace，然後再次傳送。",
   "composer.detail.probeLeft": "輸入框中可能還留有 Collie 的測試字元。輸入前請先查看窗格。",
   "composer.detail.shortPane": "窗格太矮，無法顯示輸入框。請在電腦上把窗格拉高，然後再次傳送。",
   "composer.detail.lateKeys": "代理程式較晚才顯示 Collie 的測試按鍵。請稍候，然後再次傳送。",
