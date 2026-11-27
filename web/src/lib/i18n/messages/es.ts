@@ -632,7 +632,7 @@ export const es: Dictionary = {
   "composer.protocol.noticeKeyHeld": "Ese mensaje respondería al aviso situado sobre el cuadro. Respóndalo en su tarjeta o envíelo una vez que haya terminado el turno.",
   "composer.protocol.staleScreen": "La terminal muestra una imagen antigua de la caja de entrada. No se borró nada. Envía de nuevo. Si esto continúa, selecciona el panel en el ordenador y luego envía de nuevo.",
   "composer.protocol.staleScreenProbe": "La terminal muestra una imagen antigua de la caja de entrada. No se borró nada. Puede que un carácter de prueba siga en la caja. Mira la pantalla y luego envía de nuevo.",
-  "composer.protocol.unknown": "Collie no puede determinar si esto se envió. Lea la pantalla y vuelva a enviar si no se envió. Su borrador se conserva.",
+  "composer.protocol.unknown": "No se pudo confirmar si llegó. Revisa el chat: si tu mensaje no aparece, envíalo otra vez. Tu borrador se conserva.",
   "composer.protocol.busy": "Otro envío a este panel sigue en curso. Envía este de nuevo cuando termine.",
   "composer.protocol.notFree": "La caja de entrada no está libre, así que no se escribió nada. Responde o cierra lo que esté abierto allí y luego envía de nuevo.",
   "composer.protocol.badHead": "Una línea de este mensaje parece una cabecera de mensaje que solo escribe Collie. Cambia esa línea.",
