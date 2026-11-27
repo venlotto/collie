@@ -11,6 +11,7 @@ import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { usePaneKeySink } from "@/hooks/use-shortcut-handler";
 import { useLocale } from "@/hooks/use-locale";
+import { reopenTouchKeyboard } from "@/lib/reopen-touch-keyboard";
 import { useKeyboardOpen } from "@/hooks/use-keyboard";
 import { enterKeyAnswer } from "@/lib/enter-key";
 import { setEnterSends, useEnterSendsChoice } from "@/lib/enter-sends-store";
@@ -4777,6 +4778,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             value={direct.active ? direct.value : input}
             onChange={direct.active ? direct.onChange : onDraftChange}
             onSelect={direct.active ? undefined : rememberCaret}
+            onPointerDown={e => reopenTouchKeyboard(e.currentTarget, e.pointerType, softKeyboard)}
             onFocus={() => setBoxFocused(true)}
             onBlur={(e) => {
               setBoxFocused(false);

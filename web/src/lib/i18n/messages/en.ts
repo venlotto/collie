@@ -14,6 +14,7 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
+  "bot.edit.title": "Edit bot",
   "settings.language.title": "Language",
   "settings.language.description": "The terminal mirror is never translated.",
 

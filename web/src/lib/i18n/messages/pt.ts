@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const pt: Dictionary = {
+  "bot.edit.title": "Editar bot",
   "settings.language.title": "Idioma",
   "settings.language.description": "O espelho do terminal nunca é traduzido.",
   "settings.title": "Configurações",

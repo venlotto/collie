@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
+  "bot.edit.title": "编辑机器人",
   "settings.language.title": "语言",
   "settings.language.description": "终端镜像输出不会被翻译。",
 

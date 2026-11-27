@@ -1,6 +1,7 @@
 import { BotMirrorPending } from "./bot-mirror-pending";
 import { useBotDisplays } from "@/lib/bot-display";
 import { resolvePaneView } from "@/lib/bot-display-wire";
+import { CreateBot } from "./create-bot";
 import { BotChatBar } from "./bot-chat-bar";
 import { botTime, identityOf } from "./bot-identity";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -448,6 +449,7 @@ export function AgentChat({
   // title at all, so a pane the dashboard called "Collie playground sync check" was called
   // "collie-workspace › UI work" here: one pane, two names, and the reader had to work out they
   // were the same pane. The address did not vanish, it moved down one line, where an address belongs.
+  const [editingBot, setEditingBot] = useState(false);
   const bot = agent && identityOf(agent, scope ?? {});
   const name = agent === undefined ? "" : paneName(agent);
   // A pane in a linked worktree names its REPOSITORY here: Herdr's worktree slug is a random word that
@@ -2655,6 +2657,7 @@ export function AgentChat({
             not the 640px every other route uses: a 640px column minus its 16px gutters clips an
             80-column mirror, so the pane pair get their own claim. */}
         {mobileShell && bot && agent ? <BotChatBar bot={bot} pane={agent} unread={herd.filter(isUnseen).length}
+          edit={paneWrites && !gone ? () => setEditingBot(true) : undefined}
           pinned={!!botPin && botFeaturedMatches(botPin, agent)} pin={() => setBotPin(agent, !botPin || !botFeaturedMatches(botPin, agent))} back={onBackArrow ?? onBack}
           view={botDisplayEnabled ? standingPaneView : undefined} onViewChange={botDisplayEnabled ? paneViewChange : undefined}
           terminal={!chatShown} toggleView={transcriptReadable && !gridless ? () => paneViewChange(chatShown ? "terminal" : "chat") : undefined} /> : <RouteHeader
@@ -4443,6 +4446,8 @@ export function AgentChat({
         {/* This pane's own settings — one switch today, the prompt-cache warning (ADR 0042). Scoped to
             the PANE's machine, because `?host=` there names where the pane lives; the preference itself
             lands on the collie this phone is talking to, which is the only one that can push. */}
+        {editingBot && agent && <CreateBot scope={scope ?? {}} edit={agent} spaces={rootSpaces?.filter(w => w.host === scope?.host)} writable={paneWrites && !gone}
+          close={() => { setEditingBot(false); void revalidator.revalidate(); }} />}
         <PaneSettingsSheet
           open={drawer === "paneSettings"}
           onClose={closeDrawer}
