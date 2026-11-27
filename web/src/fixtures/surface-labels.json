@@ -7164,6 +7164,26 @@
    "harness": "claude",
    "version": "2.1.325",
    "state": "dialog"
+  },
+  "codex--v0172-async-answered--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
+  },
+  "codex--v0172-async-panel--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-question--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
+  },
+  "codex--v0172-trust--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
   }
  },
  "knownMismatches": {

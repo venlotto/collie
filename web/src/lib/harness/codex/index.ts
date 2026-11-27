@@ -28,6 +28,7 @@ import {
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
+import { detectAsyncPanel, detectQueuedQuestion } from "./async-question";
 import { detectTrustRegion } from "./trust";
 import { detectHooksRegion } from "./hooks";
 import { decorateCodexDisplay } from "./display";
@@ -51,6 +52,8 @@ const CODEX_DIALOG_DETECTORS: readonly DialogDetector[] = [
   { name: "hooks", detect: detectHooksRegion },
   { name: "approval", detect: detectApprovalRegion },
   { name: "ask", detect: detectAskRegion },
+  { name: "async-question", detect: detectAsyncPanel },
+  { name: "async-question-reminder", detect: detectQueuedQuestion },
   { name: "session-picker", detect: sessionPickerRegion },
 ];
 
@@ -95,12 +98,32 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
     return blocks;
   }
 
+  const panel = detectAsyncPanel(lines);
+  if (panel) {
+    const before = trimTrailingBlank(lines.slice(0, panel.startLine));
+    const blocks: Block[] = [];
+    if (before.length > 0) blocks.push(raw(before));
+    blocks.push({ kind: "prompt-select", prompt: panel.model, lines: lines.slice(panel.startLine) });
+    return blocks;
+  }
+
   const picker = sessionPickerRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     const blocks: Block[] = [];
     if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "menu", menu: picker.model, lines: lines.slice(picker.startLine) });
+    return blocks;
+  }
+
+  // A question the agent queued over the live box: the box keeps the keys, so the transcript and the
+  // chrome read as they always do, the reminder's rows leave the mirror, and its card goes after them.
+  const queued = detectQueuedQuestion(lines);
+  if (queued) {
+    const rest = stripChrome([...lines.slice(0, queued.startLine), ...lines.slice(queued.endLine + 1)]);
+    const blocks: Block[] = [];
+    if (rest.length > 0) blocks.push(raw(rest));
+    blocks.push({ kind: "menu", menu: queued.model, lines: lines.slice(queued.startLine, queued.endLine + 1) });
     return blocks;
   }
 

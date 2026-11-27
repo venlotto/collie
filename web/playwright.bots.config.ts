@@ -7,7 +7,7 @@ export default defineConfig({
   testMatch: [
     "bot-activity.spec.ts", "bot-thread.spec.ts", "bot-workspaces.spec.ts", "bot-multiselect.spec.ts",
     "bot-drag.spec.ts", "bot-idle-resume.spec.ts", "bot-remember-sections.spec.ts", "bot-pinned-top.spec.ts", "bot-desk.spec.ts",
-    "bot-display-mode.spec.ts", "bot-composer-open.spec.ts",
+    "bot-display-mode.spec.ts", "bot-composer-open.spec.ts", "bot-questions.spec.ts",
   ],
   workers: 2, timeout: 60_000, use: { baseURL, serviceWorkers: "block" },
   projects: [

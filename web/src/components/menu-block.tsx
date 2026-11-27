@@ -103,6 +103,7 @@ export function MenuBlock({ menu, lines, onAction, disabled }: MenuBlockProps) {
   // headings and bullets drawn as the terminal drew them, so it shows under the title by itself.
   const mirrors = !readsBody && menu.liveBox === undefined;
   const noticeBody = menu.liveBox?.body;
+  const queued = menu.liveBox?.queued;
 
   /** The arrow presses that walk the marker from `current` to `target`, in order. */
   const stepKeys = (target: number): string[] => {
@@ -127,7 +128,19 @@ export function MenuBlock({ menu, lines, onAction, disabled }: MenuBlockProps) {
     // rawMode (ADR 0056 counsel fix): `mirrors` is exactly the branch below that still renders
     // the RawMirror in children, so the control there only puts the buttons away, never a swap.
     <PromptPanel ariaLabel={menu.title} raw={lines} rawMode={mirrors ? "declutter" : "reveal"}>
-      <OptionGroupCaption>{menu.title}</OptionGroupCaption>
+      {/* A reminder that the agent queued questions (`liveBox.queued`): Collie's own words say what the
+          card is, over the question the transcript printed, and the one key opens it. */}
+      {queued === undefined ? (
+        <OptionGroupCaption>{menu.title}</OptionGroupCaption>
+      ) : (
+        <>
+          <OptionGroupCaption>{queued === 1 ? t("dialog.queuedQuestion.one") : t("dialog.queuedQuestion.many", { n: queued })}</OptionGroupCaption>
+          <p data-slot="prompt-question" className="font-content pl-0.5 text-sm leading-snug whitespace-pre-line text-foreground wrap-anywhere">
+            {menu.title}
+          </p>
+          <p className="font-content pl-0.5 text-xs text-muted-foreground">{t("dialog.queuedQuestion.hint")}</p>
+        </>
+      )}
 
       {/* The region, mirrored verbatim by default — ONLY for a card that reads just the footer. A
           card that reads the body (readsBody, above) has already parsed everything the mirror could
@@ -234,7 +247,7 @@ export function MenuBlock({ menu, lines, onAction, disabled }: MenuBlockProps) {
                 className="font-content flex w-full items-center justify-center gap-2 rounded-lg border border-primary/60 bg-primary/15 px-3 py-2 text-sm font-medium text-foreground transition-colors active:bg-primary/25 disabled:opacity-60"
               >
                 {sending === id ? spinner : null}
-                {action.label}
+                {queued === undefined ? action.label : t("dialog.queuedQuestion.answer")}
               </button>
             );
           })}

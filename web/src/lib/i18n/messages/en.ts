@@ -2069,6 +2069,11 @@ export const en = {
   "dialog.menu.moveUp": "Move up",
   "dialog.menu.moveDown": "Move down",
   "dialog.menu.noticeDraft": "Empty the box first: a digit would join the text there.",
+  "dialog.queuedQuestion.one": "The agent asked you a question",
+  "dialog.queuedQuestion.many": "The agent asked you {n} questions",
+  "dialog.queuedQuestion.hint": "Tap Answer to see the options.",
+  "dialog.queuedQuestion.answer": "Answer",
+  "bot.desk.questionWaiting": "A question is waiting for you · Answer",
   "dialog.menu.leftAria": "Left, {verb} ({label})",
   "dialog.menu.rightAria": "Right, {verb} ({label})",
   // The printed scale's chips (.adr/0054): one per value the screen listed. The chip's own text is

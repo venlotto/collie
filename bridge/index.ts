@@ -254,6 +254,7 @@ import {
 import { bootSources, ENV_SOURCE_NAME, planPrograms, PROGRAMS_OFF_LOG, programsOff, sourcesPath, sourceTransportEnv, type DurableSource, type ProgramPlan } from "./sources.ts";
 import { Snooze } from "./snooze.ts";
 import { StateEngine } from "./state-engine.ts";
+import { settleBlocked } from "./blocked-settle.ts";
 import { SubagentTracker } from "./subagents.ts";
 import { TodoTracker } from "./todos.ts";
 import { diskUsageFiles, usageDir, UsageTracker } from "./usage.ts";
@@ -2235,6 +2236,9 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   // The screen wins for an ask (M78 spec 07): a pane whose last read shows an ask is `blocked` on the
   // phone and in the push, also where the multiplexer says `working` (herdr-core with pi's question).
   if (surface !== undefined) engine.liftScreenAsks((paneId) => surface.askOnScreen(paneId));
+  // And against it: a `blocked` whose screen shows nobody asked (no ask, a free box, no queued
+  // question) is what its turn says (blocked-settle.ts, Koperca catalogue C).
+  if (surface !== undefined) engine.settleBlockedByScreen((paneId) => settleBlocked(surface.surfaceOf(paneId), surface.questionQueued(paneId)));
   if (surface !== undefined) {
     engine.onUpdate((s) => {
       void surface.observe(s.agents).then(() => {

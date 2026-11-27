@@ -787,6 +787,7 @@ const NAMED_KEYS: readonly [RegExp, readonly string[]][] = [
   [/\bbackspace\b|⌫/iu, ["backspace"]],
   [/[↑▲]|\bup\s*\/\s*down\b/iu, ["up"]],
   [/[↓▼]|\bup\s*\/\s*down\b/iu, ["down"]],
+  [/\bshift\s*\+\s*←/iu, ["shift+left"]],
   [/[←◀]|\bleft\s*\/\s*right\b/iu, ["left"]],
   [/[→▶]|\bleft\s*\/\s*right\b/iu, ["right"]],
 ];
@@ -1133,6 +1134,14 @@ export function describeAdapterConformance(
         it(`${name}: a notice card's keys are the digits (letters under a letters head) its key block printed`, () => {
           for (const block of adapter.buildBlocks(loadLines(name))) {
             if (block.kind !== "menu" || block.menu.liveBox === undefined) continue;
+            // A reminder that questions wait (`liveBox.queued`, Codex's `shift+← to answer`) has one key,
+            // the chord its last row prints, which opens the question and answers nothing.
+            if (block.menu.liveBox.queued !== undefined) {
+              expect(lineText(block.lines.at(-1)!)).toMatch(/shift\+← to answer\s*$/u);
+              expect(block.menu.actions.map((a) => a.keys)).toEqual([["shift+Left"]]);
+              expect(block.menu.nav).toEqual({ upDown: false });
+              continue;
+            }
             const printed = printedNoticeKeys(block.lines.map(lineText), block.menu.title);
             const head = lineText(block.lines[0]!).trimEnd();
             const lettered = LETTERED_HEADS.some((pattern) => pattern.test(head));
