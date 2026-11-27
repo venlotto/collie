@@ -11,6 +11,7 @@ import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { usePaneKeySink } from "@/hooks/use-shortcut-handler";
 import { useLocale } from "@/hooks/use-locale";
+import { reopenTouchKeyboard } from "@/lib/reopen-touch-keyboard";
 import { useKeyboardOpen } from "@/hooks/use-keyboard";
 import { enterKeyAnswer } from "@/lib/enter-key";
 import { setEnterSends, useEnterSendsChoice } from "@/lib/enter-sends-store";
@@ -1079,6 +1080,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   clearComposedDraftRef.current = clearComposedDraft;
   const [protocolOffer, setProtocolOffer] = useState<{ text: string; isDraft: boolean; rowsHash: string | null; offers: readonly SendOffer[]; capAck: boolean; draft: OfferDraft | null } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  useEffect(() => setUploadError(null), [paneId, scopeId]);
   const activeUploadsRef = useRef(0);
   // Pending-send preview: set when a confirmed send is still not echoed `SEND_SLOW_MS` after the tap, cleared when the
   // mirror catches up (next text update) or 6s after it showed. Shows "You sent: …" so the user knows the message
@@ -1377,8 +1380,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  // The camera-roll half of the picker. See the two inputs below.
+  // Separate photo and video pickers keep media apart from the general file browser.
   const photoRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   // Revoke any armed terminal sender when polling pauses. A new explicit choice can arm it on return.
   const idleLocked = useLocked();
   // SEND PAST THIS SCREEN (M102 spec 03, spec 01's override): the rows hash of the screen the card showed at
@@ -3292,10 +3296,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         else if (draftPaneRef.current.paneId === targetPaneId) replaceAttachment(replaceN, file, res.path);
         setStatus(translate("composer.upload.success"), "success");
       } else {
-        setStatus(describeApiError(res), "error");
+        const message = `${file.name}: ${describeApiError(res)}`;
+        setUploadError(held => held === null ? message : `${held}\n${message}`);
+        setStatus(message, "error");
       }
     } catch (err) {
-      setStatus(describeThrownError(err), "error");
+      const message = `${file.name}: ${describeThrownError(err)}`;
+      setUploadError(held => held === null ? message : `${held}\n${message}`);
+      setStatus(message, "error");
     } finally {
       if (!alreadyHeld) endUpload();
     }
@@ -3352,6 +3360,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   /** The chip's Edit: open the editor on the chip's own bytes, on the tools. A result that is a new
    *  file uploads once and replaces the chip. The same file back means nothing changed. */
   async function editAttachment(attachment: ComposerAttachment) {
+    setUploadError(null);
     const file = attachmentFilesRef.current.get(attachment);
     if (file === undefined || editSession !== null || lockedRef.current) return;
     if (offlineRef.current) {
@@ -3614,6 +3623,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // `announceBadType` is false for a paste, which has always swallowed a file it cannot take so the
   // textarea can still receive a plain-text paste on the same clipboard.
   async function presentFiles(files: File[], announceBadType: boolean) {
+    setUploadError(null);
     const epoch = editEpoch.current;
     for (const file of files) {
       if (!mountedRef.current || epoch !== editEpoch.current) return;
@@ -3918,6 +3928,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           photoRef.current?.click();
         }}
       />
+      {(limits.videoTypes?.length ?? 0) > 0 && (
+        <ActionRow
+          icon={<Icon name="image" aria-hidden="true" className="size-4 shrink-0" />}
+          label={translate("composer.attach.videos")}
+          onClick={() => {
+            setPicking(false);
+            videoRef.current?.click();
+          }}
+        />
+      )}
       <ActionRow
         icon={<Icon name="file-text" aria-hidden="true" className="size-4 shrink-0" />}
         label={translate("composer.attach.files")}
@@ -4026,14 +4046,15 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             callback survives the keyboard collapsing. Attach fires it from the reply-input row
             below (always visible, not gated behind the keyboard-open quick keys); structural commands
             (New tab/space, Kill) and Stop (Esc, in the Keys dock) live elsewhere. */}
-        {/* TWO inputs, because a phone's picker cannot be asked both questions at once. The
+        {/* Separate media inputs, because a phone's picker cannot be asked every question at once. The
             camera roll is offered only when EVERY entry in `accept` maps to a gallery, so the
             extension list that makes a `.md` pickable is the very thing that hid the gallery on
             both Android and iOS — the attach button opened the file browser and nothing else.
-            `PHOTO_ACCEPT` is the first input's whole answer; the second keeps the full list. Which
-            one fires is the sheet's question, and both land in the same `onPickFile`. */}
+            `PHOTO_ACCEPT` keeps the photo gallery; videos have their own input and files keep
+            the full list. Each choice lands in the same `onPickFile`. */}
         <input ref={photoRef} data-testid="attach-photos" type="file" accept={PHOTO_ACCEPT} multiple hidden onChange={onPickFile} />
-        <input ref={fileRef} data-testid="attach-files" type="file" accept={accept} hidden onChange={onPickFile} />
+        <input ref={videoRef} aria-label={translate("composer.attach.videos")} type="file" accept={(limits.videoTypes ?? []).map((ext) => `.${ext}`).join(",")} multiple hidden onChange={onPickFile} />
+        <input ref={fileRef} data-testid="attach-files" type="file" accept={accept} multiple hidden onChange={onPickFile} />
 
         {/* Keys / Quick / Display dock — a single in-flow site ABOVE the Controls row (so the toggle
             you tapped stays put and the panel grows over the mirror, not the input). Whichever of the
@@ -4668,6 +4689,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             source={{ kind: "commands", commands: commandSuggestions, onPick: selectSuggestion }}
           />
         )}
+        {uploadError !== null && <p role="alert" className="mb-2 whitespace-pre-wrap text-sm text-status-blocked">{uploadError}</p>}
         {secretOpen ? (
           <SecretField
             key={secretFresh}
@@ -4690,6 +4712,20 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           />
         ) : (
         <div
+          onDragOver={(event) => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = locked || direct.active || uploading || editSession !== null ? "none" : "copy";
+          }}
+          onDrop={(event) => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (locked || direct.active) { sayFileLocked(); return; }
+            // Do not replace an editor's pending promise with a second batch.
+            if (uploading || editSession !== null) return;
+            void presentFiles(Array.from(event.dataTransfer.files), true);
+          }}
           data-slot="composer-box"
           data-bot-controls={botName && draftMicShown ? true : undefined}
           data-layout={box ? "box" : undefined}
@@ -4777,6 +4813,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             value={direct.active ? direct.value : input}
             onChange={direct.active ? direct.onChange : onDraftChange}
             onSelect={direct.active ? undefined : rememberCaret}
+            onPointerDown={e => reopenTouchKeyboard(e.currentTarget, e.pointerType, softKeyboard)}
             onFocus={() => setBoxFocused(true)}
             onBlur={(e) => {
               setBoxFocused(false);

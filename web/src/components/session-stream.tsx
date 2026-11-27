@@ -1,3 +1,4 @@
+import { UserMessageText } from "./user-message-text";
 import { BotActivity, botRowKind, groupBotTurns } from "./bot-activity";
 import { BlobAvatar, type BotIdentity, botTime } from "./bot-identity";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type RefObject } from "react";
@@ -1271,7 +1272,7 @@ export function SessionStream({
           items and before the working row. Each is replaced in place by the program's item (lib/durable-pending.ts). */}
       {drawnLines.map((line, i) => (
         <div key={line.requestId} data-slot="stream-pending" className={botStyle && line.seen ? "bot-turn bot-turn-user" : cn(NEAR_BLOCK, userRhythm(look.rhythm, blocks.length + i))}>
-          {botStyle && line.seen ? <p className="whitespace-pre-wrap">{line.text}</p> : <PendingTurn text={line.text} state={line.state} at={line.at} />}
+          {botStyle && line.seen ? <div className="whitespace-pre-wrap"><UserMessageText text={line.text} /></div> : <PendingTurn text={line.text} state={line.state} at={line.at} />}
         </div>
       ))}
 

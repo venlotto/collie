@@ -2592,6 +2592,8 @@ export interface UploadCapability {
   maxBytes: number;
   /** Image extensions accepted, bare and lowercase — sniffed from the bytes, never from the name. */
   imageTypes: string[];
+  /** Video container extensions; absent on older bridges. */
+  videoTypes?: string[];
   /** Text extensions accepted, bare and lowercase — taken from the name, with a binary veto. */
   textTypes: string[];
 }

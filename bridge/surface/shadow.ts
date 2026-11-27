@@ -28,6 +28,7 @@ import { DEFAULT_EDGE_PROFILE, type EdgeKind } from "../../web/src/lib/surface/e
 import { emptyFoldState, readFold, stepFold, type FoldContext, type FoldState, type SurfaceInput, type SurfaceRead } from "../../web/src/lib/surface/fold.ts";
 import { boxInk, readIsUnstyled, rowText, wholeDraft, type IdleProfile } from "../../web/src/lib/surface/frame.ts";
 import { legacyFree, liftAsk, liftDialog, readerBlocks } from "../../web/src/lib/surface/lift.ts";
+import { queuedQuestion } from "../../web/src/lib/pending-question.ts";
 import { findProfile, loadProfiles, profileFor, type Profile } from "../../web/src/lib/surface/profile.ts";
 import { askOf, frameImageKey, isFree, modalWord, shortHash, type Ask, type Surface, type SurfaceTurn } from "../../web/src/lib/surface/surface.ts";
 import type { CounterKey } from "./counters.ts";
@@ -208,6 +209,16 @@ export class SurfaceShadow {
   askOnScreen(paneId: string): boolean {
     const surface = this.surfaceOf(paneId);
     return surface !== undefined && surface.staleFrame !== true && askOf(surface.modal) !== null;
+  }
+
+  /**
+   * Whether the pane's newest screen read shows a question the agent queued for the person
+   * (lib/pending-question.ts), which keeps a `blocked` the box does not explain (blocked-settle.ts).
+   * False before the first read and on a read with no rows.
+   */
+  questionQueued(paneId: string): boolean {
+    const rows = this.panes.get(paneId)?.fold?.screen?.rows;
+    return rows != null && queuedQuestion(rows.map(rowText)) !== null;
   }
 
   /**

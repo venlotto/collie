@@ -357,6 +357,8 @@ type UpdateListener = (snap: EngineSnapshot) => void;
 type TickListener = () => void;
 /** Whether the newest read of a pane's screen shows an ask the person must answer. */
 export type ScreenAsk = (paneId: string) => boolean;
+/** What a multiplexer's `blocked` settles to by the pane's newest screen read, or null (blocked-settle.ts). */
+export type ScreenSettle = (paneId: string) => "working" | "idle" | null;
 
 export class StateEngine {
   private agents: AgentView[] = [];
@@ -431,6 +433,9 @@ export class StateEngine {
   // The screen's ask, when the bridge reads screens (see liftScreenAsks). Absent: the mux's status
   // stands as reported.
   private screenAsk: ScreenAsk | undefined;
+  // What a `blocked` the screen does not back settles to (see settleBlockedByScreen). Absent: the mux's
+  // `blocked` stands as reported.
+  private screenSettle: ScreenSettle | undefined;
   constructor(
     private readonly mux: MuxAdapter,
     private readonly pollMs: number,
@@ -454,6 +459,17 @@ export class StateEngine {
    */
   liftScreenAsks(fn: ScreenAsk): void {
     this.screenAsk = fn;
+  }
+
+  /**
+   * The screen also has the last word AGAINST a `blocked` (blocked-settle.ts): a pane the multiplexer
+   * reports `blocked`, whose newest read shows no ask, a box that takes keys and no queued question, is
+   * what its turn says, not "Needs you". Applied after the ask lift, before the transitions are taken, so
+   * the mark, the push and the badge all follow the screen. A pane `blocked` by an error is never
+   * settled, and neither is one whose screen shows an ask.
+   */
+  settleBlockedByScreen(fn: ScreenSettle): void {
+    this.screenSettle = fn;
   }
 
   onTransition(fn: TransitionListener): () => void {
@@ -769,6 +785,15 @@ export class StateEngine {
           if (!screenAsk(a.paneId)) continue;
           a.status = "blocked";
           delete a.blockedBy;
+        }
+      }
+      const screenSettle = this.screenSettle;
+      if (screenSettle !== undefined) {
+        for (const a of agents) {
+          if (a.status !== "blocked" || a.blockedBy !== undefined) continue;
+          if (screenAsk?.(a.paneId) === true) continue;
+          const settled = screenSettle(a.paneId);
+          if (settled !== null) a.status = settled;
         }
       }
 

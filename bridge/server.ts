@@ -1,3 +1,4 @@
+import { attachmentResponse, saveAttachmentName } from "./attachment-media.ts";
 import type { AgentRuns } from "./agent-runs.ts";
 import { botFeaturedChange, type BotFeatured } from "./bot-featured.ts";
 import { botDisplayChange, type BotDisplays } from "./bot-display.ts";
@@ -177,7 +178,7 @@ import type { Push, PushMessage, PushSubscription } from "./push.ts";
 import { RefreshCoalescer } from "./refresh.ts";
 import { herdTagFor, selectView, type SessionRegistry, type SessionRuntime, widenedPanes } from "./sessions.ts";
 import type { Snooze } from "./snooze.ts";
-import { IMAGE_EXTS, TEXT_EXTS, TEXT_SNIFF_BYTES, uploadExt } from "./uploads.ts";
+import { IMAGE_EXTS, VIDEO_EXTS, TEXT_EXTS, TEXT_SNIFF_BYTES, uploadExt } from "./uploads.ts";
 import { compareSemver, type UpdateMonitor } from "./update.ts";
 import { readStagingLog } from "./staging-log.ts";
 import {
@@ -2458,6 +2459,17 @@ export function startServer(opts: {
     // read-only device may see it exactly as it may see the pane text that mentions it. Like that
     // text it needs the pairing token (ADR 0086), so the phone fetches it and shows an object URL. It is session-scoped so `caller.resolve()` forwards a `?host=` call to the
     // member whose disk holds the file — the lead has no copy of a peer's blob (§9.1).
+    const attachmentMatch = /^\/api\/attachments\/([^/]+)(\/image)?$/.exec(pathname);
+    if (attachmentMatch && req.method === "GET") {
+      const denied = caller.gate("read");
+      if (denied) return denied;
+      const rt = await caller.resolve();
+      if (rt instanceof Response) return rt;
+      const response = secure(await attachmentResponse(join(cfg.stateDir, "uploads"), attachmentMatch[1]!,
+        attachmentMatch[2] !== undefined, cfg.maxUploadBytes));
+      response.headers.set("content-security-policy", "default-src 'none'; sandbox");
+      return response;
+    }
     const blobMatch = pathname.match(BLOB_ROUTE);
     if (blobMatch && req.method === "GET") {
       const denied = caller.gate("read");
@@ -4332,6 +4344,7 @@ export function startServer(opts: {
             upload: {
               maxBytes: cfg.maxUploadBytes,
               imageTypes: [...IMAGE_EXTS],
+              videoTypes: [...VIDEO_EXTS],
               textTypes: [...TEXT_EXTS, ...cfg.uploadExtraTypes],
             },
             // The lead's own switch, for the lead's own answer only. A member-scoped read leaves the
@@ -9744,9 +9757,9 @@ function uploadLimitDetail(cfg: Config) {
 // Save an uploaded attachment to a host file and return its absolute path. The client then
 // references that path in a message; Claude Code / Codex read images and text files by path (the
 // terminal can't take a pasted file over the socket). What may be written is `uploadExt`'s decision
-// — bytes for an image, name plus a binary veto for a text file — and the filename is
+// — bytes for images/videos, name plus a binary veto for a text file — and the filename is
 // server-generated, so nothing the client sent becomes a path component.
-async function uploadPane(
+export async function uploadPane(
   cfg: Config,
   paneId: string,
   req: Request,
@@ -9805,6 +9818,7 @@ async function uploadPane(
     const write = async (prefix: string) => {
       const name = `${prefix}${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
       await Bun.write(join(dir, name), file);
+      await saveAttachmentName(dir, name, file.name);
       return name;
     };
     const filename = trash ? await trash.writeAttachment(session, paneId, terminalId, write)

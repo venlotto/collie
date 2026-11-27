@@ -3,6 +3,7 @@ import type { Dictionary } from "./en";
 // Spanish. See de.ts for the typing contract.
 
 export const es: Dictionary = {
+  "bot.edit.title": "Editar bot",
   "settings.language.title": "Idioma",
   "settings.language.description": "La salida del terminal nunca se traduce.",
 
@@ -494,6 +495,7 @@ export const es: Dictionary = {
   "composer.expand": "Expandir",
   "composer.collapse": "Contraer",
   "composer.attach.title": "Adjuntar",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Fotos",
   "composer.attach.files": "Archivos",
   "composer.attach.listAria": "Adjuntos",
@@ -1922,6 +1924,11 @@ export const es: Dictionary = {
   "dialog.menu.moveUp": "Subir",
   "dialog.menu.moveDown": "Bajar",
   "dialog.menu.noticeDraft": "Vacía primero la caja: un dígito se sumaría al texto que hay.",
+  "dialog.queuedQuestion.one": "El agente te hizo una pregunta",
+  "dialog.queuedQuestion.many": "El agente te hizo {n} preguntas",
+  "dialog.queuedQuestion.hint": "Toca Responder para ver las opciones.",
+  "dialog.queuedQuestion.answer": "Responder",
+  "bot.desk.questionWaiting": "Te espera una pregunta · Responder",
   "dialog.menu.leftAria": "Izquierda: {verb} ({label})",
   "dialog.menu.rightAria": "Derecha: {verb} ({label})",
   "dialog.menu.levelAria": "{verb} a {label}",

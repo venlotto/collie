@@ -60,7 +60,17 @@ const DIALOG = [
   "codex--v0167-resume-tall--w120.txt",
   "codex--v0167-trust--w120.txt",
   "codex--v0167-trust--w80.txt",
+  // 0.172.0, a disposable Herdr pane at 52 columns (2026-11-27): the trust prompt, an async question's
+  // reminder over the live box (a notice card) and the question it opens (async-question.ts).
+  "codex--v0172-trust--w52.txt",
+  "codex--v0172-async-question--w52.txt",
+  "codex--v0172-async-panel--w52.txt",
 ];
+
+// A notice over the live box (a reminder that a question waits): the box keeps the keyboard, so the
+// composer reads ready under it, unlike every other capture in DIALOG.
+const LIVE_BOX_NOTICES: ReadonlySet<string> = new Set(["codex--v0172-async-question--w52.txt"]);
+const MODAL = DIALOG.filter((f) => !LIVE_BOX_NOTICES.has(f));
 
 const ownFixtures = DIALOG;
 const neutralFixtures = allCodexFixtures.filter((f) => !DIALOG.includes(f));
@@ -93,7 +103,7 @@ describe("composerReady — the gate the reply path pre-flights on", () => {
     },
   );
 
-  it.each([...DIALOG, "codex--ask-notes-focused.txt"])("%s: a modal owns the screen ⇒ false", (name) => {
+  it.each([...MODAL, "codex--ask-notes-focused.txt"])("%s: a modal owns the screen ⇒ false", (name) => {
     expect(codexAdapter.composerReady!(fixtureLines(name))).toBe(false);
   });
 });
@@ -160,7 +170,7 @@ describe("Codex on a read with no styling (herdr-core, Codex 0.166.0, reported 2
     },
   );
 
-  it.each([...DIALOG, "codex--ask-notes-focused.txt"])("%s stripped: a modal still owns the screen", (name) => {
+  it.each([...MODAL, "codex--ask-notes-focused.txt"])("%s stripped: a modal still owns the screen", (name) => {
     const raw = readFileSync(join(PANES_DIR, name), "utf8");
     expect(codexAdapter.composerReady!(splitLines(parseAnsi(stripSgr(raw))))).toBe(false);
   });

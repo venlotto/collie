@@ -92,6 +92,58 @@ export function imageExtFromBytes(head: Uint8Array): string | null {
   return null;
 }
 
+/** Video containers accepted by the upload route, verified from their header. */
+export const VIDEO_EXTS: readonly string[] = ["mp4", "mov", "webm"];
+
+/** Identify a supported video container; MIME types and filenames are not evidence. */
+export function videoExtFromBytes(head: Uint8Array): string | null {
+  // ISO base media: require a complete ftyp box and a known video major brand. In particular,
+  // HEIC/AVIF and audio-only M4A must not become videos merely because they also use ftyp.
+  if (head.length >= 16 && matchesAt(head, 4, [0x66, 0x74, 0x79, 0x70])) {
+    const size = new DataView(head.buffer, head.byteOffset, head.byteLength).getUint32(0);
+    if (size < 16 || size > head.length || size % 4 !== 0) return null;
+    const brand = String.fromCharCode(...head.subarray(8, 12));
+    if (brand === "qt  ") return "mov";
+    if (["isom", "iso2", "mp41", "mp42", "avc1", "M4V ", "MSNV"].includes(brand)) return "mp4";
+    return null;
+  }
+  // WebM uses EBML. Read the header's bounded elements rather than accepting every Matroska file.
+  if (!matchesAt(head, 0, [0x1a, 0x45, 0xdf, 0xa3])) return null;
+  const headerSize = ebmlInteger(head, 4, false);
+  if (headerSize === null) return null;
+  let offset = 4 + headerSize.width;
+  const end = offset + headerSize.value;
+  if (end > head.length) return null;
+  while (offset < end) {
+    const id = ebmlInteger(head, offset, true);
+    if (id === null) return null;
+    offset += id.width;
+    const size = ebmlInteger(head, offset, false);
+    if (size === null) return null;
+    offset += size.width;
+    if (offset + size.value > end) return null;
+    if (id.value === 0x4282) {
+      return size.value === 4 && matchesAt(head, offset, [0x77, 0x65, 0x62, 0x6d]) ? "webm" : null;
+    }
+    offset += size.value;
+  }
+  return null;
+}
+
+function ebmlInteger(head: Uint8Array, offset: number, keepMarker: boolean): { value: number; width: number } | null {
+  const first = head[offset];
+  if (first === undefined) return null;
+  let mask = 0x80;
+  let width = 1;
+  while (width <= 4 && (first & mask) === 0) { mask >>= 1; width++; }
+  // Upload sniffing only needs small, finite header elements, never an unknown-size segment.
+  if (width > 4 || offset + width > head.length) return null;
+  let value = keepMarker ? first : first & (mask - 1);
+  const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
+  for (let i = 1; i < width; i++) value = value * 256 + view.getUint8(offset + i);
+  return { value, width };
+}
+
 // ── Text attachments ─────────────────────────────────────────────────────────────────────────
 //
 // An image is identified by its BYTES, because every format we take has a signature and a lie about
@@ -148,7 +200,7 @@ export function extFromName(name: string): string | null {
 
 /**
  * THE WHOLE ACCEPT DECISION, in one pure function: the extension to save this upload under, or null
- * to refuse it. Bytes first (an image is what its signature says, whatever it is called), then the
+ * to refuse it. Bytes first (images and videos use their signatures, whatever their name), then the
  * name against the text allow-list with the bytes as a veto.
  *
  * `extraExts` is the operator's own additions, already normalised by `bridge/config.ts`. They join
@@ -162,6 +214,8 @@ export function uploadExt(
 ): string | null {
   const image = imageExtFromBytes(head);
   if (image !== null) return image;
+  const video = videoExtFromBytes(head);
+  if (video !== null) return video;
   const claimed = extFromName(name);
   if (claimed === null) return null;
   if (!TEXT_EXTS.includes(claimed) && !extraExts.includes(claimed)) return null;

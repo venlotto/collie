@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const fr: Dictionary = {
+  "bot.edit.title": "Modifier le bot",
   "settings.language.title": "Langue",
   "settings.language.description": "Le miroir du terminal n'est jamais traduit.",
   "settings.title": "Paramètres",
@@ -440,6 +441,7 @@ export const fr: Dictionary = {
   "composer.expand": "Développer",
   "composer.collapse": "Réduire",
   "composer.attach.title": "Joindre",
+  "composer.attach.videos": "Vidéos",
   "composer.attach.photos": "Photos",
   "composer.attach.files": "Fichiers",
   "composer.attach.listAria": "Pièces jointes",
@@ -1797,6 +1799,11 @@ export const fr: Dictionary = {
   "dialog.menu.moveUp": "Monter",
   "dialog.menu.moveDown": "Descendre",
   "dialog.menu.noticeDraft": "Videz d'abord la zone : un chiffre s'ajouterait au texte qui s'y trouve.",
+  "dialog.queuedQuestion.one": "L'agent vous a posé une question",
+  "dialog.queuedQuestion.many": "L'agent vous a posé {n} questions",
+  "dialog.queuedQuestion.hint": "Touchez Répondre pour voir les options.",
+  "dialog.queuedQuestion.answer": "Répondre",
+  "bot.desk.questionWaiting": "Une question vous attend · Répondre",
   "dialog.menu.leftAria": "Gauche : {verb} ({label})",
   "dialog.menu.rightAria": "Droite : {verb} ({label})",
   "dialog.menu.levelAria": "{verb} vers {label}",
