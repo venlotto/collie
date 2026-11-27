@@ -200,7 +200,7 @@ describe("ChatMessageList: the cards and the tag share one room", () => {
       unmount();
       return bottom;
     };
-    expect(away(72)).toBe("84px");
+    expect(away(72)).toBe("max(84px, calc(0.75rem + var(--bot-composer-overlap, 0px)))");
     expect(away(undefined)).toBe("");
   });
 });

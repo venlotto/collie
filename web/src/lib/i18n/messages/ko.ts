@@ -6,6 +6,7 @@ import type { Dictionary } from "./en";
 // Instructions name the translated controls (입력, 화면, 전송), not their English labels.
 
 export const ko: Dictionary = {
+  "bot.edit.title": "봇 편집",
   "settings.language.title": "언어",
   "settings.language.description": "터미널 출력 내용은 번역되지 않습니다.",
 
@@ -482,6 +483,7 @@ export const ko: Dictionary = {
   "composer.expand": "펼치기",
   "composer.collapse": "접기",
   "composer.attach.title": "첨부",
+  "composer.attach.videos": "동영상",
   "composer.attach.photos": "사진",
   "composer.attach.files": "파일",
   "composer.attach.listAria": "첨부 파일",

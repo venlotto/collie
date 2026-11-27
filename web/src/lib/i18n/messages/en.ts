@@ -14,6 +14,7 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
+  "bot.edit.title": "Edit bot",
   "settings.language.title": "Language",
   "settings.language.description": "The terminal mirror is never translated.",
 
@@ -536,6 +537,7 @@ export const en = {
   "composer.expand": "Expand",
   "composer.collapse": "Collapse",
   "composer.attach.title": "Attach",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Photos",
   "composer.attach.files": "Files",
   "composer.attach.listAria": "Attachments",

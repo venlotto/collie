@@ -29,7 +29,7 @@
 @keyframes bot-window-in { from { opacity: 0; transform: scale(.98); } }
 
 /* The bar: window controls where the phone keeps Back, the bot's name centred, its menu at the end. */
-.bot-window .bot-bar { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding-top: 9px; }
+.bot-window .bot-bar { grid-template-columns: auto minmax(0, 1fr) 44px; padding-top: 9px; }
 .bot-window .bot-bar > .bot-desk-ctrls { grid-column: 1; justify-self: start; }
 .bot-window .bot-bar > .bot-pill { grid-column: 2; max-width: min(100%, 260px); }
 .bot-window .bot-bar > .bot-circle:last-of-type { grid-column: 3; justify-self: end; }

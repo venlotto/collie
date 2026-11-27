@@ -36,7 +36,7 @@ export function uploadLimits(published: UploadCapability | null): UploadCapabili
  * Offering both is what makes the same button work on both.
  */
 export function acceptAttribute(limits: UploadCapability): string {
-  const exts = [...limits.imageTypes, ...limits.textTypes].map((ext) => `.${ext}`);
+  const exts = [...limits.imageTypes, ...limits.textTypes, ...(limits.videoTypes ?? [])].map((ext) => `.${ext}`);
   return ["image/*", ...exts].join(",");
 }
 
@@ -58,7 +58,7 @@ export const PHOTO_ACCEPT = "image/*";
  * the button opens the camera roll directly and the operator never sees a choice with one option.
  */
 export function offersFiles(limits: UploadCapability): boolean {
-  return limits.textTypes.length > 0;
+  return limits.textTypes.length > 0 || (limits.videoTypes?.length ?? 0) > 0;
 }
 
 /**
@@ -76,7 +76,7 @@ export function rejectAttachment(
   if (file.size > limits.maxBytes) return "tooLarge";
   if (file.type.startsWith("image/")) return null;
   const ext = extensionOf(file.name);
-  if (ext !== null && [...limits.imageTypes, ...limits.textTypes].includes(ext)) return null;
+  if (ext !== null && [...limits.imageTypes, ...limits.textTypes, ...(limits.videoTypes ?? [])].includes(ext)) return null;
   return "badType";
 }
 

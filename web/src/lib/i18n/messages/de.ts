@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const de: Dictionary = {
+  "bot.edit.title": "Bot bearbeiten",
   "settings.language.title": "Sprache",
   "settings.language.description": "Der Terminal-Spiegel wird nie übersetzt.",
 
@@ -497,6 +498,7 @@ export const de: Dictionary = {
   "composer.expand": "Ausklappen",
   "composer.collapse": "Einklappen",
   "composer.attach.title": "Anhängen",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Fotos",
   "composer.attach.files": "Dateien",
   "composer.attach.listAria": "Anhänge",
