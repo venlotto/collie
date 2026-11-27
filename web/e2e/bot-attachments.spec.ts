@@ -4,11 +4,11 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { PaneChatResponse, TranscriptEntry } from "@/lib/types";
 import { fixtureAgents, fixtureKiroChat, fixtureSnapshot, sendAnswer } from "@/test/handlers";
-import { installApiStub, installPaneWorld, pinLocale } from "./fixtures/api";
+import { installApiStub, installPaneWorld, paneCapture, pinLocale } from "./fixtures/api";
 const expect = baseExpect.configure({ timeout: 15_000 });
 const PNG = readFileSync(new URL("./fixtures/attachments/photo-small.png", import.meta.url));
 const codexHistoryPane = readFileSync(new URL("./fixtures/attachments/codex-history-pane.txt", import.meta.url), "utf8");
-const codexHistoryWrap = readFileSync(new URL("./fixtures/attachments/codex-history-well-wrap.txt", import.meta.url), "utf8");
+const codexHistoryPaddedWell = paneCapture("codex--upload-history-padded-well");
 const saved = "/home/ubuntu/.local/state/collie/uploads/term.fixture.mwz50y8g-12345678.png";
 async function open(page: Page, status = 200, entries: TranscriptEntry[] = [], harness = "kiro",
   screen = "Kiro> ", chat?: Extract<PaneChatResponse, { available: false }>) {
@@ -172,19 +172,39 @@ test("Codex Mensajes lifts a persisted upload echo out of the terminal after rel
   await expect(page.locator(".bot-turn-user")).toHaveCount(0);
 });
 
-test("Codex Mensajes reassembles a persisted upload echo wrapped by the input well", async ({ page }) => {
-  await open(page, 200, [], "codex", codexHistoryWrap.trimEnd(),
+test("Codex Mensajes reassembles the real padded input-well echo and Terminal stays verbatim", async ({ page }) => {
+  await page.setViewportSize(test.info().project.name.includes("phone")
+    ? { width: 390, height: 844 }
+    : { width: 1280, height: 800 });
+  await open(page, 200, [], "codex", codexHistoryPaddedWell,
     { paneId: fixtureAgents[0]!.paneId, available: false, reason: "no-log" });
   await page.reload();
-  const bubble = page.locator(".bot-turn-user").last();
-  await expect(bubble).toBeVisible();
+
+  await page.getByRole("button", { name: "Opciones del chat" }).click();
+  const view = page.getByRole("radiogroup", { name: "Vista", exact: true });
+  await expect(view.getByRole("radio", { name: "Mensajes", exact: true })).toHaveAttribute("aria-checked", "true");
+  await shot(page, "codex-history-padded-well-vista");
+  await page.keyboard.press("Escape");
+
+  const bubble = page.locator('[data-slot="terminal-user-upload"]');
+  await expect(bubble).toHaveCount(1);
+  await expect(bubble).toHaveClass(/bot-turn-user/);
   await expect(bubble.getByRole("img", { name: "photo-small.png" })).toBeVisible();
   await expect.poll(() => bubble.getByRole("img", { name: "photo-small.png" })
     .evaluate((img) => img instanceof HTMLImageElement ? img.naturalWidth : 0)).toBeGreaterThan(0);
   await expect(bubble).toContainText("photo-small.png");
   await expect(bubble).toContainText("COL-21: responde OK y para.");
+  await expect(bubble).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
   await expect(page.locator(".bot-detail")).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
-  await shot(page, "codex-terminal-history-wrap");
+  await expect(page.locator(".bot-terminal")).toContainText("• OK");
+  await shot(page, "codex-history-padded-well");
+
+  await page.getByRole("button", { name: "Opciones del chat" }).click();
+  await view.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".bot-terminal")).toContainText("/home/ubuntu/.local/state/collie/uploads/");
+  await expect(page.locator('[data-slot="terminal-user-upload"]')).toHaveCount(0);
+  await shot(page, "codex-history-padded-well-terminal");
 });
 
 test("a pending Codex send in Terminal uses the same attachment renderer", async ({ page }) => {

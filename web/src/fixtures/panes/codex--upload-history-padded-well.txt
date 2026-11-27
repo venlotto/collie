@@ -1,0 +1,23 @@
+  /status[0m[2m - show current session configuration[0m
+  /permissions[0m[2m - choose what Codex is allowed to do[0m
+  /model[0m[2m - choose what model and reasoning effort to[0m
+[0m[2muse[0m
+  /review[0m[2m - review any changes and find issues[0m
+ 
+[0m[38;2;238;238;238m[48;2;68;68;68m [0m[48;2;68;68;68m                                                     [0m
+[0m[1m[2m[38;2;238;238;238m[48;2;68;68;68m› [0m[38;2;238;238;238m[48;2;68;68;68m/home/ubuntu/.local/state/collie/uploads/[0m[48;2;68;68;68m           [0m
+[0m[38;2;238;238;238m[48;2;68;68;68m  term.8e157ec6c195a5165416515fd82dacb5e24cfaf307dfdc[0m[48;2;68;68;68m [0m
+[0m[38;2;238;238;238m[48;2;68;68;68m  58008fd9fb0082dde2.mwzcmgas-ff7603b9.png[0m[48;2;68;68;68m [0m[38;2;238;238;238m[48;2;68;68;68mCOL-21:[0m[48;2;68;68;68m    [0m
+[0m[38;2;238;238;238m[48;2;68;68;68m [0m[48;2;68;68;68m [0m[38;2;238;238;238m[48;2;68;68;68mresponde[0m[48;2;68;68;68m [0m[38;2;238;238;238m[48;2;68;68;68mOK[0m[48;2;68;68;68m [0m[38;2;238;238;238m[48;2;68;68;68my[0m[48;2;68;68;68m [0m[38;2;238;238;238m[48;2;68;68;68mpara.[0m[48;2;68;68;68m                                 [0m
+[0m[38;2;238;238;238m[48;2;68;68;68m [0m[48;2;68;68;68m                                                     [0m
+ 
+[0m[2m• [0mOK
+ 
+[0m[2m  Worked for 4s • 19:02                               [0m
+                             [0m[38;2;196;167;103m⚠ weekly limit: 18% left[0m
+ 
+[0m[1m› [0m[2mAsk Codex to do anything[0m
+ 
+  [0m[38;2;246;226;183mGPT-6-Astra high[0m · [0m[38;2;171;223;167m~/codex-hist-retest-2 [0m· [0m[38;2;243;139;168mResponder[0m
+  [0m[38;2;243;139;168mOK para COL-21[0m
+  [0m[1m←[0m for agents              ⚠ [0m[38;2;196;167;103m3 warnings [0m· [0m[1mf2 [0mto view
