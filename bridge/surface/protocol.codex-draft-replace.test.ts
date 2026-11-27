@@ -103,7 +103,7 @@ function codex() {
   return { pane, send };
 }
 
-const writes = (pane: FakePane): string[] => pane.calls.filter((call) => call.startsWith("block:") || (call.startsWith("type:") && call.length > "type:x".length));
+const writes = (pane: FakePane): string[] => pane.calls.filter((call) => (call.startsWith("block:") && call !== "block:⌁") || (call.startsWith("type:") && call.length > "type:x".length));
 const capture = (name: string): string => readFileSync(join(import.meta.dirname, "captures", name), "utf8");
 // eslint-disable-next-line no-control-regex
 const plain = (text: string): string => text.replace(/\u001b\[[0-9;:?]*[ -/]*[@-~]/gu, "");
