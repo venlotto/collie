@@ -8,6 +8,13 @@ export const ja: Dictionary = {
   "bot.selection.trashConfirm": "ゴミ箱に移動",
   "bot.selection.cancel": "キャンセル",
   "bot.edit.title": "ボットを編集",
+  "bot.chatActions.delete": "チャットを削除",
+  "bot.chatActions.move": "ワークスペースを変更",
+  "bot.chatActions.confirm": "「{name}」はゴミ箱に7日間保存されます。",
+  "bot.chatActions.empty": "他のワークスペースはありません。",
+  "bot.chatActions.cancel": "キャンセル",
+  "bot.chatActions.failed": "操作を完了できませんでした。もう一度お試しください。",
+
   "settings.language.title": "言語",
   "settings.language.description": "ターミナル出力は翻訳されません。",
 

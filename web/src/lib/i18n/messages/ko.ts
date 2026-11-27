@@ -11,6 +11,13 @@ export const ko: Dictionary = {
   "bot.selection.trashConfirm": "휴지통으로 이동",
   "bot.selection.cancel": "취소",
   "bot.edit.title": "봇 편집",
+  "bot.chatActions.delete": "채팅 삭제",
+  "bot.chatActions.move": "워크스페이스 변경",
+  "bot.chatActions.confirm": "“{name}”은(는) 휴지통에 7일 동안 보관됩니다.",
+  "bot.chatActions.empty": "사용 가능한 다른 워크스페이스가 없습니다.",
+  "bot.chatActions.cancel": "취소",
+  "bot.chatActions.failed": "작업을 완료하지 못했습니다. 다시 시도하세요.",
+
   "settings.language.title": "언어",
   "settings.language.description": "터미널 출력 내용은 번역되지 않습니다.",
 

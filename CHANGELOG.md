@@ -49,6 +49,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Attach videos alongside images in your messages.** The attachment menu accepts MP4, MOV and WebM videos, checks their container headers, and keeps video previews alongside image attachments.
 - **Answer several Codex questions, or write your own answer, from Messages.** When Codex asks more than one question at once, the card lists them and opens them one after another, each with its own options. Where Codex offers "Other", the card has a field for your own words: Collie picks Other, types them and sends them, and never types over words already in that field.
+- **Open chats offer deletion and workspace assignment from their menu.** Move a bot to another workspace or send it to Trash for seven days without selecting it in the chat list first.
 
 ### Changed
 

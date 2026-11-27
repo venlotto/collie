@@ -9,6 +9,13 @@ export const zh: Dictionary = {
   "bot.selection.trashConfirm": "移至回收站",
   "bot.selection.cancel": "取消",
   "bot.edit.title": "编辑机器人",
+  "bot.chatActions.delete": "删除聊天",
+  "bot.chatActions.move": "更改工作区",
+  "bot.chatActions.confirm": "“{name}”将在回收站中保留7天。",
+  "bot.chatActions.empty": "没有其他可用的工作区。",
+  "bot.chatActions.cancel": "取消",
+  "bot.chatActions.failed": "无法完成操作，请重试。",
+
   "settings.language.title": "语言",
   "settings.language.description": "终端镜像输出不会被翻译。",
 

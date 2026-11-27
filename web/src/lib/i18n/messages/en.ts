@@ -19,6 +19,13 @@ export const en = {
   "bot.selection.trashConfirm": "Move to Trash",
   "bot.selection.cancel": "Cancel",
   "bot.edit.title": "Edit bot",
+  "bot.chatActions.delete": "Delete chat",
+  "bot.chatActions.move": "Change workspace",
+  "bot.chatActions.confirm": "“{name}” will move to Trash for 7 days.",
+  "bot.chatActions.empty": "No other workspaces are available.",
+  "bot.chatActions.cancel": "Cancel",
+  "bot.chatActions.failed": "Could not complete the action. Try again.",
+
   "settings.language.title": "Language",
   "settings.language.description": "The terminal mirror is never translated.",
 

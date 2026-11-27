@@ -9,6 +9,13 @@ export const pt: Dictionary = {
   "bot.selection.trashConfirm": "Mover para a lixeira",
   "bot.selection.cancel": "Cancelar",
   "bot.edit.title": "Editar bot",
+  "bot.chatActions.delete": "Excluir chat",
+  "bot.chatActions.move": "Alterar workspace",
+  "bot.chatActions.confirm": "«{name}» ficará na lixeira por 7 dias.",
+  "bot.chatActions.empty": "Não há outros workspaces disponíveis.",
+  "bot.chatActions.cancel": "Cancelar",
+  "bot.chatActions.failed": "Não foi possível concluir a ação. Tente novamente.",
+
   "settings.language.title": "Idioma",
   "settings.language.description": "O espelho do terminal nunca é traduzido.",
   "settings.title": "Configurações",

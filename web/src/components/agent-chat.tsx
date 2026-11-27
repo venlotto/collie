@@ -2664,6 +2664,8 @@ export function AgentChat({
             80-column mirror, so the pane pair get their own claim. */}
         {mobileShell && bot && agent ? <BotChatBar bot={bot} pane={agent} unread={herd.filter(isUnseen).length}
           edit={paneWrites && !gone ? () => setEditingBot(true) : undefined}
+          actions={{ scope: scope ?? {}, writable: paneWrites && !gone && !rootData?.error && !rootData?.stale,
+            onChanged: () => { void revalidator.revalidate(); }, onDone: onBack }}
           pinned={!!botPin && botFeaturedMatches(botPin, agent)} pin={() => setBotPin(agent, !botPin || !botFeaturedMatches(botPin, agent))} back={onBackArrow ?? onBack}
           view={botDisplayEnabled ? standingPaneView : undefined} onViewChange={botDisplayEnabled ? paneViewChange : undefined}
           terminal={!chatShown} toggleView={transcriptReadable && !gridless ? () => paneViewChange(chatShown ? "terminal" : "chat") : undefined} /> : <RouteHeader

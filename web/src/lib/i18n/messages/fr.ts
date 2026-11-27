@@ -9,6 +9,13 @@ export const fr: Dictionary = {
   "bot.selection.trashConfirm": "Mettre à la corbeille",
   "bot.selection.cancel": "Annuler",
   "bot.edit.title": "Modifier le bot",
+  "bot.chatActions.delete": "Supprimer le chat",
+  "bot.chatActions.move": "Changer d’espace de travail",
+  "bot.chatActions.confirm": "« {name} » sera conservé dans la corbeille pendant 7 jours.",
+  "bot.chatActions.empty": "Aucun autre espace de travail disponible.",
+  "bot.chatActions.cancel": "Annuler",
+  "bot.chatActions.failed": "Impossible de terminer l’action. Réessayez.",
+
   "settings.language.title": "Langue",
   "settings.language.description": "Le miroir du terminal n'est jamais traduit.",
   "settings.title": "Paramètres",

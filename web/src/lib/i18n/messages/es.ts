@@ -8,6 +8,13 @@ export const es: Dictionary = {
   "bot.selection.trashConfirm": "Enviar a Papelera",
   "bot.selection.cancel": "Cancelar",
   "bot.edit.title": "Editar bot",
+  "bot.chatActions.delete": "Eliminar chat",
+  "bot.chatActions.move": "Cambiar workspace",
+  "bot.chatActions.confirm": "«{name}» se guardará en la Papelera durante 7 días.",
+  "bot.chatActions.empty": "No hay otros workspaces disponibles.",
+  "bot.chatActions.cancel": "Cancelar",
+  "bot.chatActions.failed": "No se pudo completar la acción. Vuelve a intentar.",
+
   "settings.language.title": "Idioma",
   "settings.language.description": "La salida del terminal nunca se traduce.",
 

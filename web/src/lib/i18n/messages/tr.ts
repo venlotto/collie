@@ -9,6 +9,13 @@ export const tr: Dictionary = {
   "bot.selection.trashConfirm": "Çöp Kutusuna taşı",
   "bot.selection.cancel": "İptal",
   "bot.edit.title": "Botu düzenle",
+  "bot.chatActions.delete": "Sohbeti sil",
+  "bot.chatActions.move": "Çalışma alanını değiştir",
+  "bot.chatActions.confirm": "“{name}” 7 gün boyunca Çöp Kutusunda saklanacak.",
+  "bot.chatActions.empty": "Başka çalışma alanı yok.",
+  "bot.chatActions.cancel": "İptal",
+  "bot.chatActions.failed": "İşlem tamamlanamadı. Tekrar deneyin.",
+
   "settings.language.title": "Dil",
   "settings.language.description": "Uçbirim yansısı hiçbir zaman çevrilmez.",
   "settings.title": "Ayarlar",

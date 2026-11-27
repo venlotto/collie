@@ -9,6 +9,13 @@ export const de: Dictionary = {
   "bot.selection.trashConfirm": "In den Papierkorb",
   "bot.selection.cancel": "Abbrechen",
   "bot.edit.title": "Bot bearbeiten",
+  "bot.chatActions.delete": "Chat löschen",
+  "bot.chatActions.move": "Arbeitsbereich ändern",
+  "bot.chatActions.confirm": "„{name}“ wird 7 Tage im Papierkorb aufbewahrt.",
+  "bot.chatActions.empty": "Keine anderen Arbeitsbereiche verfügbar.",
+  "bot.chatActions.cancel": "Abbrechen",
+  "bot.chatActions.failed": "Die Aktion konnte nicht abgeschlossen werden. Versuche es erneut.",
+
   "settings.language.title": "Sprache",
   "settings.language.description": "Der Terminal-Spiegel wird nie übersetzt.",
 

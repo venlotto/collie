@@ -911,3 +911,34 @@ test("the same open terminal, draft and selection cross the split breakpoint", a
     expect(composer.x + composer.width).toBeLessThanOrEqual(width);
   }
 });
+
+// The browser owns popover dismissal, the dialog top layer and focus restoration.
+// Request bodies, cancellation and failures are covered by bot-chat-actions.test.tsx.
+test("open chat menu hands focus to its action dialog", async ({ page }) => {
+  await installApiStub(page);
+  const pane = { ...fixtureAgents[0]!, terminalId: "chat-menu-terminal", paneLabel: "Bot del menú", agent: "kiro", hasSession: true };
+  const snapshot = { ...fixtureSnapshot, agents: [pane], shellPanes: [], device: { enforced: true, authorized: true, device: "test" } };
+  await installPaneWorld(page, { paneId: pane.paneId, snapshot, chat: fixtureKiroChat,
+    start: "idle", screens: { idle: paneCapture("kiro--v3-idle-w120") }, script: [] });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Bot del menú/ }).click();
+  const options = page.getByRole("button", { name: "Opciones del chat" });
+  await options.click();
+  await page.getByRole("button", { name: "Eliminar chat", exact: true }).click();
+  const remove = page.getByRole("dialog", { name: "Eliminar chat" });
+  await expect(remove).toBeVisible();
+  await expect(remove).toHaveText(/7 días/);
+  await expectBotSheetPosition(remove);
+  await screenshot(page, "chat-menu-eliminar");
+  await remove.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(remove).toHaveCount(0);
+  await options.click();
+  await page.getByRole("button", { name: "Cambiar workspace", exact: true }).click();
+  const move = page.getByRole("dialog", { name: "Cambiar workspace" });
+  await expect(move).toBeVisible();
+  await expectBotSheetPosition(move);
+  await screenshot(page, "chat-menu-workspace");
+  await move.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(move).toHaveCount(0);
+  await expect(options).toBeVisible();
+});

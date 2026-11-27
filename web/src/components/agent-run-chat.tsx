@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft } from "lucide-react";
 import { useRevalidator } from "react-router";
 import { useChatWindow } from "@/hooks/use-chat-window";
 import { useDisplayPrefs } from "@/hooks/use-display-prefs";
@@ -15,12 +14,11 @@ import { homePath, panePath } from "@/lib/nav";
 import { paneSurface, UNREAD_SURFACE } from "@/lib/send-slot";
 import { paneScopeKey, type Scope } from "@/lib/scope";
 import type { AgentView } from "@/lib/types";
-import { activityStatusOf } from "@/lib/activity-status";
 import { mintRequestId } from "@/lib/worktree-name";
-import { BotActivityPill } from "./bot-activity-avatar";
+import { BotChatBar } from "./bot-chat-bar";
+import { botFeaturedMatches, useBotFeatured } from "@/lib/bot-featured";
 import { identityOf } from "./bot-identity";
 import { Composer, type ComposerHandle } from "./composer";
-import { useDeskControls } from "./bot-desk-controls";
 import { SessionStream } from "./session-stream";
 import { AgentRunImplementSheet } from "./agent-run-implement";
 import { Button } from "./ui/button";
@@ -63,7 +61,7 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
   const creatingChat = useRef(false);
   const { prefs } = useDisplayPrefs();
   const bot = identityOf(agent, scope);
-  const desk = useDeskControls();
+  const { featured, setFeatured } = useBotFeatured();
   const replyPane = physical ? agent.paneId : id;
   const canSend = run.status === "running" && physical;
   const canResume = run.canResume === true && !resumeFailed;
@@ -144,10 +142,10 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
   }
   const fallback = resumeFailed ? t("agentRun.finished.resumeFailed") : t("agentRun.finished.unsupported");
   return <div ref={root} className="bot-conversation bot-agent-run">
-    <header className="bot-bar bot-chat-bar agent-run-bar">
-      {desk ?? <button className="bot-circle bot-back" aria-label="Volver a los chats" onClick={() => nav.upTo(homePath(scope))}><ChevronLeft /></button>}
-      <BotActivityPill bot={bot} status={activityStatusOf(agent)} />
-    </header>
+    <BotChatBar className="agent-run-bar" bot={bot} pane={agent} unread={0} terminal={false}
+      pinned={!!featured && botFeaturedMatches(featured, agent)} pin={() => setFeatured(agent, !featured || !botFeaturedMatches(featured, agent))}
+      back={() => nav.upTo(homePath(scope))} actions={{ scope, writable,
+        onDone: () => nav.upTo(homePath(scope)), onChanged: () => { void refresh.revalidate(); } }} />
     <SessionStream bot={bot} feed={feed} working={run.status === "running" || continued} agent={agent.agent}
       address={paneScopeKey(scope, id)} showToolCalls={false} showCompactions={false} fontSize={15} listRef={list} />
     <div ref={setBottom} className="agent-run-bottom">

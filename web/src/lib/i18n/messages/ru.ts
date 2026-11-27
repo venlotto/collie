@@ -9,6 +9,13 @@ export const ru: Dictionary = {
   "bot.selection.trashConfirm": "В корзину",
   "bot.selection.cancel": "Отмена",
   "bot.edit.title": "Изменить бота",
+  "bot.chatActions.delete": "Удалить чат",
+  "bot.chatActions.move": "Сменить рабочее пространство",
+  "bot.chatActions.confirm": "«{name}» будет храниться в корзине 7 дней.",
+  "bot.chatActions.empty": "Нет других доступных рабочих пространств.",
+  "bot.chatActions.cancel": "Отмена",
+  "bot.chatActions.failed": "Не удалось выполнить действие. Попробуйте ещё раз.",
+
   "settings.language.title": "Язык",
   "settings.language.description": "Зеркало терминала не переводится.",
   "settings.title": "Настройки",

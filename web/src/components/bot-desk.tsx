@@ -11,7 +11,7 @@
 
 import { Maximize2, Minimize2, Minus, MessagesSquare, X } from "lucide-react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode, type RefObject } from "react";
-import { DeskControlsContext, useDeskControls } from "./bot-desk-controls";
+import { DeskControlsContext } from "./bot-desk-controls";
 import "./bot-desk.css";
 import { useBotChromeOverlap } from "@/hooks/use-bot-chrome-overlap";
 import { useChatWindow } from "@/hooks/use-chat-window";
@@ -29,7 +29,11 @@ import { useRootData } from "@/lib/route-data";
 import { paneScopeKey, type Scope } from "@/lib/scope";
 import { isUnseen } from "@/lib/triage";
 import type { AgentView } from "@/lib/types";
-import { BotActivityAvatar, BotActivityPill } from "./bot-activity-avatar";
+import { BotActivityAvatar } from "./bot-activity-avatar";
+import { BotChatBar } from "./bot-chat-bar";
+import { botFeaturedMatches, useBotFeatured } from "@/lib/bot-featured";
+import { isReadOnly } from "@/lib/types";
+import { useRevalidator } from "react-router";
 import { identityOf } from "./bot-identity";
 import { RawMirror } from "./raw-mirror";
 import { SessionStream } from "./session-stream";
@@ -94,7 +98,9 @@ function DeskWindow({ windowKey, name, maxed, focused, leaving, acts, children }
 
 /** A window without the focus: its chat, live, read only. Any click on it hands it the focus. */
 function DeskPeek({ pane, scope, onReply }: { pane: AgentView; scope: Scope; onReply: () => void }) {
-  const controls = useDeskControls();
+  const data = useRootData();
+  const refresh = useRevalidator();
+  const { featured, setFeatured } = useBotFeatured();
   const run = pane.agentRun;
   const id = run ? "agent-run:" + run.id : pane.paneId;
   const sessionLog = paneSessionLog(useMuxCapability("agentSessionRef", scope), pane.hasSession);
@@ -113,10 +119,10 @@ function DeskPeek({ pane, scope, onReply }: { pane: AgentView; scope: Scope; onR
     if (node) setClear(Math.ceil(node.getBoundingClientRect().height));
   }, [setBottom]);
   return <div ref={root} className="bot-conversation bot-agent-run bot-desk-peek">
-    <header className="bot-bar bot-chat-bar agent-run-bar">
-      {controls}
-      <BotActivityPill bot={bot} status={activityStatusOf(pane)} />
-    </header>
+    <BotChatBar className="agent-run-bar" bot={bot} pane={pane} unread={0} terminal={!chat} back={onReply}
+      pinned={!!featured && botFeaturedMatches(featured, pane)} pin={() => setFeatured(pane, !featured || !botFeaturedMatches(featured, pane))}
+      actions={{ scope, writable: !data.authError && !data.error && !data.stale && !isReadOnly(data.device),
+        onChanged: () => { void refresh.revalidate(); } }} />
     {chat ? <SessionStream bot={bot} feed={feed} working={run ? run.status === "running" : pane.status === "working"} agent={pane.agent}
       address={paneScopeKey(scope, id)} showToolCalls={false} showCompactions={false} fontSize={15} listRef={list} clearBottom={clear} />
       : <div><div data-slot="session-stream" className="bot-desk-mirror">
