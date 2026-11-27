@@ -126,6 +126,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       top: (list.previousElementSibling?.getBoundingClientRect().bottom ?? bounds.top) - bounds.top,
       bottom: (footer.current?.getBoundingClientRect().top ?? bounds.bottom) - bounds.top,
     };
+    // The footer (search bar, and the unread chip above it) floats over the list's end. Its measured
+    // height lets the last row rest above both, and hides rows under the chip while it shows.
+    list.style.setProperty("--bot-foot-clip", Math.max(0, bounds.height - visibleBand.current.bottom) + "px");
     const offset = list.scrollTop - bounds.top;
     unreadRows.current = Array.from(list.querySelectorAll<HTMLButtonElement>(".bot-row:has(.bot-unread)"), button => {
       const box = button.getBoundingClientRect();
@@ -275,7 +278,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
         <PlusButton onNew={onNew} onQuickNew={onQuickNew && (() => void onQuickNew().then(message => setError(message ?? "")))} busy={quickBusy} />
       </header>}
-      <div className="bot-scroll" ref={scroll} onScroll={countUnread}>
+      <div className="bot-scroll" ref={scroll} onScroll={countUnread} data-jump-below={below > 0 || undefined}>
         {accessNotice}
         {organize.error && <p role="alert" className="bot-access">{organize.error}</p>}
         {error && !sheet && <p className="bot-access" role="alert">{error}</p>}
@@ -299,11 +302,11 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         {!trashedSpaces.length && !trashRows.length && !accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
       </div>
       {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.row.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
-      {below > 0 && <button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.row.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button>}
     </div>
     {organize.menu && <WorkspaceMenu {...organize.menu} />}
     {organize.dragging && <div className="bot-drop-trash"><Trash2 size={19} />Papelera</div>}
     <div className="bot-search-foot" ref={footer}>
+      {below > 0 && <div className="bot-jump-slot"><button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.row.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button></div>}
       {mode ? <div className="bot-search bot-actions" role="toolbar" aria-label="Acciones de selección">
         {mode === "chats" ? <>
           <button disabled={!chosen.length || !destinations.length || busy} onClick={() => openSheet("move")}><FolderInput size={18} />Mover</button>

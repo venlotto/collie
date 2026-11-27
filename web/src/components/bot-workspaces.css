@@ -230,10 +230,18 @@
 .bot-spaces { pointer-events: auto; background: #382c39; width: 44px; height: 44px; flex: none; }
 .bot-picker { position: fixed; inset: auto auto max(72px,calc(env(safe-area-inset-bottom) + 55px)) 16px; margin: 0; background: #262628; border-radius: 18px; padding: 7px; max-width: calc(var(--sidebar-width, 100dvw) - 32px); max-height: 52dvh; overflow-wrap: anywhere; overflow: auto; color: white; pointer-events: auto; }
 .bot-picker button { min-height: 42px; display: block; width: 100%; padding: 0 14px; text-align: left; }
-.bot-jump { position: absolute; z-index: 1; left: 50%; transform: translateX(-50%); border-radius: 99px; background: #076ad0; padding: 7px 12px; display: flex; align-items: center; gap: 6px; color: white; font-size: 13px; }
-.bot-jump-up { top: calc(64px + env(safe-area-inset-top)); }
+.bot-jump { pointer-events: auto; border-radius: 99px; background: #076ad0; padding: 7px 12px; display: flex; align-items: center; gap: 6px; color: white; font-size: 13px; white-space: nowrap; }
+.bot-jump-up { position: absolute; z-index: 1; left: 50%; transform: translateX(-50%); top: calc(64px + env(safe-area-inset-top)); }
 .bot-jump-up svg { transform: rotate(180deg); }
-.bot-jump-down { bottom: 64px; }
+/* The "N unread" chip below the fold owns a row of the footer, above the search bar. While it shows,
+   the list fades out above it, so the chip never covers a row and the search bar stays clear. */
+.bot-search-foot { flex-wrap: wrap; row-gap: 8px; }
+.bot-search-foot > .bot-search { flex: 1 1 0; min-width: 0; }
+.bot-jump-slot { flex: 0 0 100%; display: flex; justify-content: center; min-width: 0; }
+.bot-scroll[data-jump-below] {
+  -webkit-mask-image: linear-gradient(to top, transparent var(--bot-foot-clip, 0px), #000 calc(var(--bot-foot-clip, 0px) + 18px));
+  mask-image: linear-gradient(to top, transparent var(--bot-foot-clip, 0px), #000 calc(var(--bot-foot-clip, 0px) + 18px));
+}
 .bot-group::first-letter { text-transform: uppercase; }
 
 .bot-backdrop { position: absolute; inset: 0; }
@@ -369,7 +377,7 @@
 .bot-sheet p[role=alert] { color: #ffe8e3; }
 .bot-search-foot { background: transparent; }
 .bot-list-surface > .bot-bar { position: absolute; inset: 0 0 auto; z-index: 2; }
-.bot-scroll { padding-top: calc(var(--bot-head) + 8px); scroll-padding-block: var(--bot-head) 58px; }
+.bot-scroll { padding-top: calc(var(--bot-head) + 8px); padding-bottom: calc(var(--bot-foot-clip, 56px) + 18px); scroll-padding-block: var(--bot-head) calc(var(--bot-foot-clip, 56px) + 2px); }
 .bot-row, .bot-index [data-drag-space] .bot-row { transition-property: transform, opacity; }
 
 /* Both chat bars float over a full-height reader. Measured bottom clearance
@@ -429,3 +437,14 @@
 .agent-run-status .agent-run-implement:disabled { opacity: .55; }
 .agent-run-bar.bot-bar > .bot-back:last-of-type { grid-column: 1; }
 .agent-run-bar .bot-pill { grid-column: 2; }
+
+/* A finished agent run names its Send slot ("Continue with the agent", "Open new chat"). On a narrow
+   reply box that word would squeeze the field to a sliver, so it takes a full-width row of its own
+   under the field. Measured on the box's container, so a narrow desk window stacks too. */
+.agent-run-bottom { container: agent-run-bottom / inline-size; }
+@container agent-run-bottom (max-width: 560px) {
+  .agent-run-bottom [data-slot="composer-box"][data-box="rest"]:has(> [data-text-action]) { row-gap: 6px; }
+  .bot-detail .agent-run-bottom [data-slot="composer-box"][data-box="rest"] > button[data-text-action] {
+    grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; white-space: normal;
+  }
+}

@@ -103,6 +103,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Touching a focused reply field can reopen its keyboard.** A fresh touch restores mobile keyboard focus when the caret stayed active after the keyboard closed.
 
 - **Bot controls fit phones, tablets and desktop chat windows.** Long workspace names wrap, menus and forms stay within the screen, and the jump-to-latest control clears the reply box. Touch controls have more room and the hub respects the corrected iOS viewport height.
+- **The unread chip sits above the search bar instead of over your chats.** When a chat below the fold is unread, its chip takes a row of its own above search, the list fades out above it, and the last chat still scrolls clear of both.
+- **A finished agent's reply box stays whole on a phone.** The "Continue with the agent" button moves to its own full-width row under the field on a narrow screen, so the field, its placeholder and the attach button are no longer squeezed.
 
 ## [1.31.0] - 2026-11-24
 
