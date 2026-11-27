@@ -1,0 +1,30 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.172.0)
+[0m     [2m/tmp/cx-scratch[0m
+
+
+
+
+
+
+
+  [1mKeyboard shortcuts[0m
+
+  [1mCompose[0m
+  [38;2;99;168;248m/[39m        Commands
+  [38;2;99;168;248m@[39m        Mention files
+  [38;2;99;168;248m![39m        Shell command
+  [38;2;99;168;248m^j[39m       New line
+  [38;2;99;168;248m^v[39m       Paste image
+  [38;2;99;168;248m^g[39m       External editor
+  [38;2;99;168;248m^r[39m       Search history
+  [38;2;99;168;248mesc esc[39m  Edit last message
+
+  [1mSession[0m
+  [2m… resize to see all[0m
+  [38;2;99;168;248m/keymap[39m customize
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  [38;2;246;226;183mgpt-5 default[39m · [38;2;171;223;167m/tmp/cx-scratch[39m
+  [1m?[0m / [1mesc[0m close

@@ -2682,7 +2682,8 @@ export function wholePaste(match: ProfileMatch | null, lines: readonly string[],
   const alone = uploadAlone(match, lines, imageFile);
   if (alone !== null) return alone;
   const text = lines.join("\n");
-  if (lines.length === 1 && text.length <= WHOLE_PASTE_MIN_CHARS) return null;
+  if (text.length === 0) return null;
+  if (lines.length === 1 && text.length <= (paste.blockMinChars ?? WHOLE_PASTE_MIN_CHARS)) return null;
   if (reservedLead(lines[0] ?? "", match.profile.reservedLeads) !== null) return null;
   const counted: Pick<WholePaste, "foldsLines"> = paste.foldLines === "lines" ? { foldsLines: true } : {};
   if (paste.image === undefined) return { images: 0, image: null, lines, literal: lines, ...counted };
@@ -2814,7 +2815,11 @@ function boxMatchesForm(box: string, prefix: string, lines: readonly string[], c
     const after = q;
     const m = whole.folds === false ? null : take(collapse);
     const count = m?.groups?.lines;
+    const chars = m?.groups?.chars;
     const expected = whole.foldsLines === true ? lines.length : lines.length - 1;
+    // A form that counts characters (Codex 0.172.0: `[Pasted Content 1231 chars]`, lab 2026-11-27) is
+    // the paste only when it counts exactly this text, line breaks included, as the harness counts it.
+    if (m !== null && q === squeezed.length && chars !== undefined) return Number(chars) === [...lines.join("\n")].length;
     if (m !== null && q === squeezed.length && (count === undefined ? lines.length === 1 : Number(count) === expected)) return true;
     p = at[after]!;
   }
