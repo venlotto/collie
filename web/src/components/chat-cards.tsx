@@ -124,6 +124,11 @@ export interface CardWaiting {
   body?: ReactNode;
   /** One line drawn in `body`'s place as it leaves, for a close the reader did not cause. */
   note?: string;
+  /**
+   * The way to the card that answers this one, when it is elsewhere (the dialog dock below the
+   * stream). Set, the note is a button that moves the focus there; it sends nothing.
+   */
+  go?: () => void;
 }
 
 /**
@@ -1349,12 +1354,23 @@ function QuestionTool({
       {/* The body is the host's alone. The line below is the note's own place, so a note arriving
           swaps a sentence for a sentence rather than opening a second line under the first. */}
       <WaitingArea waiting={waiting && { ...waiting, note: undefined }} />
-      {(asking || status === "denied") && (
-        <p className="border-t border-border px-3 py-2.5 text-xs text-muted-foreground">
-          {status === "denied"
-            ? t("chat.question.dismissed")
-            : (waiting?.note ?? t("chat.question.waiting"))}
-        </p>
+      {asking && waiting?.note !== undefined && waiting.go !== undefined ? (
+        // The options above are a record, not buttons; this line is the way to the ones that answer.
+        <button
+          type="button"
+          onClick={waiting.go}
+          className="w-full border-t border-border px-3 py-2.5 text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
+        >
+          {waiting.note}
+        </button>
+      ) : (
+        (asking || status === "denied") && (
+          <p className="border-t border-border px-3 py-2.5 text-xs text-muted-foreground">
+            {status === "denied"
+              ? t("chat.question.dismissed")
+              : (waiting?.note ?? t("chat.question.waiting"))}
+          </p>
+        )
       )}
     </Card>
   );

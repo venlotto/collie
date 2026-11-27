@@ -1045,6 +1045,8 @@ export const it: Dictionary = {
   "newPage.title.inSpace": "Nuovo in questo spazio",
   "prompt.feedback.cancel": "Annulla",
   "prompt.feedback.other.help": "Sceglie «Other» nel terminale, vi scrive la tua risposta e la invia.",
+  "prompt.feedback.other.stranded": "La tua risposta non è partita. Il testo resta scritto nel campo del terminale, non inviato: rinvialo da qui o completalo nel terminale.",
+  "prompt.feedback.other.retry": "Invia di nuovo",
   "prompt.questionStep": "Domanda {index} di {total}",
   "prompt.feedback.typedAria": "Feedback nel terminale",
   "prompt.feedback.planChange.offer": "Spiega a Claude cosa modificare",
@@ -1855,6 +1857,7 @@ export const it: Dictionary = {
   "promptAction.feedback.empty": "Nulla da inviare",
   "promptAction.feedback.boxNotOpened": "Il campo per il feedback non si è aperto: controlla il riquadro",
   "promptAction.feedback.notArrived": "Il feedback non è arrivato: nulla è stato inviato",
+  "promptAction.feedback.other.notSent": "Non è stato possibile inviare la risposta. Il tuo testo resta scritto nel campo del terminale, non inviato.",
   "promptAction.answer.fieldNotReached":
     "Impossibile raggiungere il campo di risposta. Non è stato inviato nulla",
   "promptAction.answer.notCleared": "Impossibile cancellare il campo di risposta. Non è stato inviato nulla",

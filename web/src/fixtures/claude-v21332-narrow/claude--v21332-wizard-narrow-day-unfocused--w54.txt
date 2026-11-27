@@ -1,0 +1,23 @@
+  sé si quisiste escribir algo propio o si hubo un
+  error. No hice nada más, como pediste.
+     
+[0m[38;2;153;153;153m✻ Churned for 4s · done 8:46 PM[0m
+
+[0m[38;2;153;153;153m[48;2;55;55;55m❯ [0m[38;2;255;255;255m[48;2;55;55;55mUsa AskUserQuestion UNA vez con dos preguntas: Pet?[0m[48;2;55;55;55m [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55mopciones Cat y Dog. Day? opciones Mon y Tue. No [0m[48;2;55;55;55m    [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55mhagas nada mas.[0m[48;2;55;55;55m                                     [0m
+[0m[38;2;153;153;153m──────────────────────────────────────────────────────[0m
+←  ☒ Pet [0m[38;2;0;0;0m[48;2;177;185;249m ☐ Day  [0m✔ Submit  →
+
+[0m[1m[38;2;255;255;255m¿Day?[0m
+
+[0m[38;2;177;185;249m❯[0m [0m[38;2;153;153;153m1.[0m [0m[38;2;177;185;249mMon[0m
+     [0m[38;2;153;153;153mOpción Mon[0m
+  [0m[38;2;153;153;153m2. [0mTue
+     [0m[38;2;153;153;153mOpción Tue[0m
+  [0m[38;2;153;153;153m3. Type something.[0m
+[0m[38;2;153;153;153m──────────────────────────────────────────────────────[0m
+  4. Chat about this
+
+[0m[38;2;153;153;153mEnter to select · Tab/Arrow keys to navigate · Esc to [0m
+[0m[38;2;153;153;153mcancel[0m

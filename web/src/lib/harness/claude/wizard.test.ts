@@ -412,3 +412,60 @@ describe("wizardsSameIdentity — the answer recipe's mid-flight comparator", ()
     expect(wizardsSameIdentity(oc, moved)).toBe(false);
   });
 });
+
+// Claude Code 2.1.332 in a 54-column, 23-row Herdr pane (the diagnosis panes of 2026-11-27). The select
+// footer wraps onto two rows, and the field's `ctrl+g to edit in Vim · ` hint moves the wrap: unfocused
+// `… · Esc to` / `cancel`, focused `… · ctrl+g` / `to edit in Vim · Esc to cancel`. The review step no
+// longer prints "Ready to submit your answers?".
+describe("detectWizard — Claude Code 2.1.332 at 54 columns", () => {
+  const NARROW_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "claude-v21332-narrow");
+  const narrowText = (name: string) => readFileSync(join(NARROW_DIR, name), "utf8");
+  const narrowLines = (name: string) => splitLines(parseAnsi(narrowText(name)));
+  const step = (name: string) => {
+    const m = detectWizard(narrowLines(name));
+    if (m?.phase !== "question") throw new Error(`${name}: no question step`);
+    return m;
+  };
+  const unfocused = step("claude--v21332-wizard-narrow-unfocused--w54.txt");
+  const focused = step("claude--v21332-wizard-narrow-field-focused--w54.txt");
+  const typed = step("claude--v21332-wizard-narrow-field-typed--w54.txt");
+
+  it("reads the field in all three states", () => {
+    expect(unfocused.field).toMatchObject({ key: "3", focused: false, text: "" });
+    expect(focused.field).toMatchObject({ key: "3", focused: true, text: "" });
+    expect(typed.field).toMatchObject({ key: "3", focused: true, text: "Fish 42, maybe 3" });
+  });
+
+  it("focusing and filling the field keep the step's identity although the wrapped footer re-flows", () => {
+    for (const [a, b] of [
+      [unfocused, focused],
+      [focused, typed],
+      [unfocused, typed],
+    ] as const) {
+      expect(wizardsSameIdentity(a, b)).toBe(true);
+    }
+    // The byte-faithful comparison still sees the change: the entry guard is unchanged.
+    expect(wizardsEqual(unfocused, focused)).toBe(false);
+  });
+
+  it("a different question at the same width is still another identity", () => {
+    const other = { ...focused, question: "¿Day?", coreSignature: focused.coreSignature!.replace("¿Pet?", "¿Day?") };
+    expect(wizardsSameIdentity(unfocused, other)).toBe(false);
+  });
+
+  it("lifts the review step that carries no 'Ready to submit' line, answers and all", () => {
+    const review = detectWizard(narrowLines("claude--v21332-wizard-review--w54.txt"));
+    expect(review?.phase).toBe("review");
+    if (review?.phase !== "review") return;
+    expect(review.answers).toEqual([
+      { question: "¿Pet?", answer: "Shark 7" },
+      { question: "¿Day?", answer: "Fish 42, maybe 3" },
+    ]);
+    expect(review.steps.map((s) => s.answered)).toEqual([true, true]);
+  });
+
+  it("without that line, a Submit/Cancel pair under a stepper lifts only under the 'Review your answers' heading", () => {
+    const texts = narrowText("claude--v21332-wizard-review--w54.txt").replace("Review your answers", "Something else here");
+    expect(detectWizard(splitLines(parseAnsi(texts)))).toBeNull();
+  });
+});

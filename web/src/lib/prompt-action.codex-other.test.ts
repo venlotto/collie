@@ -16,7 +16,7 @@ import { fetchPane, sendKeys, sendReply } from "./api";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
 import { detectAsyncPanel } from "./harness/codex/async-question";
-import { submitPromptFeedback, submitPromptOption } from "./prompt-action";
+import { confirmPromptFeedback, submitPromptFeedback, submitPromptOption } from "./prompt-action";
 
 const mockFetchPane = vi.mocked(fetchPane);
 const mockSendKeys = vi.mocked(sendKeys);
@@ -90,5 +90,145 @@ describe("Codex `Other`: digit → the field focused and empty → type → the 
     const focused = model(FOCUSED);
     expect(await submitPromptOption({ ...base, prompt: focused, option: focused.options[0]! })).toEqual({ status: "changed" });
     expect(mockSendKeys).not.toHaveBeenCalled();
+  });
+});
+
+// The same run on a 23-row pane (scratch tmux, 52x23): the transcript's `? Pet?` cell has scrolled away
+// before the panel opens, so the typed row is proven by nothing but its place and our own words.
+const OPENED_23 = capture("codex--v0172-async-two-panel-23rows--w52.txt");
+const FOCUSED_23 = capture("codex--v0172-async-other-focused-23rows--w52.txt");
+const TYPED_23 = capture("codex--v0172-async-other-typed-23rows--w52.txt");
+const SENT_23 = capture("codex--v0172-async-other-sent-23rows--w52.txt");
+const DAY_FOCUSED_23 = capture("codex--v0172-async-other-day-focused-23rows--w52.txt");
+const DAY_TYPED_LONG_23 = capture("codex--v0172-async-other-day-typed-long-23rows--w52.txt");
+const LONG = "Tuesday afternoon works best for the whole team review";
+// The same screen with a plain answer under the pointer in the field's place: words nobody typed.
+const THIRD_ANSWER_23 = TYPED_23.replace("Fish 42, maybe 3", "Fish");
+// Our words one row up, the second answer gone: the field's row is not where the tapped card had it.
+const MOVED_23 = TYPED_23.replace(/ {4}2\. Dog\r\n/, "").replace("› 3. ", "› 2. ");
+const keysSent = () => mockSendKeys.mock.calls.map((call) => call[1]);
+
+describe("Codex `Other` on a 23-row pane: the field proven by its row and our exact words", () => {
+  it("the variants are what they say: one row moved, and a plain label in the field's place", () => {
+    expect(model(MOVED_23).options.map((o) => o.label)).toEqual(["Cat"]);
+    expect(model(THIRD_ANSWER_23).feedback).toMatchObject({ key: "3", text: "Fish", unproven: true });
+  });
+
+  it("digit, focus, type, the words back at the same row, then Enter bound to that read", async () => {
+    const opened = model(OPENED_23);
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValueOnce(paneWith(FOCUSED_23))
+      .mockResolvedValue(paneWith(TYPED_23));
+    const res = await submitPromptFeedback({ ...base, prompt: opened, text: TEXT });
+    expect(res).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls).toEqual([
+      ["w1:p1", ["3"], undefined, opened.signature],
+      ["w1:p1", ["Enter"], undefined, model(TYPED_23).signature],
+    ]);
+    expect(mockSendReply.mock.calls).toEqual([["w1:p1", TEXT, false, undefined]]);
+  });
+
+  it("a long answer that wrapped: its joined words match, and Enter goes", async () => {
+    const opened = model(SENT_23);
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(SENT_23))
+      .mockResolvedValueOnce(paneWith(DAY_FOCUSED_23))
+      .mockResolvedValue(paneWith(DAY_TYPED_LONG_23));
+    expect(await submitPromptFeedback({ ...base, prompt: opened, text: LONG })).toEqual({ status: "sent" });
+    expect(keysSent()).toEqual([["3"], ["Enter"]]);
+  });
+
+  it("other words in the row than the ones typed: no Enter, and the person is told the text waits there", async () => {
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValueOnce(paneWith(FOCUSED_23))
+      .mockResolvedValue(paneWith(TYPED_23));
+    const res = await submitPromptFeedback({ ...base, prompt: model(OPENED_23), text: "Fish 42" });
+    expect(res).toEqual({ status: "error", error: expect.stringContaining("field") });
+    expect(keysSent()).toEqual([["3"]]);
+  });
+
+  it("our words on another row: no Enter", async () => {
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValueOnce(paneWith(FOCUSED_23))
+      .mockResolvedValue(paneWith(MOVED_23));
+    expect((await submitPromptFeedback({ ...base, prompt: model(OPENED_23), text: TEXT })).status).toBe("error");
+    expect(keysSent()).toEqual([["3"]]);
+  });
+
+  it("a plain label in the field's place after the digit: nothing typed, no Enter", async () => {
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValue(paneWith(THIRD_ANSWER_23));
+    expect((await submitPromptFeedback({ ...base, prompt: model(OPENED_23), text: TEXT })).status).toBe("error");
+    expect(keysSent()).toEqual([["3"]]);
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("a plain label in the field's place after typing: no Enter", async () => {
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValueOnce(paneWith(FOCUSED_23))
+      .mockResolvedValue(paneWith(THIRD_ANSWER_23));
+    expect((await submitPromptFeedback({ ...base, prompt: model(OPENED_23), text: TEXT })).status).toBe("error");
+    expect(keysSent()).toEqual([["3"]]);
+  });
+
+  it("the panel closed after typing: no Enter", async () => {
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValueOnce(paneWith(FOCUSED_23))
+      .mockResolvedValue(paneWith(capture("codex--v0172-async-answered--w52.txt")));
+    expect((await submitPromptFeedback({ ...base, prompt: model(OPENED_23), text: TEXT })).status).toBe("error");
+    expect(keysSent()).toEqual([["3"]]);
+  });
+
+  it("the bridge refuses the bound Enter: an error that says the text waits in the field", async () => {
+    mockFetchPane
+      .mockResolvedValueOnce(paneWith(OPENED_23))
+      .mockResolvedValueOnce(paneWith(FOCUSED_23))
+      .mockResolvedValue(paneWith(TYPED_23));
+    mockSendKeys.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false, code: "prompt_changed", error: "moved" });
+    const res = await submitPromptFeedback({ ...base, prompt: model(OPENED_23), text: TEXT });
+    expect(res.status).toBe("error");
+    expect(keysSent()).toEqual([["3"], ["Enter"]]);
+  });
+
+  it("an unproven field refuses every answer button and a second typing", async () => {
+    const typed = model(TYPED_23);
+    expect(await submitPromptOption({ ...base, prompt: typed, option: typed.options[0]! })).toEqual({ status: "changed" });
+    expect(await submitPromptFeedback({ ...base, prompt: typed, text: TEXT })).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+  });
+});
+
+describe("sending again a Codex `Other` answer the phone typed and could not send", () => {
+  it("Enter alone, bound to a fresh read that shows exactly those words at the row", async () => {
+    const typed = model(TYPED_23);
+    mockFetchPane.mockResolvedValue(paneWith(TYPED_23));
+    expect(await confirmPromptFeedback({ ...base, prompt: typed, text: TEXT })).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls).toEqual([["w1:p1", ["Enter"], undefined, typed.signature]]);
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("other words on the card than the ones remembered: nothing", async () => {
+    mockFetchPane.mockResolvedValue(paneWith(TYPED_23));
+    expect(await confirmPromptFeedback({ ...base, prompt: model(TYPED_23), text: "Fish" })).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+  });
+
+  it("the field changed since the card was drawn (someone typed at the terminal): no Enter", async () => {
+    mockFetchPane.mockResolvedValue(paneWith(THIRD_ANSWER_23));
+    expect((await confirmPromptFeedback({ ...base, prompt: model(TYPED_23), text: TEXT })).status).toBe("error");
+    expect(mockSendKeys).not.toHaveBeenCalled();
+  });
+
+  it("an empty or unfocused field: nothing", async () => {
+    expect(await confirmPromptFeedback({ ...base, prompt: model(OPENED_23), text: TEXT })).toEqual({ status: "changed" });
+    expect(await confirmPromptFeedback({ ...base, prompt: model(FOCUSED_23), text: TEXT })).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+    expect(mockFetchPane).not.toHaveBeenCalled();
   });
 });

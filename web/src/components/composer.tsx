@@ -1264,6 +1264,22 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     if (key !== null && !offers) setHiddenRefusalKey((hidden) => (hidden === key ? null : hidden));
   }
   const hideRefusal = () => setHiddenRefusalKey(shownRefusalKey);
+  // THE DIALOG'S OWN REFUSAL ENDS WITH IT. A refusal the `answer` slot raised (a dialog owns the keys) is
+  // about the screen as the Surface last read it, and the Surface and the card are two reads that can lag
+  // each other by a poll: a dialog closed at the desk (Esc, an interrupted turn) left "a dialog is waiting
+  // that no card shows" standing over a pane that was free again, and every later send looked refused.
+  // So it goes by itself when the slot is no longer `answer`, and the unseen one also when a card now
+  // shows the dialog: the answer is then a tap on that card, which the person can see.
+  const answerRefusalRef = useRef<{ readonly refusal: SendRefusal; readonly unseen: boolean } | null>(null);
+  useEffect(() => {
+    const raised = answerRefusalRef.current;
+    if (raised === null || sendRefusal !== raised.refusal) return;
+    if (slot !== "answer" || (raised.unseen && dialogCard)) {
+      answerRefusalRef.current = null;
+      setSendRefusal(null);
+    }
+    // The three facts above are what can change; setSendRefusal is this render's own function.
+  }, [sendRefusal, slot, dialogCard]);
   // STOP (M68 spec 02): one fresh request id per second tap, the bridge's receipt told in the notice a send's
   // refusal uses. The bridge presses the profile's interrupt key as this person's tap, so nothing is typed
   // and no draft is touched; a refusal says why nothing was pressed. A thrown error that says nothing about
@@ -2230,7 +2246,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     // live screen and the person's Keys pad, rather than send the person to look for a card.
     if (!dialogCard && onAnswerUnseen !== undefined) {
       onAnswerUnseen();
-      setSendRefusal(phoneRefusal(translate("answerExit.unseen")));
+      const refusal = phoneRefusal(translate("answerExit.unseen"));
+      answerRefusalRef.current = { refusal, unseen: true };
+      setSendRefusal(refusal);
       return;
     }
     setSendRefusal({ ...phoneRefusal(translate("composer.tap.noCard")), screen: true });
@@ -2332,6 +2350,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       const unseen = !dialogCard && onAnswerUnseen !== undefined;
       const refusal = unseen ? phoneRefusal(translate("answerExit.unseen")) : phoneRefusal(translate("composer.status.dialogWaiting"), true);
       if (unseen) onAnswerUnseen();
+      answerRefusalRef.current = { refusal, unseen };
       setSendRefusal(refusal);
       tell("failed", refusal.sentence);
       return false;

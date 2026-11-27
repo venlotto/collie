@@ -327,7 +327,12 @@ function fieldPointer(texts: string[], menu: readonly OptionRow[], fieldAt: numb
 
 /** The Submit review step. NO footer exists here (verified): the buffer tail is the
  *  "❯ 1. Submit answers / 2. Cancel" pair, with "Ready to submit your answers?" just above and
- *  the stepper (Submit chip highlighted) at the top of the region. */
+ *  the stepper (Submit chip highlighted) at the top of the region.
+ *
+ *  Claude Code 2.1.332 no longer prints "Ready to submit your answers?" (the string is gone from the
+ *  binary): the answers run straight into the Submit row. Without that line the step is read only
+ *  when the "Review your answers" heading stands between the stepper and the Submit row, so a pair
+ *  of rows that merely reads "1. Submit answers / 2. Cancel" under some stepper never lifts. */
 function detectReviewPhase(lines: StyledLine[], texts: string[], fi: number): WizardRegion | null {
   // Tail anchor: the last non-blank line is exactly the Cancel row, the row above it the Submit
   // row. Literal labels — Claude Code generates them (not user content).
@@ -346,11 +351,14 @@ function detectReviewPhase(lines: StyledLine[], texts: string[], fi: number): Wi
     if (/^ready to submit your answers\?/i.test(texts[i]!.trim())) ri = i;
     break; // only the nearest non-blank line may be the prompt
   }
-  if (ri < 0) return null;
+  // 2.1.332: no prompt line, the answers end at the Submit row (the heading is required below).
+  const prompted = ri >= 0;
+  if (!prompted) ri = si;
 
   const found = findStepper(lines, texts, ri - 1, ri - REVIEW_SCAN_WINDOW);
   if (!found) return null;
   const { stepper, index: stepperIdx } = found;
+  if (!prompted && !texts.slice(stepperIdx + 1, ri).some((row) => /^review your answers$/i.test(questionRowText(row)))) return null;
 
   // The echoed answers between the stepper and the prompt: "● <question>" rows each followed by a
   // "→ <answer>" row; other non-blank lines continue whichever field is open (wrapped text). Each row

@@ -7195,6 +7195,36 @@
    "version": "0.172.0",
    "state": "dialog"
   },
+  "codex--v0172-async-two-panel-23rows--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-focused-23rows--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-typed-23rows--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-sent-23rows--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-day-focused-23rows--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-day-typed-long-23rows--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
   "codex--v0172-async-two-next--w60.txt": {
    "harness": "codex",
    "version": "0.172.0",

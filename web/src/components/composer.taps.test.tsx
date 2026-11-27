@@ -268,6 +268,35 @@ describe("composer taps: the answer slot with no card for its dialog opens the e
     expect(recordedSends()).toEqual([]);
   });
 
+  it("the unseen words go by themselves when the Surface catches up and the dialog is gone", async () => {
+    // A dialog closed at the desk (Esc, an interrupted turn): the card went with the pane read, the
+    // Surface still carried the ask for a poll, and the words stood over a free pane (2026-11-27).
+    const user = userEvent.setup();
+    const { update } = mount({ surface: ASK, onAnswerDialog: () => false, dialogCard: false, onAnswerUnseen: vi.fn() });
+    await user.click(screen.getByRole("button", { name: "Compact" }));
+    expect(await screen.findByText(UNSEEN)).toBeInTheDocument();
+    update({ surface: FREE });
+    await waitFor(() => expect(screen.queryByText(UNSEEN)).toBeNull());
+  });
+
+  it("the unseen words go when a card now shows the dialog: the answer is a tap on it", async () => {
+    const user = userEvent.setup();
+    const { update } = mount({ surface: ASK, onAnswerDialog: () => false, dialogCard: false, onAnswerUnseen: vi.fn() });
+    await user.click(screen.getByRole("button", { name: "Compact" }));
+    expect(await screen.findByText(UNSEEN)).toBeInTheDocument();
+    update({ dialogCard: true });
+    await waitFor(() => expect(screen.queryByText(UNSEEN)).toBeNull());
+  });
+
+  it("the unseen words stay while the ask is still up and no card shows it", async () => {
+    const user = userEvent.setup();
+    const { update } = mount({ surface: ASK, onAnswerDialog: () => false, dialogCard: false, onAnswerUnseen: vi.fn() });
+    await user.click(screen.getByRole("button", { name: "Compact" }));
+    expect(await screen.findByText(UNSEEN)).toBeInTheDocument();
+    update({ surface: { ...ASK, revision: 7 } });
+    expect(screen.getByText(UNSEEN)).toBeInTheDocument();
+  });
+
   it("a card on screen keeps today's words, and no exit is asked for", async () => {
     const user = userEvent.setup();
     const onAnswerUnseen = vi.fn();
