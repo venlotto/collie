@@ -112,7 +112,7 @@ import { paneGitHead } from "@/lib/git-head";
 import { CacheSheet } from "@/components/cache-sheet";
 import { PaneActionsSheet, togglePanePin } from "@/components/pane-actions-sheet";
 import { openActionsPalette, useActionsPaletteOpen } from "@/lib/actions-palette/state";
-import { CardWaitingCtx } from "@/components/chat-cards";
+import { CardWaitingCtx, type CardWaiting } from "@/components/chat-cards";
 import { chatStatusKey, SavedCopyRow, SessionStream, sharedFolderLine, type QueuedCardAction, type QueuedCardResult } from "@/components/session-stream";
 import { readingRefusal } from "@/components/send-notice";
 import { sendText } from "@/lib/reply-action";
@@ -1434,8 +1434,11 @@ export function AgentChat({
   // `t()` and keys the memo so the sentence follows a language change.
   const questionNotes = useMemo(() => {
     void localeRevision;
-    return waitingQuestionNote(chatFeed.window.entries, blocks);
-  }, [chatFeed.window.entries, blocks, localeRevision]);
+    // The note's line takes the person to the dock card: a tap on the record above is not lost.
+    const notes: Record<string, CardWaiting> = {};
+    for (const [id, note] of Object.entries<CardWaiting>(waitingQuestionNote(chatFeed.window.entries, blocks))) notes[id] = { ...note, go: answerDialog };
+    return notes;
+  }, [chatFeed.window.entries, blocks, localeRevision, answerDialog]);
   // THE HANDOVER OWNS THE SWAP WHILE A SHELL BECOMES AN AGENT (hooks/use-handover.ts). The bloom
   // and the body swap are one sequence: the swap is held while the layer covers, applies at its
   // rest, and the reveal follows the rest with nothing else to wait for, because the gate above
@@ -4031,7 +4034,13 @@ export function AgentChat({
                   unreadState={display ? (exitShown !== null ? `exit:${exitShown.n}` : unreadState) : null}
                   onScreenUnread={(past) => setUnreadOpenedOn({ paneId, revision: composerRevisionRef.current, past })}
                   // The `answer` slot with no card for its dialog (M102 spec 10, diagnosis B): the exit opens.
-                  onAnswerUnseen={() => raiseExit(composerAsk === null ? null : askExitKey(composerAsk), "unseen")}
+                  onAnswerUnseen={() => {
+                    raiseExit(composerAsk === null ? null : askExitKey(composerAsk), "unseen");
+                    // The Surface and the card are two reads; an unseen dialog is often one of them a
+                    // poll behind (a dialog the desk just closed, or a card not drawn yet). Ask for a
+                    // look now, so the card comes back or the exit and its words go within a beat.
+                    void refreshNow(scope).then(() => revalidator.revalidate());
+                  }}
                   onCannotTell={setCannotTell}
                   onCannotTellRing={() => setCannotTellRing((n) => n + 1)}
                   // The card shows where no dialog card lifts and the unread card does not stand (see the CardDock above).

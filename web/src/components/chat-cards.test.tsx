@@ -344,6 +344,17 @@ describe("a question card", () => {
     expect(container.querySelector('[data-waiting="q1"]')).not.toBeNull();
   });
 
+  it("with a way to the dock, the note is the one button, and a tap on it takes the person there", async () => {
+    const go = vi.fn();
+    withWaiting(<ItemView item={tool(asked, { id: "q1", status: "running" })} />, {
+      q1: { id: "q1", note: "Answer in the card below", go },
+    });
+    // The options stay a record: the note is the only button on the card.
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Answer in the card below" }));
+    expect(go).toHaveBeenCalledOnce();
+  });
+
   it("marks the chosen label once answered, and only that one", () => {
     const { container } = render(<ToolCard callId="call-1" tool={{ ...asked, answers: [["Blue"]] }} status="done" />);
     expect(marked(container)).toEqual(["BlueThe color blue"]);

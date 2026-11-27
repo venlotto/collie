@@ -161,3 +161,44 @@ describe("submitWizardKeys while the field has focus", () => {
     expect(mockSendKeys).not.toHaveBeenCalled();
   });
 });
+
+// The live failure of 2026-11-27 (Claude Code 2.1.332, a 54-column pane): the field's digit went in,
+// the wrapped footer re-flowed around the `ctrl+g to edit in Vim` hint, and the recipe refused with
+// `reach: drift`, so the text never arrived and the card stayed on the question. Real captures.
+describe("submitWizardAnswer — Claude Code 2.1.332 at 54 columns", () => {
+  const raw = (name: string) => readFileSync(join(PANES, "..", "claude-v21332-narrow", `claude--v21332-wizard-narrow-${name}--w54.txt`), "utf8");
+
+  it("an empty field: digit, text, then ONE Enter bound to the read that proved the text", async () => {
+    const tapped = raw("unfocused");
+    screens(tapped, raw("field-focused"), raw("field-typed"));
+    const res = await submitWizardAnswer({
+      paneId: "w1:p1",
+      requestedLines: 600,
+      detectedRevision: 5,
+      agent: "claude",
+      wizard: model(tapped),
+      text: "Fish 42, maybe 3",
+      sleep: async () => {},
+    });
+    expect(res).toEqual({ status: "sent" });
+    expect(keys()).toEqual([["3"], ["Enter"]]);
+    expect(mockSendKeys.mock.calls[1]![3]).toBe(model(raw("field-typed")).signature);
+    expect(mockSendReply.mock.calls).toEqual([["w1:p1", "Fish 42, maybe 3", false, undefined]]);
+  });
+
+  it("fail closed: text that never reads back exactly sends no Enter", async () => {
+    const tapped = raw("unfocused");
+    screens(tapped, raw("field-focused"), raw("field-typed").replace("Fish 42, maybe 3", "Fish 42, maybe 4"));
+    const res = await submitWizardAnswer({
+      paneId: "w1:p1",
+      requestedLines: 600,
+      detectedRevision: 5,
+      agent: "claude",
+      wizard: model(tapped),
+      text: "Fish 42, maybe 3",
+      sleep: async () => {},
+    });
+    expect(res.status).not.toBe("sent");
+    expect(keys()).not.toContainEqual(["Enter"]);
+  });
+});
