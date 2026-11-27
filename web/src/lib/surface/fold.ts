@@ -46,7 +46,7 @@
 // Pure: no DOM, no Bun API, no harness name. One log and one context always give one Surface.
 
 import { signInShown } from "./secret-field";
-import { edgeListHolds, readCuesFor, runningSign, type CueRead } from "./cues";
+import { edgeListHolds, readCuesFor, runningSign, withoutPromptEchoes, type CueRead } from "./cues";
 import { coveredFrame, dialogRowShown, findInputFrame, frameEdge, overlayInRows, pastPrompt, rowText, type Frame, type FrameRow, type IdleProfile } from "./frame";
 import { LOST_STOP_READS, LOST_STOP_SPAN_MS, SETTLE_MS, type EdgeKind } from "./edges";
 import { isFree, type Ask, type Surface, type SurfaceComposer, type SurfaceModal, type SurfaceReason, type SurfaceTurn } from "./surface";
@@ -275,11 +275,15 @@ function composerOf(frame: Frame | null, blocked: boolean): SurfaceComposer {
  * cue. Its anchors are an edge with a label and a plain rule, which a transcript row (an echo of such a
  * box) and a rule may also draw over a dialog; there the screen reads as it does with no box at all, so
  * a dialog under it is never read as "no dialog". A box with its prompt row in view is taken as before.
+ * The transcript's echoes of sent prompts above the box (`idle.promptEchoes`, {@link withoutPromptEchoes})
+ * read as blank there, as they do in the framed read: after a first turn the sent text stands over the box
+ * under its `❯`, and its wrapped rows read as a pointed list (Claude Code 2.1.332 at 54 x 23, the second
+ * long paste, live 2026-11-27). A dialog's pointer on an option row, or one under the box, still counts.
  */
 export function inputFrameOf(rows: readonly FrameRow[], idle: IdleProfile): Frame | null {
   const found = findInputFrame(rows, idle);
   if (found === null || !pastPrompt(found)) return found;
-  return readCuesFor(rows, null, idle).strength === "none" ? found : null;
+  return readCuesFor(withoutPromptEchoes(rows, found, idle), null, idle).strength === "none" ? found : null;
 }
 
 /** The Surface of one screen read, before time is applied. */

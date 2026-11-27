@@ -3,8 +3,8 @@
 // pane, 54 x 23, the size of the live report of 2026-11-27, with the operator's fullscreen renderer.
 // Claude's model calls go to a local Anthropic stand-in that records the text of each turn and answers "OK":
 // no login is read and no model turn is spent. The phone (WebKit, iPhone 390 x 844) and the desktop
-// (Chromium, 1280 x 800) each send the 376-character line of the live receipts, a "?" and a Replace over a
-// planted draft, and every one must start a turn whole. LP_DEBUG=1 prints the long send's receipt and screen.
+// (Chromium, 1280 x 800) each send the 376-character line of the live receipts three times in a row, a "?" and a
+// Replace over a planted draft, and every one must start a turn whole. LP_DEBUG=1 prints the long send's receipt and screen.
 import { chromium, devices, expect, webkit } from "@playwright/test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -96,20 +96,28 @@ async function checkBrowser(phone, bridge, pane) {
     const idle = () => expect.poll(() => { const s = plain(pane); return s.includes("❯") && !/esc to interrupt/u.test(s); }, { timeout: 20000 }).toBe(true);
     await expect(field).toBeInViewport();
 
-    // 1. The live receipts' line: sent whole, Enter pressed, the turn starts with all 376 characters.
-    await idle();
-    await field.fill(LONG);
-    let delivery = response();
-    await submit();
-    const first = await (await delivery).json();
-    let { receipt } = first;
-    log.push(["largo", receipt.outcome, receipt.reason ?? null]);
-    if (process.env.LP_DEBUG) console.log(device, "largo", JSON.stringify({ receipt, detail: first.detail, cause: first.cause }), "\n" + plain(pane));
-    expect(receipt).toMatchObject({ outcome: "sent", profileId: "claude", version: "2.1.332" });
-    expect(receipt.keys.at(-1)).toBe("Enter");
-    await expect.poll(() => turnOf(LONG), { timeout: 20000 }).toBe(true);
-    await expect(field).toHaveValue("");
-    await shot("01-largo-enviado");
+    // 1. The live receipts' line, three times in a row: each is sent whole, Enter pressed, and the turn starts
+    // with all 376 characters. From the second on, the first turn's echo (`❯` and its wrapped rows) stands over
+    // the scrolled box, which once read as a dialog: typed_not_submitted (modal_cue), live 2026-11-27.
+    for (let n = 1; n <= 3; n++) {
+      await idle();
+      const before = turns.length;
+      await field.fill(LONG);
+      const delivery = response();
+      await submit();
+      const answer = await (await delivery).json();
+      const { receipt } = answer;
+      log.push(["largo-" + n, receipt.outcome, receipt.reason ?? null]);
+      if (process.env.LP_DEBUG) console.log(device, "largo-" + n, JSON.stringify({ receipt, detail: answer.detail, cause: answer.cause }), "\n" + plain(pane));
+      expect(receipt).toMatchObject({ outcome: "sent", profileId: "claude", version: "2.1.332" });
+      expect(receipt.keys.at(-1)).toBe("Enter");
+      // A later turn's user message carries the earlier ones too: the newest text is what this send started.
+      await expect.poll(() => turns.length > before && turns.at(-1).trim().endsWith(LONG.trim()), { timeout: 20000 }).toBe(true);
+      await expect(field).toHaveValue("");
+      await shot("01-largo-" + n + "-enviado");
+    }
+    let delivery;
+    let receipt;
 
     // 2. A "?" right after: literal text, no shortcut overlay, sent.
     await idle();

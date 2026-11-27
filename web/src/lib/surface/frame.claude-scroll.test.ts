@@ -62,6 +62,28 @@ describe("Claude Code 2.1.331 box scrolled past its height (`─── ↑ 5 mor
     expect(surfaceOf(lines).surface).toMatchObject({ turn: "unknown", modal: "unreadable", composer: "unknown" });
   });
 
+  it("the transcript's echo of a sent prompt over the scrolled box is no dialog (Claude Code 2.1.332, live 2026-11-27)", () => {
+    // The first long send's echo, `❯` and its wrapped rows, still in view when the second long paste scrolls the box.
+    const lines = [
+      "❯ Por favor responde solo OK y para. Esta es una",
+      "  frase un poco larga para probar el ajuste de linea",
+      "  en un pane estrecho",
+      "",
+      "● OK",
+      "",
+      GREY(`─── ↑ 2 more ${"─".repeat(27)}`),
+      "  en un pane estrecho de Claude. Por favor",
+      "  ajuste de linea en un pane estrecho",
+      GREY(RULE),
+      "  ⏵⏵ bypass permissions on (shift+tab to cycle)",
+    ];
+    expect(inputFrameOf(screen(lines), IDLE)?.scrolled).toBe(true);
+    expect(surfaceOf(lines).surface).toMatchObject({ turn: "idle", modal: "none", composer: "draft" });
+    // A pointer on an option row over the same box is a list, whoever drew it: no box, as before.
+    const listed = ["❯ 1. Yes", "  2. No", ...lines.slice(3)];
+    expect(inputFrameOf(screen(listed), IDLE)).toBeNull();
+  });
+
   it("the same box with its prompt row in view over the same dialog is taken as before (the rule is the scrolled box's own)", () => {
     const lines = ["> an earlier question", RULE, "❯ of view. Collie looks for that prompt", "  typing without pressing Enter.", RULE, "", " Do you want to proceed?", " ❯ 1. Yes", "   2. No", " Esc to cancel · Enter to select"];
     expect(inputFrameOf(screen(lines), IDLE)).toEqual(findInputFrame(screen(lines), IDLE));

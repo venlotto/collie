@@ -1,0 +1,23 @@
+
+ ▐▛███▛█   Claude Code v2.1.332
+▝▜██████▀  Opus 5.5 with low effort · Claude API
+ ▝▝   ▝▝   ~/claudep-stability
+
+
+❯ Por favor responde solo OK y para. Esta es una
+  frase un poco larga para probar el ajuste de linea
+  en un pane estrecho de Claude. Por favor responde
+  solo OK y para. Esta es una frase un poco larga
+  para probar el ajuste de linea en un pane estrecho
+  de Claude. Por favor responde solo OK y para. Esta
+  es una frase un poco larga para probar el ajuste de
+  linea en un pane estrecho
+
+● OK
+
+✻ Baked for 1s · done 11:16 PM
+
+──────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────
+  ⏵⏵ bypass permissions on (shift+tab to cycle)
