@@ -117,7 +117,9 @@ describe("the Codex profile pastes every message (2026-11-27)", () => {
     const pane = codexPane();
     const answer = await rig({ pane, harness: "codex", version: VERSION, block: true }).send(LONG);
     expect(answer.receipt?.outcome).toBe("sent");
-    expect(pane.calls).toEqual([expect.stringMatching(/^type:/u), `block:${LONG}`]);
+    // The message is one paste (the probe before it is zone B's to shape, so only the last call is pinned).
+    expect(pane.calls.at(-1)).toBe(`block:${LONG}`);
+    expect(pane.calls.filter((call) => call.includes("Explica"))).toEqual([`block:${LONG}`]);
     expect(sentRow(pane)).toBe(`› ${LONG}`);
     expect(pane.box).toBe("");
   });
