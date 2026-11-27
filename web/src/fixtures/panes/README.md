@@ -4313,3 +4313,21 @@ footer names the model and the folder only.
 | `codex--v0172-trust--w52.txt` | The folder-trust prompt in a new folder; Herdr reported `idle` |
 
 Keystroke probes: [`codex/ASYNC_QUESTION_NOTES.md`](../../lib/harness/codex/ASYNC_QUESTION_NOTES.md).
+
+## Codex 0.172.0 two async questions and `Other` (captured 2026-11-27, a scratch tmux server)
+
+A tmux server of its own (`tmux -L <scratch>`) running Codex with a scratch `CODEX_HOME` in an empty
+folder under `/tmp`, so no pane of the operator's was read or written. Each throwaway prompt asked the
+model for one `request_user_input_async` call with two questions: `Color?`/`Size?` at 60 columns, then
+`Pet?`/`Day?` at 52, the width of the reads above. Read with `tmux capture-pane -e -p`, CRLF added to
+match those reads. No secret is on screen.
+
+| Fixture | State |
+| --- | --- |
+| `codex--v0172-async-two-reminder--w52.txt` | `Pet?` and `Day?` in the transcript, the turn waits on `sleep`, the reminder reads `? 2 questions · 7s` |
+| `codex--v0172-async-two-panel--w52.txt` | `shift+Left` opened the first: `1 of 2` over `Pet?`, `shift+← next question` under the footer |
+| `codex--v0172-async-other-focused--w52.txt` | `3` on it: the pointer on `3. Other`, the label faint |
+| `codex--v0172-async-other-typed--w52.txt` | `Fish 42, maybe 3` typed: the text stands in the label's place |
+| `codex--v0172-async-other-sent--w52.txt` | A moment after `Enter`: `↪ Re: Pet? / Fish 42, maybe 3`, `Day?` open alone |
+| `codex--v0172-async-two-next--w60.txt` | The first run: a moment after `1` answered `Color?`, `Size?` opened alone, no `1 of 2` |
+

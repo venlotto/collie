@@ -1077,6 +1077,8 @@ export const ru: Dictionary = {
   "newPage.starters.title": "Новый разговор",
   "newPage.title.inSpace": "Создать в этом пространстве",
   "prompt.feedback.cancel": "Отмена",
+  "prompt.feedback.other.help": "Выбирает «Other» в терминале, вводит там ваш ответ и отправляет его.",
+  "prompt.questionStep": "Вопрос {index} из {total}",
   "prompt.feedback.typedAria": "Отзыв в терминале",
   "prompt.feedback.planChange.offer": "Сообщите Claude, что изменить",
   "prompt.feedback.planChange.editorLabel": "Что Claude должен изменить?",

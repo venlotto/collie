@@ -1,0 +1,40 @@
+[38;2;238;238;238m[48;2;68;68;68m [39m
+[1;2m[38;2;238;238;238m› [0m[38;2;238;238;238m[48;2;68;68;68mCall request_user_input_async ONCE with two[39m
+[38;2;238;238;238m  questions: 'Pet?' (options Cat, Dog) and[39m
+[38;2;238;238;238m  'Day?' (options Mon, Tue). Then run sleep 240 and[39m
+[38;2;238;238;238m [39m [38;2;238;238;238mreply[39m [38;2;238;238;238mok.[39m
+[38;2;238;238;238m [39m
+[49m
+[2m• [0mI’ll ask both questions together, then wait 240
+  seconds and reply.
+
+[38;2;99;168;248m? Pet?[39m
+
+  [38;2;148;226;213m• [39mCat
+  [38;2;148;226;213m• [39mDog
+
+[38;2;99;168;248m? Day?[39m
+
+  [38;2;148;226;213m• [39mMon
+  [38;2;148;226;213m• [39mTue
+
+[38;2;238;238;238m[48;2;68;68;68m [39m
+[38;2;121;180;249m↪ [2mRe: Pet?[0m[48;2;68;68;68m
+[38;2;238;238;238m [39m
+  [38;2;238;238;238mFish 42, maybe 3[39m
+[38;2;238;238;238m [39m
+[49m
+[1m[38;2;242;242;242m•[0m [2mWaiting for background terminal[0m [2m(36s • [0;1mesc[0;2m to int…
+  └ sleep 240[0m
+
+[2m• [0mQueued follow-up inputs
+
+
+  [38;2;99;168;248mDay?[39m
+
+  [1;7m› 1. Mon                                        [0m
+    2. Tue
+    3. Other
+
+  [1menter[0m submit   [1m^][0m skip   [1mshift+→[0m main prompt
+

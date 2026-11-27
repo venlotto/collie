@@ -66,12 +66,15 @@ export interface PromptOption {
  *   - `answer` — Claude's AskUserQuestion `Type something.` field: typed into and submitted as the
  *     question's answer by `lib/answer-field.ts` (ADR 0113, ASK_FIELD_NOTES.md). Its digit focuses
  *     the field only while it is empty; on a filled field it submits the held text.
+ *   - `other` — Codex's async question `Other` row (harness/codex/async-question.ts): the digit
+ *     focuses the field, typing fills it in the label's place, Enter sends it as the answer. Typed
+ *     into by the `plan-change` recipe, over an empty field only (codex/ASYNC_QUESTION_NOTES.md).
  *   - `free-text` — a text field Collie reads and does not type into: a permission dialog's amend
  *     note, or another harness's custom-answer row (Grok's `z`). Parsed so a focused row can lock
  *     the option buttons. Neither Claude recipe fits it (different key, different Enter,
  *     unmeasured caret/wrap).
  */
-export type PromptFeedbackPurpose = "plan-change" | "answer" | "free-text";
+export type PromptFeedbackPurpose = "plan-change" | "answer" | "free-text" | "other";
 
 /**
  * Where `❯` sits relative to an `answer` field, among the menu's rows: on a row above it, on the
@@ -124,6 +127,12 @@ export interface PromptModel {
   caption?: string;
   /** The dialog's inline free-text input row, when it has one. Absent on dialogs without one. */
   feedback?: PromptFeedback;
+  /**
+   * Where this question stands in a run the dialog asks one at a time: Codex's `1 of 2` over the first
+   * of two async questions. Display only: the grammar folds it into `coreSignature` for identity.
+   * Absent on a lone question and on every other dialog.
+   */
+  step?: { index: number; total: number };
   /**
    * What the dialog asks about: the rows it paints between its own top edge and its question, with
    * the dialog's chrome removed (its indent, a `│` gutter, dashed rules, a stock tip) and the

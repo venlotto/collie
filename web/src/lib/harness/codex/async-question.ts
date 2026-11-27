@@ -26,16 +26,30 @@
 //        enter submit   ^] skip   shift+→ main prompt
 //
 //    A digit answers and submits (probed: `2` answered "Spaces", `1` answered "Tabs", and the pane went
-//    back to `working`). `Other` opens a text field nobody has probed, so it is left out of the card and
-//    stays one tap away in the terminal. The card is a `prompt-select` and lifts as the Surface's ask, so
-//    the bridge answers it by id like any other.
+//    back to `working`). The card is a `prompt-select` and lifts as the Surface's ask, so the bridge
+//    answers it by id like any other.
+//
+// 3. SEVERAL QUESTIONS (`? 2 questions`, one call that asked two; probed on a scratch tmux server at 52
+//    columns). The reminder is the same; the transcript holds one `? <question>` cell per question, and
+//    the card names them all. The key opens them one at a time: the first carries `1 of 2` over it and a
+//    second footer row, `shift+← next question`. A digit answers that one alone (`↪ Re: Color? / Red`)
+//    and the next opens in the one-question shape, so the card follows on the next poll.
+//
+// 4. `OTHER`, the last row when the question allows one. Its digit only moves the pointer there (the
+//    label turns faint: the field is empty); what is typed then stands in the label's place, digits
+//    included, and Enter sends it as the answer (`↪ Re: Pet? / Fish 42, maybe 3`). The card models the
+//    row as a text field (`PromptFeedback`, purpose `other`), never as a button, and types into it only
+//    while it is empty, by the same digit → focus → type → Enter recipe as Claude's plan field
+//    (lib/prompt-action.ts). A pointed last row whose label is not the faint placeholder is the field
+//    only when the transcript's cell for the question proves it (one answer fewer than rows); with no
+//    such proof it could be a third answer, and nothing is lifted.
 //
 // Anything off these shapes stays raw. Pure; no pane access.
 
 import type { StyledLine } from "../../blocks";
 import { queuedQuestion } from "../../pending-question";
 import type { MenuModel } from "../menu-model";
-import type { PromptModel, PromptOption } from "../prompt-model";
+import type { PromptFeedback, PromptModel, PromptOption } from "../prompt-model";
 import { extractInputDraft, locateComposer } from "./chrome";
 import { lastNonBlankIndex, lineText, regionSignature, rstrip, skipBlanksUp } from "./markers";
 
@@ -61,21 +75,37 @@ const RIGHT_NOTICE = /^ {8,}⚠ \S/;
 /** The question as the transcript keeps it: `? Tabs or spaces?` at column 0. */
 const HISTORY_QUESTION = /^\? (\S.*)$/;
 const HISTORY_OPTION = /^ {2}• (\S.*)$/;
-/** How far up the transcript the question's history cell is looked for. */
-const HISTORY_REACH = 30;
+/** How far up the transcript the question's history cells are looked for. */
+const HISTORY_REACH = 40;
+
+/** One question cell of the transcript: `? Tabs or spaces?` and its `• option` rows. */
+interface HistoryCell {
+  question: string;
+  options: string[];
+}
 
 /**
- * The text of the newest question cell in the transcript above `from`, or null: `? Tabs or spaces?`
- * followed by its `• option` rows. Display only: the card's identity is the reminder's own rows.
+ * The question cells in the transcript above `from`, newest first, up to `most` of them: each a
+ * `? <question>` row followed by its `• option` rows. A `?` row with no option under it ends the walk
+ * (it is no cell of this shape). Display and proof only: the card's identity is the screen's own rows.
  */
-function historyQuestion(texts: readonly string[], from: number): string | null {
-  for (let i = from - 1; i >= 0 && from - i <= HISTORY_REACH; i--) {
+function historyCells(texts: readonly string[], from: number, most: number): HistoryCell[] {
+  const cells: HistoryCell[] = [];
+  for (let i = from - 1; i >= 0 && from - i <= HISTORY_REACH && cells.length < most; i--) {
     const head = HISTORY_QUESTION.exec(texts[i]!);
     if (head === null) continue;
-    const next = skipBlanksDown(texts, i + 1);
-    return next >= 0 && HISTORY_OPTION.test(texts[next]!) ? head[1]!.trim() : null;
+    let at = skipBlanksDown(texts, i + 1);
+    const options: string[] = [];
+    while (at >= 0 && at < texts.length) {
+      const option = HISTORY_OPTION.exec(texts[at]!);
+      if (option === null) break;
+      options.push(option[1]!.trim());
+      at++;
+    }
+    if (options.length === 0) break;
+    cells.push({ question: head[1]!.trim(), options });
   }
-  return null;
+  return cells;
 }
 
 function skipBlanksDown(texts: readonly string[], i: number): number {
@@ -98,13 +128,15 @@ export function detectQueuedQuestion(lines: StyledLine[]): QueuedQuestionRegion 
     if (text.trim() !== "" && !RIGHT_NOTICE.test(text)) return null;
   }
   const start = found.first > 0 && QUEUE_HEAD.test(texts[found.first - 1]!) ? found.first - 1 : found.first;
-  const question = found.count === 1 ? historyQuestion(texts, start) : null;
+  // The newest cells are the queued ones: as many as the reminder counts, oldest first, one per row.
+  const cells = historyCells(texts, start, found.count);
+  const questions = cells.length === found.count ? cells.map((cell) => cell.question).toReversed().join("\n") : null;
   return {
     startLine: start,
     endLine: found.last,
     model: {
-      // The question the transcript printed for it, or the reminder's own words.
-      title: question ?? texts[found.first]!.trim().replace(/^\?\s*/, ""),
+      // The questions the transcript printed for it, or the reminder's own words without their ticking age.
+      title: questions ?? texts[found.first]!.trim().replace(/^\?\s*/, "").replace(/\s+·\s+\d+[smh]$/, ""),
       actions: [{ label: "Answer", keys: [...OPEN_QUESTION_KEYS] }],
       nav: { upDown: false },
       // From the key row down to the prompt row: the box must read as it did when the card was drawn,
@@ -117,8 +149,12 @@ export function detectQueuedQuestion(lines: StyledLine[]): QueuedQuestionRegion 
 }
 
 const PANEL_FOOTER = /^\s*enter submit\s+\^\] skip\s+shift\+→ main prompt$/;
+/** The footer's second row while more than one question waits. */
+const PANEL_NEXT = /^\s*shift\+← next question$/;
+/** The run's place over the question while more than one waits: `1 of 2`. */
+const PANEL_STEP = /^ {2}(\d{1,2}) of (\d{1,2})$/;
 // The pointed row leads with `  › `, the others with four spaces.
-const PANEL_OPTION = /^(?:\s{2}› |\s{4})([1-9])\. (\S.*)$/;
+const PANEL_OPTION = /^(?:\s{2}(›) |\s{4})([1-9])\. (\S.*)$/;
 /** An option label that wrapped onto the next row, indented past the number. */
 const PANEL_CONTINUATION = /^ {7,}\S/;
 const OTHER = "Other";
@@ -129,19 +165,21 @@ const HEAD_REACH = 4;
 export function detectAsyncPanel(lines: StyledLine[]): AsyncPanelRegion | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
   const fi = lastNonBlankIndex(texts);
-  if (fi < 3 || !PANEL_FOOTER.test(texts[fi]!)) return null;
-  const bottom = skipBlanksUp(texts, fi - 1);
+  // More than one question waiting adds a row under the footer, straight under it.
+  const footer = fi >= 1 && PANEL_NEXT.test(texts[fi]!) ? fi - 1 : fi;
+  if (footer < 3 || !PANEL_FOOTER.test(texts[footer]!)) return null;
+  const bottom = skipBlanksUp(texts, footer - 1);
   if (bottom < 0) return null;
 
   // The option run, read upwards: a row that is not an option is a wrapped label of the option above it.
-  const rows: { digit: string; label: string }[] = [];
+  const rows: { digit: string; label: string; pointed: boolean; line: number }[] = [];
   let pending: string[] = [];
   let i = bottom;
   for (; i >= 0; i--) {
     const text = texts[i]!;
     const option = PANEL_OPTION.exec(text);
     if (option !== null) {
-      rows.unshift({ digit: option[1]!, label: [option[2]!.trim(), ...pending].join(" ") });
+      rows.unshift({ digit: option[2]!, label: [option[3]!.trim(), ...pending].join(" "), pointed: option[1] !== undefined, line: i });
       pending = [];
       continue;
     }
@@ -160,28 +198,73 @@ export function detectAsyncPanel(lines: StyledLine[]): AsyncPanelRegion | null {
   let top = questionEnd;
   while (top > 0 && /^ {2}\S/.test(texts[top - 1]!) && !PANEL_OPTION.test(texts[top - 1]!)) top--;
   if (!/^ {2}\S/.test(texts[top]!)) return null;
+  // `1 of 2` heads the question while more than one waits: the card's place in the run, not its words.
+  const stepMatch = top < questionEnd ? PANEL_STEP.exec(texts[top]!) : null;
+  const regionTop = top;
+  if (stepMatch !== null) top++;
+  const step = stepMatch === null ? undefined : { index: Number(stepMatch[1]), total: Number(stepMatch[2]) };
+  if (step !== undefined && (step.index < 1 || step.index > step.total)) return null;
   // The queue's head stands above the question: what proves this is the queue's question and not a
   // look-alike list printed by something else.
-  let head = top - 1;
-  while (head >= 0 && top - head <= HEAD_REACH && texts[head]!.trim() === "") head--;
+  let head = regionTop - 1;
+  while (head >= 0 && regionTop - head <= HEAD_REACH && texts[head]!.trim() === "") head--;
   if (head < 0 || !QUEUE_HEAD.test(texts[head]!)) return null;
 
   const question = texts.slice(top, questionEnd + 1).map((row) => row.trim()).join(" ");
-  const signature = regionSignature(lines, top, fi + 1);
+  const signature = regionSignature(lines, regionTop, fi + 1);
   if (signature === "") return null;
-  // `Other` opens a text field: no recipe for it, so no button. It is always the last row.
-  const answers = rows.at(-1)!.label === OTHER ? rows.slice(0, -1) : rows;
+  const other = otherRow(lines, texts, rows, question, head);
+  if (other === null) return null;
+  const answers = other === "none" ? rows : rows.slice(0, -1);
   if (answers.length < 1) return null;
   const options: PromptOption[] = answers.map((row) => ({ label: row.label, keys: [row.digit] }));
-  return {
-    startLine: top,
-    model: {
-      question,
-      options,
-      // `select` pins the caption; the digit alone submits (probed), and the per-option keys say so.
-      family: "select",
-      coreSignature: question,
-      signature,
-    },
+  const model: PromptModel = {
+    question,
+    options,
+    // `select` pins the caption; the digit alone submits (probed), and the per-option keys say so.
+    family: "select",
+    // The run's place is part of the question's identity: the first of two and a lone question with
+    // the same words are two dialogs.
+    coreSignature: step === undefined ? question : `${step.index}/${step.total}\n${question}`,
+    signature,
   };
+  if (step !== undefined) model.step = step;
+  if (other !== "none") model.feedback = other;
+  return { startLine: regionTop, model };
+}
+
+/** Whether every character of the row after its `N. ` lead is faint: the `Other` placeholder. */
+function labelFaint(line: StyledLine): boolean {
+  const strong = line.segments.filter((segment) => segment.dim !== true).map((segment) => segment.text).join("");
+  return /^\s*(?:›\s*)?[1-9]\.\s*$/.test(strong);
+}
+
+/**
+ * The last row as Codex's `Other` field, `"none"` when the question has no such row, or null when the
+ * screen cannot say which (nothing is lifted then). The label `Other` is the empty field (faint while
+ * the pointer is on it). Any other last row is the field only when the transcript's cell for this
+ * question lists one answer fewer than the panel has rows: what the person typed stands in the label's
+ * place, and a third answer looks the same. A pointed row with no such proof is not read.
+ */
+function otherRow(
+  lines: StyledLine[],
+  texts: readonly string[],
+  rows: readonly { digit: string; label: string; pointed: boolean; line: number }[],
+  question: string,
+  head: number,
+): PromptFeedback | "none" | null {
+  const last = rows.at(-1)!;
+  const line = lines[last.line]!;
+  const field = (text: string): PromptFeedback => ({ key: last.digit, focused: last.pointed, text, purpose: "other" });
+  if (last.label === OTHER && (!last.pointed || labelFaint(line))) return field("");
+  const cell = historyCells(texts, head, 8).find((c) => c.question === question);
+  if (cell !== undefined) {
+    const sameAnswers = (n: number) => cell.options.length === n && cell.options.every((label, k) => label === rows[k]!.label);
+    if (sameAnswers(rows.length - 1)) return field(last.pointed && labelFaint(line) ? "" : last.label);
+    if (sameAnswers(rows.length)) return "none";
+    return null;
+  }
+  // No cell in reach: an unpointed row reads as an answer, as before `Other` was read (its digit only
+  // moves the pointer, it submits nothing); a pointed one may be the field holding text, so no card.
+  return last.pointed ? null : "none";
 }

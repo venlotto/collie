@@ -136,6 +136,86 @@ test("«1 question» de Codex: Te necesita, tarjeta en Mensajes, Responder abre 
   await shot(page, "codex-question-respondida");
 });
 
+test("«2 questions» de Codex: la tarjeta nombra las dos y se contestan en orden, cada una con su título y sus opciones", async ({ page }) => {
+  // Real captures of one request_user_input_async call with two questions (scratch tmux, 52 columns): the
+  // reminder, the first opened, and the second as it opened after the first was answered.
+  const { agent, world } = await setup(page, {
+    harness: "codex", status: "blocked", start: "reminder", surface: RUNNING_FREE, title: ACTION_REQUIRED,
+    screens: {
+      reminder: paneCapture("codex--v0172-async-two-reminder--w52"),
+      first: paneCapture("codex--v0172-async-two-panel--w52"),
+      second: paneCapture("codex--v0172-async-other-sent--w52"),
+      answered: paneCapture("codex--v0172-async-answered--w52"),
+    },
+    script: [{ on: "reminder", keys: ["shift+Left"], to: "first" }, { on: "first", keys: ["1"], to: "second" }, { on: "second", keys: ["2"], to: "answered" }],
+  });
+  await openBot(page);
+  await expect(page.getByText("El agente te hizo 2 preguntas")).toBeVisible();
+  const titles = page.locator('[data-slot="prompt-question"]').filter({ hasText: "Pet?" });
+  await expect(titles.last()).toContainText("Day?");
+  await shot(page, "codex-dos-preguntas-tarjeta");
+
+  await page.getByRole("button", { name: "Responder", exact: true }).click();
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["shift+Left"]);
+  const cat = page.getByRole("button", { name: /Cat/ });
+  await expect(cat).toBeVisible();
+  await expect(page.getByRole("button", { name: /Dog/ })).toBeVisible();
+  await expect(page.getByText(/Pregunta 1 de 2/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Escriba su propia respuesta" })).toBeVisible();
+  await shot(page, "codex-dos-preguntas-primera");
+
+  await cat.click();
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["shift+Left", "1"]);
+  const tue = page.getByRole("button", { name: /Tue/ });
+  await expect(tue).toBeVisible();
+  await expect(cat).toHaveCount(0);
+  await expect(page.getByText(/Pregunta 1 de 2/)).toHaveCount(0);
+  await shot(page, "codex-dos-preguntas-segunda");
+
+  await tue.click();
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["shift+Left", "1", "2"]);
+  Object.assign(agent, { status: "working" });
+  await expect(tue).toHaveCount(0);
+  await expect(page.getByText(/El agente te hizo/)).toHaveCount(0);
+  await shot(page, "codex-dos-preguntas-respondidas");
+});
+
+test("«Other» de Codex: un campo de texto en la tarjeta elige Other, escribe la respuesta y la envía con Enter", async ({ page }) => {
+  // The `Other` captures (scratch tmux, 52 columns), one run: the digit puts the pointer on the row, the
+  // typed words stand in the faint label's place, Enter sends them and the next question opens.
+  const opened = paneCapture("codex--v0172-async-two-panel--w52");
+  const { world } = await setup(page, {
+    harness: "codex", status: "blocked", start: "opened", surface: RUNNING_FREE, title: ACTION_REQUIRED,
+    screens: {
+      opened,
+      focused: paneCapture("codex--v0172-async-other-focused--w52"),
+      typed: paneCapture("codex--v0172-async-other-typed--w52"),
+      sent: paneCapture("codex--v0172-async-other-sent--w52"),
+    },
+    script: [{ on: "opened", keys: ["3"], to: "focused" }, { on: "typed", keys: ["Enter"], to: "sent" }],
+  });
+  const replies: { text: string; submit: boolean }[] = [];
+  // The typed words go through the reply route unsubmitted; the terminal then shows them in the row.
+  await page.route((url) => url.pathname.endsWith("/reply"), async (route) => {
+    replies.push(route.request().postDataJSON());
+    world.show("typed");
+    await route.fulfill({ json: { ok: true } });
+  });
+  await openBot(page);
+  await expect(page.getByRole("button", { name: /Cat/ })).toBeVisible();
+  await page.getByRole("button", { name: "Escriba su propia respuesta" }).click();
+  const field = page.getByRole("textbox", { name: "Texto de la respuesta" });
+  await field.fill("Fish 42, maybe 3");
+  await shot(page, "codex-other-campo");
+  await page.getByRole("button", { name: "Enviar respuesta" }).click();
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["3", "Enter"]);
+  expect(replies).toEqual([expect.objectContaining({ text: "Fish 42, maybe 3", submit: false })]);
+  await expect(page.getByText("Respuesta enviada")).toBeVisible();
+  // The next question of the run opens on its own card.
+  await expect(page.getByRole("button", { name: /Tue/ })).toBeVisible();
+  await shot(page, "codex-other-enviado");
+});
+
 test("vista Terminal: la pregunta encolada de Codex queda a la vista como tarjeta, sin perderse por el scroll", async ({ page }) => {
   await setup(page, { harness: "codex", status: "blocked", start: "queued", surface: RUNNING_FREE, title: ACTION_REQUIRED,
     screens: { queued: paneCapture("codex--v0172-async-question--w52") } });

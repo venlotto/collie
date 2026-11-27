@@ -7180,6 +7180,36 @@
    "version": "0.172.0",
    "state": "running"
   },
+  "codex--v0172-async-other-focused--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-sent--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-other-typed--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-two-next--w60.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-two-panel--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-async-two-reminder--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
+  },
   "codex--v0172-trust--w52.txt": {
    "harness": "codex",
    "version": "0.172.0",
@@ -7193,6 +7223,7 @@
   "claude--v2310-auth-refresh-output-spinner--w52.txt": "The first second of a turn sent while the Authentication box is up: the spinner row under the box has no timer yet, and the running sign needs the timer. A send there goes ahead and Claude Code queues it.",
   "claude--v2301-spinner-no-timer--w100.txt": "The first second of a turn: the spinner row has no timer yet, and the running sign needs the timer. A send there goes ahead and Claude Code queues it.",
   "claude--v2302-turn-ending-stop-hooks--w119.txt": "The last read of a turn on Claude Code 2.1.302: the spinner row carries 'running Stop hooks' before its timer, which the running sign does not take. The turn is ending; a send there goes ahead, and Enter either queues it or starts the next turn.",
-  "claude--v2302-working-list-echo--w119.txt": "Claude Code 2.1.302 draws no spinner while the answer streams: the screen shows a list growing above an empty box, and only the prompt edge can say the turn runs. A send there goes ahead and Claude Code queues it."
+  "claude--v2302-working-list-echo--w119.txt": "Claude Code 2.1.302 draws no spinner while the answer streams: the screen shows a list growing above an empty box, and only the prompt edge can say the turn runs. A send there goes ahead and Claude Code queues it.",
+  "codex--v0172-async-two-reminder--w52.txt": "Codex 0.172.0 waiting on a background terminal at 52 columns: its row is cut to 'esc to int…', so no interrupt hint reads, and its '└ sleep 240' row sits under it. The turn runs and two questions wait; a send there goes ahead and Codex takes it into the running turn."
  }
 }

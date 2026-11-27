@@ -1242,6 +1242,8 @@ export const en = {
   "newPage.starters.title": "New conversation",
   "newPage.title.inSpace": "New in this space",
   "prompt.feedback.cancel": "Cancel",
+  "prompt.feedback.other.help": "Picks Other in the terminal, types your answer there and sends it.",
+  "prompt.questionStep": "Question {index} of {total}",
   "prompt.feedback.typedAria": "Feedback in the terminal",
   "prompt.feedback.planChange.offer": "Tell Claude what to change",
   "prompt.feedback.planChange.editorLabel": "What should Claude change?",

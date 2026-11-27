@@ -1039,6 +1039,8 @@ export const tr: Dictionary = {
   "newPage.starters.title": "Yeni konuşma",
   "newPage.title.inSpace": "Bu alanda yeni",
   "prompt.feedback.cancel": "İptal",
+  "prompt.feedback.other.help": "Terminalde “Other” seçeneğini seçer, yanıtını oraya yazar ve gönderir.",
+  "prompt.questionStep": "Soru {index}/{total}",
   "prompt.feedback.typedAria": "Uçbirimde geri bildirim",
   "prompt.feedback.planChange.offer": "Claude'a neyi değiştireceğini söyleyin",
   "prompt.feedback.planChange.editorLabel": "Claude neyi değiştirmeli?",

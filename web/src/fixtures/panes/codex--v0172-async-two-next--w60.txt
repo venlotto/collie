@@ -1,0 +1,40 @@
+
+[38;2;238;238;238m[48;2;68;68;68m [39m
+[1;2m[38;2;238;238;238m› [0m[38;2;238;238;238m[48;2;68;68;68mCall request_user_input_async ONCE with two questions:[39m
+[38;2;238;238;238m  'Color?' (options Red, Blue) and 'Size?' (options Small,[39m
+[38;2;238;238;238m  Large). Then run sleep 240 and reply ok.[39m
+[38;2;238;238;238m [39m
+[49m
+[2m• [0mI’ll ask both questions together, then wait before
+  replying.
+
+[38;2;99;168;248m? Color?[39m
+
+  [38;2;148;226;213m• [39mRed
+  [38;2;148;226;213m• [39mBlue
+
+[38;2;99;168;248m? Size?[39m
+
+  [38;2;148;226;213m• [39mSmall
+  [38;2;148;226;213m• [39mLarge
+
+[38;2;238;238;238m[48;2;68;68;68m [39m
+[38;2;121;180;249m↪ [2mRe: Color?[0m[48;2;68;68;68m
+[38;2;238;238;238m [39m
+  [38;2;238;238;238mRed[39m
+[38;2;238;238;238m [39m
+[49m
+[1m[38;2;128;128;128m•[0m [2mWaiting for background terminal[0m [2m(42s • [0;1mesc[0;2m to interrupt) …
+  └ sleep 240[0m
+
+[2m• [0mQueued follow-up inputs
+
+
+  [38;2;99;168;248mSize?[39m
+
+  [1;7m› 1. Small                                              [0m
+    2. Large
+    3. Other
+
+  [1menter[0m submit   [1m^][0m skip   [1mshift+→[0m main prompt
+

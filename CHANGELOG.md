@@ -48,6 +48,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Hold a chat title to edit its bot.** Change its name, appearance and workspace with the creation form, keeping its running agent.
 
 - **Attach videos alongside images in your messages.** The attachment menu accepts MP4, MOV and WebM videos, checks their container headers, and keeps video previews alongside image attachments.
+- **Answer several Codex questions, or write your own answer, from Messages.** When Codex asks more than one question at once, the card lists them and opens them one after another, each with its own options. Where Codex offers "Other", the card has a field for your own words: Collie picks Other, types them and sends them, and never types over words already in that field.
 
 ### Changed
 
@@ -118,6 +119,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Codex shell mode no longer blocks every message.** A "!" command now runs and is confirmed. If the box is left in shell mode, Collie leaves it before typing your message so the message is never run as a shell command, and says how to leave it on the key pad when it cannot.
 - **Codex photo attachments keep their preview and filename in chat.** Messages now recognises upload paths wrapped onto several terminal lines, and the immediate sent-message bubble uses the same photo and filename display as the saved conversation. If the saved name is no longer available, a short file label replaces the long server path.
 - **Codex photos stay readable after you reload Messages.** When no saved conversation is available, Messages now recognises the terminal's echoed upload turn, including a path wrapped by Codex's input box, and shows the same thumbnail, filename and caption as the sent bubble instead of the server path. Explicit Terminal remains verbatim.
+- **Replace over a long Codex draft no longer stops when the box flickers.** While Codex redraws a box that is emptying, Collie could read it between two frames, take that for the box going away, and leave your message untyped even though the draft was gone. Collie now looks again a moment later and gives up only when the box is really gone or a dialog took its place.
 - **Reloaded Codex photos survive padded terminal line wraps.** Messages now reassembles an upload path split across rows even when Codex pads those rows and indents their continuations, so a reload keeps the thumbnail, original filename and caption instead of the raw server path. Composer prompts and unrecognised paths stay untouched, and Terminal still shows the original screen.
 
 ## [1.31.0] - 2026-11-24
