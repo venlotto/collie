@@ -1,10 +1,15 @@
-// Codex chat text must arrive as literal paste content, never as terminal hotkeys. The fake opens
-// Codex's modal when the probe or message arrives as keystrokes; a bracketed paste is inert.
+// Claude Code and Codex chat text must arrive as literal paste content, never as terminal hotkeys. The
+// fake opens a modal when the message arrives as keystrokes; a bracketed paste is inert. The Claude
+// captures pin the real shortcut overlay and the literal question-mark box.
 
 import { describe, expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
+import { agentOf, fixtureRows, idleFor, readScreen } from "../../web/src/test/surface-corpus.ts";
 import { DIALOG, FakePane, PROBE, rig, useScratchDir } from "./protocol.rig.ts";
 
 useScratchDir();
+
+const FIXTURES = fileURLToPath(new URL("fixtures/", import.meta.url));
 
 function codex() {
   const pane = new FakePane("codex");
@@ -19,6 +24,29 @@ function codex() {
   };
   return rig({ pane, harness: "codex", version: "0.172.0", block: true, linePaste: false });
 }
+
+describe("Claude Code 2.1.332 literal keyboard input", () => {
+  test("the real captures distinguish the raw-key overlay from a literal pasted question mark", () => {
+    const read = (name: string) => readScreen(fixtureRows(name, FIXTURES), agentOf("claude"), idleFor("claude")).surface;
+    expect(read("claude--v2332-shortcuts-overlay--w80.txt")).toMatchObject({ modal: "unreadable" });
+    expect(read("claude--v2332-question-bracketed-paste--w80.txt")).toMatchObject({ modal: "none", composer: "draft" });
+    expect(read("claude--v2332-ready--w54.txt")).toMatchObject({ turn: "idle", modal: "none", composer: "empty" });
+  });
+
+  test("? is one bracketed paste, opens no shortcut overlay, and the next short send works", async () => {
+    const pane = new FakePane("claude");
+    pane.afterInput = (p, what) => {
+      if (what === "type:?" || what === "paste:?") p.dialog = DIALOG;
+    };
+    const { send } = rig({ pane, harness: "claude", version: "2.1.332", block: true, linePaste: false });
+
+    expect((await send("?")).receipt).toMatchObject({ outcome: "sent", keys: ["probe", "Backspace", "Enter"] });
+    expect(pane.dialog).toBeNull();
+    expect(pane.calls).toEqual([`type:${PROBE}`, "block:?"]);
+    expect((await send("responde OK y para")).receipt?.outcome).toBe("sent");
+    expect(pane.dialog).toBeNull();
+  });
+});
 
 describe("Codex 0.172 literal keyboard input", () => {
   test.each(["?", "@x"])("%s is one bracketed paste and opens no hotkey modal", async (text) => {

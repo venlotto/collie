@@ -310,6 +310,7 @@ export type SendNote =
   | "codeRejected"
   | "noSecretField"
   | "held"
+  | "startup"
   | "expired"
   | "cancelled"
   | "discarded"
@@ -513,7 +514,8 @@ export function sendNote(outcome: SendOutcome | null, reason: SendReason | null)
  * (`sendReceipts.outcome.steered`), as its other outcomes do.
  */
 export type NoteKey =
-  | `composer.protocol.${Exclude<SendNote, "steered" | "steerUnsupported" | "steerNotAllowed" | "unconfirmed" | "noticeKey" | "capConfirm">}`
+  | `composer.protocol.${Exclude<SendNote, "steered" | "steerUnsupported" | "steerNotAllowed" | "unconfirmed" | "noticeKey" | "capConfirm" | "startup">}`
+  | "composer.startup.queued"
   | "composer.protocol.unconfirmedPast"
   | "composer.protocol.capConfirmPast"
   | "composer.protocol.noticeKeyPast"
@@ -523,6 +525,8 @@ export type NoteKey =
 
 export function noteKey(note: SendNote): NoteKey {
   switch (note) {
+    case "startup":
+      return "composer.startup.queued";
     case "steered":
       return "composer.steer.steered";
     case "steerUnsupported":
@@ -625,6 +629,8 @@ function noteAndOffers(reply: SendReply, offers: readonly SendOffer[]): Verdict 
   // A box that stayed in the agent's shell mode (2026-11-27): nothing was typed, and the note says how to leave it.
   if (reply.outcome === "refused" && reply.cause === "shell_mode") return { clear: false, note: "shellMode", offers };
   const note = sendNote(reply.outcome, reply.reason);
+  // A launch wait is not a turn wait: the sentence says the agent is starting and the message goes when ready.
+  if (note === "held" && reply.cause === "starting") return { clear: true, note: "startup", offers: [] };
   // A discard has its own outcome: the box emptied, but nothing went to the agent, so the phone's draft stays.
   // A send queued behind the running turn went out all the same: it clears, and its sentence says it waits.
   if (note === "sent") return { clear: true, note: reply.queued ? "queued" : note, offers: [] };

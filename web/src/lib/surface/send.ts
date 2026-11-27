@@ -455,10 +455,10 @@ export type HeldState = "held" | "running" | "ended";
  */
 /**
  * What holds a held request now: the refusal it was held from (a running turn, something open at the
- * box, a box that did not read twice the same in time, a probe that found the box not free, a draft).
- * The phone picks the row's sentence by it.
+ * box, a box that did not read twice the same in time, a probe that found the box not free, a draft),
+ * or an agent that has not drawn its first input box yet (`starting`). The phone picks the row's sentence by it.
  */
-export const HELD_CAUSES = ["turn_running", "not_free", "bound", "draft_present", "probe_failed"] as const;
+export const HELD_CAUSES = ["turn_running", "not_free", "bound", "draft_present", "probe_failed", "starting"] as const;
 export type HeldCause = (typeof HELD_CAUSES)[number];
 
 export interface HeldRow {
@@ -569,8 +569,10 @@ export interface SendAnswer {
  * refusal, `draft_present` over what is left of the draft, else `not_free` (2026-11-27). `shell_mode`: the
  * box stayed in the harness's shell mode, where Enter runs the text as a shell command, after Collie
  * pressed the profile's exit keys; nothing was typed, and the answer is `not_free` (2026-11-27).
+ * `starting`: the agent has no input box yet, so a plain message is held for its first ready box and no
+ * key reached the shell (2026-11-27).
  */
-export const SEND_CAUSES = ["notice_key", "stale_screen", "short_pane", "late_keys", "not_emptied", "shell_mode"] as const;
+export const SEND_CAUSES = ["notice_key", "stale_screen", "short_pane", "late_keys", "not_emptied", "shell_mode", "starting"] as const;
 export type SendCause = (typeof SEND_CAUSES)[number];
 
 /**

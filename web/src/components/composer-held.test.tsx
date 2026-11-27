@@ -108,6 +108,14 @@ const showAll = () => screen.getByRole("button", { name: "Show all queued messag
 const showLess = () => screen.getByRole("button", { name: "Show less of the queue" });
 
 describe("the held-send card", () => {
+  it("a startup row says it waits for the agent, and its expiry gives a two-minute recovery", () => {
+    const { rerender } = render(<HeldCard paneId="w1:p1" rows={[row("req00001", "held", { cause: "starting" })]} canAct sending={false} onSend={vi.fn()} onChanged={vi.fn()} onSendNow={vi.fn()} />);
+    expect(screen.getByText("Queued. Sends when the agent is ready.")).toBeInTheDocument();
+    rerender(<HeldCard paneId="w1:p1" rows={[row("req00001", "ended", { cause: "starting", outcome: "expired" })]} canAct sending={false} onSend={vi.fn()} onChanged={vi.fn()} onSendNow={vi.fn()} />);
+    expect(screen.getByText("Not sent. The agent was not ready within 2 minutes. Check the pane and send again.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Resend the message" })).toBeInTheDocument();
+  });
+
   it("one row: its label, its Cancel, its text clamped to three lines", () => {
     renderComposer({ held: [row("req00001", "held")] });
     const found = document.querySelectorAll('[data-slot="held-row"]');

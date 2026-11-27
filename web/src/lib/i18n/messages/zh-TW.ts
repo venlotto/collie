@@ -561,6 +561,7 @@ export const zhTW: Dictionary = {
   "composer.steer.unsupported": "此窗格不支援「引導」，所以沒有傳送任何內容。再次傳送，即可排入佇列，在這一輪結束時送出。",
   "composer.steer.notAllowed": "只有在手機旁的人才能引導。請不使用「引導」再次傳送。",
   "composer.startup.queued": "已加入佇列。代理程式準備好後將自動傳送。",
+  "composer.startup.expired": "未傳送。代理程式未在 2 分鐘內準備好。請檢查窗格並重新傳送。",
   "composer.protocol.held": "已排入佇列。在這一輪結束時傳送。",
   "composer.protocol.expired": "未傳送。這一輪未在 30 分鐘內結束。",
   "composer.protocol.cancelled": "已取消。沒有任何內容傳送給代理。",

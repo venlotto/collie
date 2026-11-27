@@ -1,0 +1,24 @@
+
+[38;5;174m ▐[48;5;16m▛███▛█[39m[49m   [1mClaude Code[0m [38;5;246mv2.1.332[39m
+[38;5;174m▝▜[48;5;16m█████[49m█▀[39m  [38;5;246mk3.1-pro with low effort · API Usage Billing[39m
+[38;5;174m ▝▝   ▝▝ [39m  [38;5;246m~/project[39m
+
+[38;5;220m⚠[39m [1m[38;5;220m~/.claude/CLAUDE.md[0m[38;5;220m is over the 40.0k-char limit (42.3k chars)[38;5;246m · [39m
+  [38;5;246m/memory to free up context[39m
+
+
+
+
+
+[38;5;244m────────────────────────────────────────────────────────────────────────────────
+[39m❯ [2mTry "create a util logging.py that…"[0m
+[38;5;244m────────────────────────────────────────────────────────────────────────────────
+[39m  [38;5;246m! for shell mode[39m      [38;5;246mesc esc to clear input[39m         [38;5;246mctrl+shift+_ to undo[39m
+  [38;5;246m/ for commands[39m        [38;5;246mshift+tab to cycle modes[39m       [38;5;246mctrl+z to suspend[39m
+  [38;5;246m@ for file paths[39m      [38;5;246mctrl+x =/- to change effort[39m    [38;5;246mctrl+v to paste images[39m
+  [38;5;246m/btw for side [39m        [38;5;246mctrl+o to see full transcript[39m  [38;5;246malt+p to switch model[39m
+  [38;5;246mquestion[39m              [38;5;246mctrl+t to toggle tasks[39m         [38;5;246mctrl+s to stash prompt[39m
+                        [38;5;246m\ then enter for newline[39m       [38;5;246mctrl+g to edit in [39m
+                                                       [38;5;246m$EDITOR[39m
+                                                       [38;5;246m/keybindings to [39m
+                                                       [38;5;246mcustomize[39m

@@ -574,6 +574,7 @@ export const ko: Dictionary = {
   "composer.steer.unsupported": "이 창에서는 ‘방향 전환’을 쓸 수 없어 아무것도 전송되지 않았습니다. 다시 전송하면 턴이 끝날 때까지 대기열에 추가됩니다.",
   "composer.steer.notAllowed": "방향 전환은 휴대폰 앞에 있는 사람만 할 수 있습니다. ‘방향 전환’ 없이 다시 전송하세요.",
   "composer.startup.queued": "대기 중입니다. 에이전트가 준비되면 전송됩니다.",
+  "composer.startup.expired": "전송되지 않았습니다. 2분 안에 에이전트가 준비되지 않았습니다. 창을 확인하고 다시 전송하세요.",
   "composer.protocol.held": "대기열에 추가되었습니다. 턴이 끝나면 전송됩니다.",
   "composer.protocol.expired": "전송되지 않았습니다. 30분 이내에 턴이 끝나지 않았습니다.",
   "composer.protocol.cancelled": "취소되었습니다. 에이전트에 아무것도 전송되지 않았습니다.",

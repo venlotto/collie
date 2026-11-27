@@ -408,6 +408,7 @@ export function rig(
     status?: ProfileStatus;
     holds?: HoldStore;
     generation?: () => string | null;
+    starting?: SendDeps["starting"];
     clock?: { now: number };
   } = {},
 ): Rig {
@@ -446,6 +447,7 @@ export function rig(
       return Promise.resolve(status === undefined ? match : { ...match, status });
     },
     generation: options.generation ?? (() => "gen-1"),
+    starting: options.starting,
     ledger: options.ledger,
     holds: options.holds,
     imageFile: (path: string) => (options.imageFiles ?? []).includes(path),

@@ -875,7 +875,7 @@ describe("pure helpers", () => {
     const isShot = (path: string): boolean => path === shot || path === windows || path === "/srv/shots/a.png";
     const alone = uploadAlone(match, [shot], isShot);
     expect(alone).toMatchObject({ images: 1, lines: [""], literal: [shot], folds: false });
-    // wholePaste reads it the same way, under its 800-character floor.
+    // wholePaste reads it the same way, including a short lone path.
     expect(wholePaste(match, [shot], isShot)).toMatchObject({ images: 1, lines: [""], literal: [shot] });
     expect(wholePaste(match, [`  ${shot} `], isShot)).toMatchObject({ images: 1 });
     expect(uploadAlone(match, [windows], isShot)).toMatchObject({ images: 1 });
@@ -888,16 +888,16 @@ describe("pure helpers", () => {
     // Add to a draft: the draft, then either form.
     expect(boxMatches("draft [Image #1]", "draft", alone?.lines ?? [], collapse, alone)).toBe(true);
     expect(boxMatches(`draft ${shot}`, "draft", alone?.lines ?? [], collapse, alone)).toBe(true);
-    // Not alone: words around the path, two lines, a missing file, another image path, no image token.
+    // Not alone: uploadAlone declines words around the path; wholePaste still takes either paste form.
     expect(uploadAlone(match, [`see ${shot}`], isShot)).toBeNull();
-    expect(wholePaste(match, [`see ${shot}`], isShot)).toBeNull();
+    expect(wholePaste(match, [`see ${shot}`], isShot)).toMatchObject({ images: 1, lines: ["see"], literal: [`see ${shot}`] });
     expect(uploadAlone(match, [shot, "b"], isShot)).toBeNull();
     expect(uploadAlone(match, ["/srv/collie/uploads/_0-mvu6nr4p-ffffffff.png"], isShot)).toBeNull();
     expect(uploadAlone(match, ["/srv/shots/a.png"], isShot)).toBeNull();
     expect(uploadAlone(match, ["/srv/collie/uploads/_0-mvu6nr4p-8ab21b25.txt"], () => true)).toBeNull();
     expect(uploadAlone(match === null ? null : { ...match, profile: { ...match.profile, paste: { bracketed: true } } }, [shot], isShot)).toBeNull();
     expect(uploadAlone(null, [shot], isShot)).toBeNull();
-    // A path inside a short line is compared as written: the literal text, never an image form.
+    // The literal-only compare still takes exactly the written line and never invents an image token.
     expect(boxMatches(`see ${shot}`, "", [`see ${shot}`], collapse, null)).toBe(true);
     expect(boxMatches("[Image #1]see", "", [`see ${shot}`], collapse, null)).toBe(false);
   });
@@ -930,15 +930,15 @@ describe("pure helpers", () => {
     expect(boxMatches("[Pasted text #1 +30 lines]", "", thirty, claudeCollapse, claudeThirty)).toBe(false);
   });
 
-  test("wholePaste: only a profile that measured it, only a long or multi-line text without a reserved lead, upload images taken off", () => {
+  test("wholePaste: only a measured profile, at its one-line threshold or with several lines, upload images taken off", () => {
     const match = profileFor("claude", "2.1.304", { log: () => undefined });
     expect(match?.profile.paste?.block).toBe(true);
     const shot = "/srv/collie/uploads/w1_p1-mf3x9q-0a1b2c3d.jpg";
     const foreign = "/srv/shots/a.jpg";
     const windows = String.raw`C:\Users\Me Too\collie\uploads\w1-mf3x9q-0a1b2c3d.PNG`;
     const isShot = (path: string): boolean => path === shot || path === foreign || path === windows;
-    expect(wholePaste(match, ["short"], isShot)).toBeNull();
-    expect(wholePaste(match, ["x".repeat(800)], isShot)).toBeNull();
+    expect(wholePaste(match, ["short"], isShot)).toMatchObject({ images: 0, lines: ["short"] });
+    expect(wholePaste(match, ["x".repeat(800)], isShot)).toMatchObject({ images: 0 });
     expect(wholePaste(match, ["x".repeat(801)], isShot)?.images).toBe(0);
     expect(wholePaste(match, ["a", "b"], isShot)).toMatchObject({ images: 0, lines: ["a", "b"] });
     for (const lead of ["/", "!", "@"]) expect(wholePaste(match, [`${lead}x`, "b"], isShot)).toBeNull();

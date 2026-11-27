@@ -33,6 +33,8 @@ import { HELD_CAUSES, HELD_LONG_MS, REQUEST_ID, SEND_MODES, SEND_OUTCOMES, SEND_
 
 /** How long a text stays held before it ends `expired` (decision 4). */
 export const HOLD_MS = 30 * 60 * 1000;
+/** How long a text waits for its agent's first input box, the launch window's own bound. */
+export const STARTUP_HOLD_MS = 120_000;
 /** How long a command stays held before it ends `expired`: a command acts on the session as it is, so it goes stale sooner. */
 export const HOLD_COMMAND_MS = 10 * 60 * 1000;
 /** How long an ended request keeps its text for the phone's Resend, when nobody dismisses it. */

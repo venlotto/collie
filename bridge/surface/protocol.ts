@@ -99,8 +99,10 @@
 // that is starting in the pane (the bridge launched it, the pane's foreground process is its binary, or
 // the multiplexer named it a moment ago), while no frame of it has been read there yet. The send then
 // reads the screen with that harness's profile: with its input box on screen it runs the normal steps,
-// always probed, and the window ends once the probe shows (`SendDeps.framed`); with none it ends
-// `refused(probe_failed)` before any key, no probe included, saying the pane may still be starting. On a
+// always probed, and the window ends once the probe shows (`SendDeps.framed`); with none a plain message
+// waits in the hold queue before any key, no probe included, and goes out when the first box is ready.
+// Its two-minute expiry says the agent never became ready; a command stays `refused(probe_failed)`, so a
+// command that names the session as it is now is never run later. On a
 // pane the multiplexer names already, a dialog the profile lifts keeps its own path. A box can be drawn
 // before it reads keys (omp 18.12.6, about twenty seconds; gang three, 2026-10-26): a probe that never
 // shows in it ends `refused(probe_failed)` with the same words, presses no Backspace (it would wait in the
@@ -349,7 +351,7 @@ import type { CapState, CounterKey, ExampleEntry, InboxEntry } from "./counters.
 import { askLifetimeOf, type AskBook } from "./ask.ts";
 import type { KeyGate } from "./key-gate.ts";
 import type { RequestStore, SendRecord } from "./requests.ts";
-import { HOLD_BRIDGE_MAX, HOLD_ENDED_KEEP_MS, HOLD_PANE_MAX, heldRow, type HeldEntry, type HoldCause, type HoldInput, type HoldStore } from "./holds.ts";
+import { HOLD_BRIDGE_MAX, HOLD_ENDED_KEEP_MS, HOLD_PANE_MAX, STARTUP_HOLD_MS, heldRow, type HeldEntry, type HoldCause, type HoldInput, type HoldStore } from "./holds.ts";
 import { QueuedSends, type BoxReading, type ReceiptQueued } from "./queued.ts";
 import { PROBE_MARKER, probeCharOf, probeResidue } from "./probe-marker.ts";
 
@@ -2391,6 +2393,8 @@ const HELD = "The agent is working. Collie keeps this and sends it when the turn
 function notStartedDetail(match: ProfileMatch | null): string {
   return `The pane shows no ${match?.profile.id ?? "agent"} input box yet; it may still be starting. Nothing was typed.`;
 }
+/** The detail of a send held until the starting agent draws a box that takes keys. */
+const HELD_STARTUP = "The agent is starting. Collie keeps this and sends it when the input box is ready.";
 /** The detail of a send held because the box was not free or would not hold still: no turn was read. */
 const HELD_BOX = "The input box is not free. Collie keeps this and sends it when the box is free.";
 /** The line of a held send that ended because its pane closed. */
@@ -2403,6 +2407,7 @@ const HELD_VERSION_UNREAD = "The agent is working, and Collie could not read thi
 function heldDetail(end: Ended): string {
   if (end.extra.detail === HELD_BEHIND) return HELD_BEHIND;
   if (end.extra.detail === TURN_VERSION_UNREAD) return HELD_VERSION_UNREAD;
+  if (end.extra.cause === "starting") return HELD_STARTUP;
   if (end.reason === "draft_present") return HELD_DRAFT;
   return end.reason === "turn_running" ? HELD : HELD_BOX;
 }
@@ -2705,8 +2710,9 @@ export interface WholePaste {
 }
 
 /**
- * One line of at most this many characters is written as before, never as a whole paste: Claude Code
- * inserts a paste this short literally (ADR 0010, the 2026-10-03 addendum: 800 literal, 801 a token).
+ * The default one-line whole-paste threshold: Claude Code inserts a paste this short literally (ADR 0010,
+ * the 2026-10-03 addendum: 800 literal, 801 a token). A profile may lower it, to zero where even one raw
+ * character can open a dialog.
  */
 const WHOLE_PASTE_MIN_CHARS = 800;
 
@@ -2720,9 +2726,9 @@ function isImageFile(path: string): boolean {
 
 /**
  * Whether a text goes as ONE paste, and what the box then shows of it; null for the write per line.
- * Only where the profile measured it (`paste.block`), only for a message of more than one line or of
- * more than {@link WHOLE_PASTE_MIN_CHARS} on one line (a dictation is often one long line), or for a
- * lone upload path of any length ({@link uploadAlone}), and never
+ * Only where the profile measured it (`paste.block`), for a message of more than one line or past its
+ * `paste.blockMinChars` one-line threshold ({@link WHOLE_PASTE_MIN_CHARS} when the profile does not
+ * override it), or for a lone upload path of any length ({@link uploadAlone}), and never
  * for a text that starts with a reserved lead: a slash command, a shell line or a file mention keeps
  * the write it has always had, so the harness reads the lead as typed. With the profile's image
  * token, the pieces that are Collie's own uploads (the shape the web adapter's `liftedPaste` reads,
@@ -4007,7 +4013,8 @@ export class SendProtocol {
     const leads = state.match.profile.reservedLeads;
     const command = state.command || state.request.mode === "command" || (state.request.mode === "replace" && reservedLead(sendLines(state.request.text)[0] ?? "", leads) !== null);
     if (end.reason === "draft_present") return state.request.draftHolds === true && !command;
-    return (end.reason === "not_free" || end.reason === "bound" || clean) && !command;
+    const startup = state.startWait === true && end.reason === "probe_failed";
+    return (startup || end.reason === "not_free" || end.reason === "bound" || clean) && !command;
   }
 
   /** The request goes to the end of its pane's queue; the answer's receipt says `held`. */
@@ -4033,10 +4040,13 @@ export class SendProtocol {
     const waitsForTurn = command && !commandCannotSteer(state.match);
     // What holds it, for the phone's sentence and a marked send's caller: the refusal it came from, or
     // what the newest request ahead of it waits on when it joins the queue behind.
-    const ahead = holds.waiting(target.session, target.paneId).at(-1)?.cause;
-    const cause = end.extra.detail === HELD_BEHIND ? (ahead ?? "turn_running") : holdCauseOf(end);
+    const aheadEntry = holds.waiting(target.session, target.paneId).at(-1);
+    const startup = state.startWait === true && end.reason === "probe_failed";
+    const cause = end.extra.detail === HELD_BEHIND ? (aheadEntry?.cause ?? "turn_running") : startup ? "starting" : holdCauseOf(end);
     const unread = end.extra.detail === TURN_VERSION_UNREAD;
-    const input = { id: request.id, session: target.session, paneId: target.paneId, harness: target.harness, mode: request.mode, text: request.text, revision: request.revision ?? 0, command, waitsForTurn, cause, versionUnread: unread };
+    let input: HoldInput = { id: request.id, session: target.session, paneId: target.paneId, harness: target.harness, mode: request.mode, text: request.text, revision: request.revision ?? 0, command, waitsForTurn, cause, versionUnread: unread };
+    // A launch wait ends clearly on the same two-minute bound as the launch window. Sends behind it share that clock.
+    if (cause === "starting") input = { ...input, expiresAt: end.extra.detail === HELD_BEHIND ? aheadEntry?.expiresAt : this.now() + STARTUP_HOLD_MS };
     if (request.draftHolds === true) {
       // A marked send keeps its caller's clock.
       let marked: HoldInput = { ...input, draftHolds: true };
@@ -4050,7 +4060,8 @@ export class SendProtocol {
     const receipt = this.receiptOf(state, "held", undefined);
     this.deps.store.hold(state.record.id, receipt);
     this.count(state, receipt);
-    return answerWith({ receipt, offers: [] }, { ...end.extra, detail: heldDetail(end) });
+    const extra = cause === "starting" ? { ...end.extra, cause: "starting" as const } : end.extra;
+    return answerWith({ receipt, offers: [] }, { ...extra, detail: heldDetail(end) });
   }
 
   /**
@@ -4067,12 +4078,15 @@ export class SendProtocol {
     const counted = state.answerWait !== true && state.startWait !== true && !draft;
     if (entry === null || (counted && entry.tries + 1 >= HOLD_TRIES)) return this.settle(state, end);
     holds.putBack(state.record.id, counted);
-    if (state.startWait === true) this.startWaits.add(state.record.id);
+    if (state.startWait === true) {
+      this.startWaits.add(state.record.id);
+      holds.setCause(state.record.id, "starting");
+    }
     if (draft) holds.setCause(state.record.id, "draft_present");
     this.notePlaceholderTried(state);
     const receipt = this.receiptOf(state, "held", undefined);
     this.deps.store.hold(state.record.id, receipt);
-    return answerWith({ receipt, offers: [] }, { ...end.extra, detail: HELD });
+    return answerWith({ receipt, offers: [] }, { ...end.extra, detail: state.startWait === true ? HELD_STARTUP : HELD });
   }
 
   /** A marked send's placeholder probe, on its pane's watch: the same box text is not probed again (tickHolds). */
@@ -5418,7 +5432,9 @@ export class SendProtocol {
     // harness up and asking: it keeps its own path. A box on screen is not yet a box that reads keys
     // (omp draws its box long before it reads one): the window ends once the probe shows in it.
     if (state.starting && s0.frame === null && (!state.startingNamed || askOf(s0.surface.modal) === null)) {
-      throw new Ended("refused", "probe_failed", { surface: s0.surface, framed: false, detail: notStartedDetail(match) });
+      // A plain send waits on disk for the first box; commands stay refusals (holdsEnd). No key may reach the shell.
+      state.startWait = true;
+      throw new Ended("refused", "probe_failed", { surface: s0.surface, framed: false, detail: notStartedDetail(match), cause: "starting" });
     }
     this.atS0(state, s0);
     // The person's override on a screen that is not free (M102 spec 12): refused only for a moved screen

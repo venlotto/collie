@@ -317,7 +317,7 @@ const holdRows = (entries: Record<string, string>) => holdFindings({ ctx: { stat
 const screenRows = (entries: Record<string, string>) => new Map(screenFindings({ ctx: { stateDir: STATE }, files: fakeFiles(entries), now: () => NOW }).map((f) => [f.harness, f]));
 
 describe("holds rows (M71 spec 02)", () => {
-  test("the cause words are the phone's, for all five causes and for none", () => {
+  test("the cause words are the phone's, for all six causes and for none", () => {
     expect(Object.keys(HELD_CAUSE_WORDS)).toEqual([...HELD_CAUSES]);
     const causes: (HeldCause | undefined)[] = [...HELD_CAUSES, undefined];
     const [row] = holdRows(heldFiles(causes.map((cause, n): Hold => (cause === undefined ? { ago: 6 - n } : { cause, ago: 6 - n }))));
@@ -328,7 +328,8 @@ describe("holds rows (M71 spec 02)", () => {
         "held 4 min for something open at the box (req-h002-abcdef)",
         "held 3 min for a draft in the box (req-h003-abcdef)",
         "held 2 min for something open at the box (req-h004-abcdef)",
-        "held 1 min for a running turn (req-h005-abcdef)",
+        "held 1 min for the agent to start (req-h005-abcdef)",
+        "held 0 min for a running turn (req-h006-abcdef)",
       ].join(" · "),
     );
     expect(row!.holds.map((hold) => hold.cause)).toEqual([...HELD_CAUSES, null]);

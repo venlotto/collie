@@ -154,11 +154,11 @@ describe("a send that goes through", () => {
     expect(pane.keysSeen).not.toContain("Enter");
   });
 
-  test("a short one-line message keeps the write it always had: only a long or multi-line one is one paste", async () => {
+  test("a one-line message of any length is one paste, so a leading hotkey character stays literal", async () => {
     const { pane, send } = rig({ block: true });
     expect((await send("a short message")).receipt).toMatchObject({ outcome: "sent", keys: ["Enter"] });
     expect((await send("x".repeat(800))).receipt?.outcome).toBe("sent");
-    expect(pane.calls.map((call) => call.split(":")[0])).toEqual(["paste", "paste"]);
+    expect(pane.calls.map((call) => call.split(":")[0])).toEqual(["block", "block"]);
     expect((await send("x".repeat(801))).receipt?.outcome).toBe("sent");
     expect(pane.calls.at(-1)).toBe(`block:${"x".repeat(801)}`);
   });

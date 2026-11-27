@@ -530,6 +530,7 @@ export const it: Dictionary = {
   "composer.steer.unsupported": "Indirizza non è disponibile in questo riquadro, quindi non è stato inviato nulla. Invia di nuovo per metterlo in coda fino alla fine del turno.",
   "composer.steer.notAllowed": "Solo una persona al telefono può indirizzare. Invia di nuovo senza Indirizza.",
   "composer.startup.queued": "In coda. Verrà inviato quando l’agente sarà pronto.",
+  "composer.startup.expired": "Non inviato. L’agente non è stato pronto entro 2 minuti. Controlla il riquadro e invia di nuovo.",
   "composer.protocol.held": "In coda. Viene inviato al termine del turno.",
   "composer.protocol.expired": "Non inviato. Il turno non è terminato entro 30 minuti.",
   "composer.protocol.cancelled": "Annullato. All'agente non è arrivato nulla.",

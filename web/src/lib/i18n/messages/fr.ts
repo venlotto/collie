@@ -528,6 +528,7 @@ export const fr: Dictionary = {
   "composer.steer.unsupported": "Rediriger n'est pas disponible sur ce volet, donc rien n'a été envoyé. Renvoyez pour le mettre en file d'attente jusqu'à la fin du tour.",
   "composer.steer.notAllowed": "Seule une personne au téléphone peut rediriger. Renvoyez sans Rediriger.",
   "composer.startup.queued": "En attente. Le message sera envoyé dès que l’agent sera prêt.",
+  "composer.startup.expired": "Non envoyé. L’agent n’était pas prêt dans les 2 minutes. Vérifiez le volet et renvoyez.",
   "composer.protocol.held": "En file d'attente. Envoi à la fin du tour.",
   "composer.protocol.expired": "Non envoyé. Le tour ne s'est pas terminé dans les 30 minutes.",
   "composer.protocol.cancelled": "Annulé. Rien n'a été envoyé à l'agent.",

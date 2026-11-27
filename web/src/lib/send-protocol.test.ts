@@ -261,6 +261,12 @@ describe("readSend", () => {
 describe("a held send (M56 spec 15)", () => {
   const reply = (outcome: string) => readSendReply({ receipt: { outcome }, offers: [], detail: "The agent is working. The bridge holds it." })!;
 
+  it("a startup hold clears the draft and says it will send when the agent is ready", () => {
+    const starting = readSendReply({ receipt: { outcome: "held" }, offers: [], cause: "starting" })!;
+    expect(readSend(starting)).toMatchObject({ clear: true, note: "startup", offers: [] });
+    expect(noteKey("startup")).toBe("composer.startup.queued");
+  });
+
   it("a held answer clears the draft, says held, and carries no offers, no detail and no refusal", () => {
     expect(readSend(reply("held"))).toEqual({ clear: true, note: "held", offers: [], surface: null, detail: null, toCard: false, cap: null, step: null, waits: false });
   });

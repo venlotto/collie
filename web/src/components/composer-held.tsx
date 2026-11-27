@@ -45,6 +45,8 @@ function heldKey(row: HeldRow): MessageKey {
     case "bound":
     case "probe_failed":
       return "composer.held.box";
+    case "starting":
+      return "composer.startup.queued";
     case "draft_present":
       return "composer.held.draft";
     default:
@@ -66,7 +68,7 @@ function labelKey(row: HeldRow): MessageKey {
   if (row.state === "running") return "composer.held.sending";
   if (row.outcome === "unknown") return "composer.held.unknown";
   if (row.outcome === "typed_not_submitted") return "composer.held.typed";
-  if (row.outcome === "expired") return "composer.held.expired";
+  if (row.outcome === "expired") return row.cause === "starting" ? "composer.startup.expired" : "composer.held.expired";
   if (row.outcome === "refused" && row.reason === "pane_gone") return "composer.held.paneGone";
   if (row.outcome === "refused" && row.reason !== undefined) return noteKey(sendNote(row.outcome, row.reason));
   return "composer.held.failed";

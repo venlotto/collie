@@ -591,6 +591,7 @@ export const de: Dictionary = {
   "composer.steer.unsupported": "Steuern ist in diesem Pane nicht verfügbar, daher wurde nichts gesendet. Sende erneut, um es für das Ende des Durchgangs einzureihen.",
   "composer.steer.notAllowed": "Nur eine Person am Telefon kann steuern. Sende erneut ohne Steuern.",
   "composer.startup.queued": "In der Warteschlange. Wird gesendet, sobald der Agent bereit ist.",
+  "composer.startup.expired": "Nicht gesendet. Der Agent war nicht innerhalb von 2 Minuten bereit. Prüfe das Pane und sende erneut.",
   "composer.protocol.held": "In der Warteschlange. Wird gesendet, wenn der Zug endet.",
   "composer.protocol.expired": "Nicht gesendet. Der Zug endete nicht innerhalb von 30 Minuten.",
   "composer.protocol.cancelled": "Abgebrochen. Es ging nichts an den Agenten.",

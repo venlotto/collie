@@ -260,6 +260,7 @@ export const HELD_CAUSE_WORDS = {
   bound: "something open at the box",
   draft_present: "a draft in the box",
   probe_failed: "something open at the box",
+  starting: "the agent to start",
 } as const satisfies Record<HeldCause, string>;
 
 /** The words for a hold with this cause: no cause is a running turn, as on the phone. */
