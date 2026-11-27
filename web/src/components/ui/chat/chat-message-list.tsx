@@ -163,8 +163,8 @@ const ChatMessageList = React.forwardRef<ChatMessageListHandle, ChatMessageListP
             onClick={() => scrollToBottom()}
             size="icon"
             variant="outline"
-            className="absolute bottom-3 left-1/2 z-10 size-9 -translate-x-1/2 rounded-full shadow-md"
-            style={clearBottom > 0 ? { bottom: cardsRoom(clearBottom) } : undefined}
+            className="absolute bottom-[calc(0.75rem+var(--bot-composer-overlap,0px))] left-1/2 z-10 size-9 -translate-x-1/2 rounded-full shadow-md"
+            style={clearBottom > 0 ? { bottom: `max(${cardsRoom(clearBottom)}px, calc(0.75rem + var(--bot-composer-overlap, 0px)))` } : undefined}
             aria-label={t("common.scrollToLatestAria")}
           >
             <Icon name="scroll-to-latest" className="size-4" />
