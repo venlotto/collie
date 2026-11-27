@@ -99,6 +99,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Long, multi-line and question-mark messages reach Codex.** Collie now pastes each message into Codex's input box in one piece instead of typing it key by key. Typed keys lost a leading "?" to Codex's shortcuts screen and could leave a long draft stuck in the box, and fast multi-line typing briefly looked like an open dialog, so the message stayed unsent with an error.
 - **The terminal draft notice no longer covers the bot's message field.** After a message stays in the agent's box, the "Draft in terminal" card now sits above the floating composer, so you can keep typing, take the draft over or dismiss it.
 
+- **Dropped files attach and sent photos stay visible in chat.** Desktop drops share the photo editor and file picker, failed uploads keep an error beside the composer, and sent attachments show a preview or filename instead of a server path.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
