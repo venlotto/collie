@@ -1278,7 +1278,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       answerRefusalRef.current = null;
       setSendRefusal(null);
     }
-  });
+    // The three facts above are what can change; setSendRefusal is this render's own function.
+  }, [sendRefusal, slot, dialogCard]);
   // STOP (M68 spec 02): one fresh request id per second tap, the bridge's receipt told in the notice a send's
   // refusal uses. The bridge presses the profile's interrupt key as this person's tap, so nothing is typed
   // and no draft is touched; a refusal says why nothing was pressed. A thrown error that says nothing about
