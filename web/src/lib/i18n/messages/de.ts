@@ -641,6 +641,7 @@ export const de: Dictionary = {
   "composer.protocol.busy": "Ein anderes Senden an dieses Pane läuft noch. Sende dieses erneut, wenn es endet.",
   "composer.protocol.notFree": "Das Eingabefeld ist nicht frei, daher wurde nichts getippt. Beantworte oder schließe, was dort offen ist, und sende dann erneut.",
   "composer.protocol.notEmptied": "Collie konnte den Entwurf nicht leeren, daher wurde deine Nachricht nicht getippt. Sie ist noch hier. Prüfe das Eingabefeld und sende dann erneut.",
+  "composer.protocol.shellMode": "Das Eingabefeld des Agenten ist im Shell-Modus, in dem dein Text als Shell-Befehl laufen würde, und Collie konnte ihn nicht verlassen. Es wurde nichts getippt. Öffne die Tasten, drücke Backspace im leeren Feld und sende dann erneut.",
   "composer.detail.probeLeft": "Ein Testzeichen von Collie steht möglicherweise noch im Feld. Prüfe den Bereich, bevor du tippst.",
   "composer.detail.shortPane": "Der Bereich ist zu niedrig, um das Eingabefeld zu zeigen. Mach ihn am Computer höher und sende dann erneut.",
   "composer.detail.lateKeys": "Der Agent hat Collies Testtasten spät angezeigt. Warte einen Moment und sende dann erneut.",

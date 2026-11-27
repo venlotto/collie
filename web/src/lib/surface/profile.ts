@@ -759,6 +759,20 @@ export interface Profile {
      */
     readonly answerPrompt?: string;
     /**
+     * The harness's shell mode, where Enter runs the box as a shell command (Codex 0.172.0, lab
+     * 2026-11-27: a `!` typed on an empty box turns the prompt glyph into `!` and puts `Shell mode`
+     * under the box; Backspace on the empty box leaves it, `ctrl+u` does not). `prompt` is a regular
+     * expression source read on the frame's prompt row, `lead` the reserved lead that enters the mode,
+     * `exit` the keys that leave it from an empty box. A request that is not a shell line never types
+     * into such a box: an empty one is left with `exit` first, proven by a read of the ordinary box;
+     * anything else is refused `not_free` with the cause `shell_mode`. Optional.
+     */
+    readonly shellMode?: {
+      readonly prompt: string;
+      readonly lead: string;
+      readonly exit: readonly string[];
+    };
+    /**
      * Rows that mean a dialog is drawn over the screen above a live box, as regular expression
      * sources, read on every row above the box. A harness that draws its pickers and notices over
      * the transcript and leaves the box on screen needs them: the box looks free under a dialog.
@@ -988,6 +1002,15 @@ export interface Profile {
     readonly status: "verified" | "provisional";
     /** Paste the probe as one bracketed block so a hotkey lead cannot open harness UI. Requires paste.block. */
     readonly paste?: boolean;
+    /**
+     * Draft ends no probe may follow, as regular expression sources read on the box's text: a token the
+     * harness completes in a popup (Codex 0.172.0, lab 2026-11-27: after `mira @READ` or `usa $cre`,
+     * even with the popup closed, any key, the probe's or its Backspace, opens it again and echoes the
+     * character in it). A draft that matches one is never probed: a send or a command is refused
+     * `draft_present` with no key, offered Replace and Cancel but not Add (the text would extend the
+     * token), and Replace empties the box before its probe. Optional.
+     */
+    readonly popupTails?: readonly string[];
     readonly note: string;
   };
   /** How a send writes its text (M56 spec 05). Optional: a profile without it is written as typed keys. */
@@ -1798,6 +1821,17 @@ export function parseProfile(raw: JsonValue): Profile {
   const withHint: Profile["idle"] = idleNode.inlineHint === undefined ? withGaps : { ...withGaps, inlineHint: parseInlineHint(idleNode.inlineHint) };
   const idleBlock: Profile["idle"] =
     idleNode.answerPrompt === undefined ? withHint : { ...withHint, answerPrompt: pattern(idleNode.answerPrompt, "idle.answerPrompt").source };
+  let shellMode: NonNullable<Profile["idle"]["shellMode"]> | undefined;
+  if (idleNode.shellMode !== undefined) {
+    const shellNode = object(idleNode.shellMode, "idle.shellMode");
+    const prompt = pattern(field(shellNode, "prompt", "idle.shellMode"), "idle.shellMode.prompt");
+    if (prompt.test("")) fail("idle.shellMode.prompt", "must not match a blank row");
+    shellMode = {
+      prompt: prompt.source,
+      lead: text(field(shellNode, "lead", "idle.shellMode"), "idle.shellMode.lead"),
+      exit: textList(field(shellNode, "exit", "idle.shellMode"), "idle.shellMode.exit", 1),
+    };
+  }
 
   const keysNode = object(field(root, "keys", ""), "keys");
   const clearNode = object(field(keysNode, "clear", "keys"), "keys.clear");
@@ -1900,6 +1934,7 @@ export function parseProfile(raw: JsonValue): Profile {
   const collapse = collapseNode.refuseLiteral === true ? { ...collapseBase, refuseLiteral: true } : collapseBase;
 
   const reservedLeads = textList(field(root, "reservedLeads", ""), "reservedLeads", 1);
+  if (shellMode !== undefined && !reservedLeads.includes(shellMode.lead)) fail("idle.shellMode.lead", "must be one of reservedLeads");
   let reservedLeadNotes: Readonly<Record<string, string>> | undefined;
   if (root.reservedLeadNotes !== undefined) {
     const notesNode = object(root.reservedLeadNotes, "reservedLeadNotes");
@@ -1972,6 +2007,14 @@ export function parseProfile(raw: JsonValue): Profile {
     if (paste?.block !== true) fail("probe.paste", "needs paste.block");
     probe = { ...probe, paste: true };
   }
+  if (probeNode.popupTails !== undefined) {
+    const popupTails = list(probeNode.popupTails, "probe.popupTails").map((item, i) => {
+      const tail = pattern(item, `probe.popupTails[${String(i)}]`);
+      if (tail.test("")) fail(`probe.popupTails[${String(i)}]`, "must not match an empty box");
+      return tail.source;
+    });
+    probe = { ...probe, popupTails };
+  }
 
   let ask: Profile["ask"];
   if (root.ask !== undefined) {
@@ -1992,7 +2035,7 @@ export function parseProfile(raw: JsonValue): Profile {
 
   const hold = root.hold === undefined ? undefined : parseHold(root.hold, hooks);
 
-  const parsedProfile: Profile = { id, identity: agentNames === undefined ? identity : { ...identity, agentNames }, versions, idle: idleBlock, keys, collapse, reservedLeads, probe, hooks };
+  const parsedProfile: Profile = { id, identity: agentNames === undefined ? identity : { ...identity, agentNames }, versions, idle: shellMode === undefined ? idleBlock : { ...idleBlock, shellMode }, keys, collapse, reservedLeads, probe, hooks };
   const withNotes = reservedLeadNotes === undefined ? parsedProfile : { ...parsedProfile, reservedLeadNotes };
   const withPaste = paste === undefined ? withNotes : { ...withNotes, paste };
   const withAsk = ask === undefined ? withPaste : { ...withPaste, ask };

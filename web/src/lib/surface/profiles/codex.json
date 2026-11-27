@@ -36,6 +36,28 @@
       "maxTailRows": 4,
       "bottomWraps": 1
     },
+    "frameAlternates": [
+      {
+        "top": {
+          "pattern": "^$",
+          "column": 0,
+          "blank": true
+        },
+        "prompt": {
+          "pattern": "^!(?=\\s|$)(?: (?<draft>.*))?$",
+          "column": 0
+        },
+        "bottom": {
+          "pattern": "^ {2}(?:(?![←?] )\\S(?:.*\\S)? · \\S.*|[Tt]ab to queue message\\s{2,}\\d+% context left)$",
+          "column": 2
+        },
+        "continuationIndent": 2,
+        "maxDraftRows": 100,
+        "maxTailRows": 4,
+        "bottomWraps": 1,
+        "note": "Shell mode (Codex 0.172.0, lab 2026-11-27, captures codex--v0172-shell-mode-*--w56.txt): a `!` typed on an empty box turns the prompt glyph into a bold red `!` and puts `Shell mode` under the status row; the box holds the line without its `!`. Read with idle.shellMode."
+      }
+    ],
     "placeholders": {
       "texts": [],
       "patterns": [
@@ -58,9 +80,15 @@
           "^\\s*\\? for shortcuts(?:\\s{2,}\\S.*)?$",
           "^\\s*[Tt]ab to queue message$",
           "^\\s*⚠ \\d+(?: warnings?)? · f2(?: to view)?$",
-          "^\\s*Goal hit usage limits \\(/goal resume\\)(?: · ⚠ \\d+(?: warnings?)? · f2(?: to view)?)?$"
+          "^\\s*Goal hit usage limits \\(/goal resume\\)(?: · ⚠ \\d+(?: warnings?)? · f2(?: to view)?)?$",
+          "^\\s*Shell mode$"
         ]
       }
+    },
+    "shellMode": {
+      "prompt": "^!(?=\\s|$)",
+      "lead": "!",
+      "exit": ["Backspace"]
     },
     "runningRows": [
       "\\s·\\s[⠀-⣿]$",
@@ -131,6 +159,7 @@
     "char": "⌁",
     "status": "verified",
     "paste": true,
+    "popupTails": ["(?:^|\\s)[@$]\\S*$"],
     "note": "M56 spec 01 lab, 2026-10-15, Codex 0.162.1: inert after the type and after Backspace in the permission and picker dialogs on Herdr, tmux and zellij; the box shows it as `› ⌁`; fallback ¤; the live sends of M56 spec 13 passed on 0.150.0, 0.159.2 and 0.163.0 (2026-10-16), so the range is verified through 0.163.0, past the ledger canary row 0.159.2"
   },
   "paste": {

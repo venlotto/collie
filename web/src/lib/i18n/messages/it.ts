@@ -580,6 +580,7 @@ export const it: Dictionary = {
   "composer.protocol.busy": "Un altro invio a questo riquadro è ancora in corso. Invia di nuovo questo quando finisce.",
   "composer.protocol.notFree": "La casella di input non è libera, quindi non è stato digitato nulla. Rispondi a ciò che è aperto lì, oppure chiudilo, poi invia di nuovo.",
   "composer.protocol.notEmptied": "Collie non è riuscito a svuotare la bozza, quindi il tuo messaggio non è stato digitato. È ancora qui. Controlla la casella di input, poi invia di nuovo.",
+  "composer.protocol.shellMode": "La casella di input dell'agente è in modalità Shell, dove il tuo testo verrebbe eseguito come comando shell, e Collie non è riuscito a uscirne. Non è stato digitato nulla. Apri i tasti, premi Backspace nella casella vuota, poi invia di nuovo.",
   "composer.detail.probeLeft": "Un carattere di prova di Collie potrebbe essere ancora nella casella. Controlla il riquadro prima di scrivere.",
   "composer.detail.shortPane": "Il riquadro è troppo basso per mostrare la casella di input. Rendilo più alto sul computer, poi invia di nuovo.",
   "composer.detail.lateKeys": "L'agente ha mostrato in ritardo i tasti di prova di Collie. Aspetta un momento, poi invia di nuovo.",

@@ -23,7 +23,7 @@ export function answerSentence(reading: SendReading): string {
       : capSentence(reading.cap, (vars) => translate("composer.protocol.capConfirmPast", vars));
   // A draft refusal already says what the screen held (a Replace whose draft did not empty too), and "The
   // agent is working" already says the turn runs.
-  if (reading.surface === null || reading.note === "draft" || reading.note === "draftCommand" || reading.note === "draftUnseen" || reading.note === "notEmptied" || reading.note === "agentBusy") return note;
+  if (reading.surface === null || reading.note === "draft" || reading.note === "draftCommand" || reading.note === "draftUnseen" || reading.note === "notEmptied" || reading.note === "shellMode" || reading.note === "agentBusy") return note;
   // What Collie saw comes first, then the verdict and its next step (M102 spec 02), so the sentence ends
   // on what the person can do.
   return `${translate(`composer.surface.${reading.surface}`)} ${note}`;

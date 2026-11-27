@@ -623,6 +623,7 @@ export const ja: Dictionary = {
   "composer.protocol.busy": "このペインへの別の送信がまだ実行中です。終わってから、もう一度これを送信してください。",
   "composer.protocol.notFree": "入力欄が空いていないため、何も入力されていません。そこで開いているものに回答するか閉じてから、もう一度送信してください。",
   "composer.protocol.notEmptied": "Collie は下書きを空にできなかったため、メッセージは入力されていません。メッセージはここに残っています。入力欄を確認してから、もう一度送信してください。",
+  "composer.protocol.shellMode": "エージェントの入力欄がシェルモードになっており、テキストはシェルコマンドとして実行されてしまいます。Collie はこのモードを抜けられませんでした。何も入力されていません。キーを開き、空の入力欄で Backspace を押してから、もう一度送信してください。",
   "composer.detail.probeLeft": "Collie のテスト用の文字が入力欄に残っている可能性があります。入力する前にペインを確認してください。",
   "composer.detail.shortPane": "ペインが低すぎて入力欄を表示できません。コンピューターでペインを高くしてから、もう一度送信してください。",
   "composer.detail.lateKeys": "エージェントが Collie のテストキーを遅れて表示しました。少し待ってから、もう一度送信してください。",

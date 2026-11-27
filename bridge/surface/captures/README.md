@@ -25,3 +25,16 @@ frase por que el cielo es azul." eight times, 376 characters, pasted and never s
 | --- | --- |
 | `codex--v0172-draft-376--w56.txt` | The draft in an idle box: one sentence per row, since a 54-character row does not fit the 53 the box takes |
 | `codex--v0172-draft-draining--w56.txt` | 250 ms after a batch of 256 Backspaces went out: seven rows still show. Codex took all 393 in about 1.5 s |
+
+# Codex 0.172.0 at 56 columns: a mention draft and shell mode (2026-11-27)
+
+The same kind of lab (a scratch `CODEX_HOME` whose provider points at a closed local port, the working
+folder `/tmp/pdlab/scratch`), for `protocol.codex-probe-draft.test.ts`. No account, key or private text
+is in them.
+
+| Fixture | State |
+| --- | --- |
+| `codex--v0172-mention-draft--w56.txt` | `mira @READ` left in the box after its file popup was closed with Escape. Any key in the `@READ` token opens the popup again |
+| `codex--v0172-mention-probe-popup--w56.txt` | The old send's draft probe after it: the box holds `mira @READ⌁` and the reopened popup echoes `READ⌁` over `no matches`, so the screen shows the character twice |
+| `codex--v0172-shell-mode-empty--w56.txt` | `!` typed on an empty box: the prompt glyph is a bold red `!`, and `Shell mode` stands under the status row |
+| `codex--v0172-shell-mode-typed--w56.txt` | `!echo hola-bang` typed on an empty box: the box shows `! echo hola-bang`, the line without its `!` |

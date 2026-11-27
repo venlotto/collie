@@ -576,6 +576,7 @@ export const pt: Dictionary = {
   "composer.protocol.busy": "Outro envio para este painel ainda está em andamento. Envie este de novo quando ele terminar.",
   "composer.protocol.notFree": "A caixa de entrada não está livre, então nada foi digitado. Responda ou feche o que estiver aberto lá e envie de novo.",
   "composer.protocol.notEmptied": "O Collie não conseguiu esvaziar o rascunho, então sua mensagem não foi digitada. Ela continua aqui. Confira a caixa de entrada e envie de novo.",
+  "composer.protocol.shellMode": "A caixa de entrada do agente está no modo Shell, onde seu texto seria executado como um comando do shell, e o Collie não conseguiu sair dele. Nada foi digitado. Abra as teclas, pressione Backspace com a caixa vazia e envie de novo.",
   "composer.detail.probeLeft": "Um caractere de teste do Collie ainda pode estar na caixa. Confira o painel antes de digitar.",
   "composer.detail.shortPane": "O painel é baixo demais para mostrar a caixa de entrada. Aumente-o no computador e envie de novo.",
   "composer.detail.lateKeys": "O agente mostrou tarde as teclas de teste do Collie. Espere um momento e envie de novo.",

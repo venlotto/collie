@@ -1,0 +1,30 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.172.0)
+[0m     [2m/tmp/pdlab/scratch[0m
+
+
+
+
+
+  [1mMentions[0m
+  [2mFiles, directories, plugins, skills and tasks[0m
+
+  [1;4m All Results [0m [2m Filesystem Only [0m [2m Plugins [0m
+
+  [2mREAD⌁[0m
+
+  [3mno matches[0m
+
+
+
+
+
+
+
+
+  [1menter/tab[0;2m insert · [0;1mesc[0;2m close · [0;1m↑/↓[0;2m select · [0;1m←/→[0;2m fil…[0m
+
+[1m›[0m mira @READ⌁
+
+  [38;2;246;226;183mgpt-5 default[39m · [38;2;171;223;167m/tmp/pdlab/scratch[39m
+

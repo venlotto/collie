@@ -576,6 +576,7 @@ export const tr: Dictionary = {
   "composer.protocol.busy": "Bu bölmeye giden başka bir gönderim hâlâ sürüyor. O bitince bunu tekrar gönderin.",
   "composer.protocol.notFree": "Giriş kutusu serbest değil, bu yüzden hiçbir şey yazılmadı. Orada açık olanı yanıtlayın veya kapatın, sonra tekrar gönderin.",
   "composer.protocol.notEmptied": "Collie taslağı boşaltamadı, bu yüzden mesajınız yazılmadı. Mesajınız hâlâ burada. Giriş kutusunu kontrol edin, sonra tekrar gönderin.",
+  "composer.protocol.shellMode": "Ajanın giriş kutusu Shell modunda; metniniz orada bir kabuk komutu olarak çalışır ve Collie bu moddan çıkamadı. Hiçbir şey yazılmadı. Tuşları açın, boş kutuda Backspace'e basın, sonra tekrar gönderin.",
   "composer.detail.probeLeft": "Kutuda Collie'nin bir deneme karakteri kalmış olabilir. Yazmadan önce bölmeyi kontrol edin.",
   "composer.detail.shortPane": "Bölme, giriş kutusunu gösteremeyecek kadar kısa. Bilgisayarda bölmeyi uzatın, sonra tekrar gönderin.",
   "composer.detail.lateKeys": "Ajan, Collie'nin deneme tuşlarını geç gösterdi. Biraz bekleyin, sonra tekrar gönderin.",

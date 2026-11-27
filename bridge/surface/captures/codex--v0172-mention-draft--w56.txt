@@ -1,0 +1,30 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.172.0)
+[0m     [2m/tmp/pdlab/scratch[0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1m›[0m mira @READ
+
+  [38;2;246;226;183mgpt-5 default[39m · [38;2;171;223;167m/tmp/pdlab/scratch[39m
+

@@ -578,6 +578,7 @@ export const fr: Dictionary = {
   "composer.protocol.busy": "Un autre envoi vers ce volet est encore en cours. Renvoyez celui-ci quand il se termine.",
   "composer.protocol.notFree": "La zone de saisie n'est pas libre, donc rien n'a été tapé. Répondez à ce qui est ouvert là, ou fermez-le, puis renvoyez.",
   "composer.protocol.notEmptied": "Collie n'a pas pu vider le brouillon, donc votre message n'a pas été tapé. Il est toujours ici. Vérifiez la zone de saisie, puis renvoyez.",
+  "composer.protocol.shellMode": "La zone de saisie de l'agent est en mode Shell, où votre texte serait exécuté comme une commande shell, et Collie n'a pas pu en sortir. Rien n'a été tapé. Ouvrez les touches, appuyez sur Backspace dans la zone vide, puis renvoyez.",
   "composer.detail.probeLeft": "Un caractère de test de Collie peut encore être dans la zone. Vérifiez le panneau avant de taper.",
   "composer.detail.shortPane": "Le panneau est trop bas pour afficher la zone de saisie. Agrandissez-le sur l'ordinateur, puis renvoyez.",
   "composer.detail.lateKeys": "L'agent a affiché tard les touches de test de Collie. Attendez un instant, puis renvoyez.",

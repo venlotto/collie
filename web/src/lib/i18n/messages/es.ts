@@ -638,6 +638,7 @@ export const es: Dictionary = {
   "composer.protocol.busy": "Otro envío a este panel sigue en curso. Envía este de nuevo cuando termine.",
   "composer.protocol.notFree": "La caja de entrada no está libre, así que no se escribió nada. Responde o cierra lo que esté abierto allí y luego envía de nuevo.",
   "composer.protocol.notEmptied": "Collie no pudo vaciar el borrador, así que tu mensaje no se escribió. Sigue aquí. Revisa la caja de entrada y envía de nuevo.",
+  "composer.protocol.shellMode": "La caja de entrada del agente está en modo Shell, donde tu texto se ejecutaría como un comando de la terminal, y Collie no pudo salir de él. No se escribió nada. Toca «Abrir teclas», pulsa Backspace con la caja vacía y envía de nuevo.",
   "composer.detail.probeLeft": "Puede que un carácter de prueba de Collie siga en la caja. Revisa el panel antes de escribir.",
   "composer.detail.shortPane": "El panel es demasiado bajo para mostrar la caja de entrada. Hazlo más alto en el ordenador y luego envía de nuevo.",
   "composer.detail.lateKeys": "El agente mostró tarde las teclas de prueba de Collie. Espera un momento y luego envía de nuevo.",

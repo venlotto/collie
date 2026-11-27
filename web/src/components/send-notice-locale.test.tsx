@@ -19,6 +19,8 @@ const LIVE_DETAILS = [
   "Something opened at the box after the text was typed, so Enter was not pressed.",
   "Collie could not empty the draft, so your message was not typed. Check the box, then send again. The box did not empty inside the bound.",
 ];
+/** The bridge's line for a box that stayed in the agent's shell mode (protocol.ts SHELL_MODE_DETAIL). */
+const SHELL_LINE = "The box is in the agent's shell mode, where Enter would run your text as a shell command, and it did not leave it. Nothing was typed. Leave shell mode on the key pad (Backspace on the empty box), then send again.";
 const MADE_UP = "The bridge says this in English only, Check the pane before you type.";
 const ENGLISH = /\b(the|box|pane|probe|typed|was|not|before)\b/iu;
 
@@ -93,6 +95,17 @@ describe("in Spanish", () => {
     expect(text).toBe(t("composer.protocol.notEmptied"));
     expect(text).toMatch(/no se escribió/u);
     expect(text).not.toContain(t("composer.protocol.unknown"));
+  });
+
+  it("a box left in the agent's shell mode says so, names the key, and is never the mute 'cannot read' (2026-11-27)", () => {
+    const answer = reply("refused", "not_free", SHELL_LINE, "shell_mode", ["keys"]);
+    const reading = readSend(answer, "send");
+    expect(reading.note).toBe("shellMode");
+    const text = shown(answer);
+    expect(text).toBe(t("composer.protocol.shellMode"));
+    expect(text).toMatch(/modo Shell/u);
+    expect(text).toMatch(/Backspace/u);
+    expect(text).not.toContain(t("composer.protocol.unconfirmed"));
   });
 });
 
