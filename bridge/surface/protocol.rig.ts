@@ -96,6 +96,14 @@ export class FakePane {
    */
   drawsQueuedRow = false;
   collapseOver = 120;
+  /** The columns a Claude box row wraps at; the rig's narrow default stands for any width. */
+  boxWidth = WIDTH;
+  /**
+   * The most draft rows a Claude box shows: past it the box scrolls, the `❯` row leaves the top and the
+   * top edge reads `─── ↑ N more ───` (Claude Code 2.1.332 at 54 x 23 caps it at six, lab 2026-11-27,
+   * fixture claude--v2332-long-paste-scrolled--w54). Null shows every row.
+   */
+  boxCap: number | null = null;
   /** The most lines a {@link pasteBlock} paste may hold and still land literally. */
   blockLiteralLines = 3;
   /** The image files a {@link pasteBlock} paste takes off, each drawn as `[Image #N]` before the rest. */
@@ -175,7 +183,7 @@ export class FakePane {
     if (this.bangPrompt && this.box.startsWith("!")) return [`! ${this.box.slice(1)}`];
     const rows: string[] = [];
     this.box.split("\n").forEach((line, li) => {
-      const chunks = line.length === 0 ? [""] : (line.match(new RegExp(`.{1,${String(WIDTH)}}`, "gu")) ?? [""]);
+      const chunks = line.length === 0 ? [""] : (line.match(new RegExp(`.{1,${String(this.boxWidth)}}`, "gu")) ?? [""]);
       chunks.forEach((chunk, ci) => rows.push(li === 0 && ci === 0 ? `❯ ${chunk}` : `  ${chunk}`));
     });
     return rows;
@@ -209,7 +217,10 @@ export class FakePane {
     // Claude Code paints its rules grey, so a Claude read is styled even while the box holds a typed
     // draft: the read-with-no-styling paths (M78 spec 06) stay off unless a test strips the colour.
     const rule = this.mode === "claude" ? `\u001b[38;2;136;136;136m${RULE}\u001b[0m` : RULE;
-    rows.push(...this.over, ...museQueued, rule, ...this.boxRows(), rule);
+    const boxRows = this.boxRows();
+    const hidden = this.mode === "claude" && this.boxCap !== null ? Math.max(0, boxRows.length - this.boxCap) : 0;
+    const top = hidden === 0 ? rule : `\u001b[38;2;136;136;136m───\u001b[0m \u001b[2m↑ ${String(hidden)} more\u001b[0m \u001b[38;2;136;136;136m${"─".repeat(28)}\u001b[0m`;
+    rows.push(...this.over, ...museQueued, top, ...boxRows.slice(hidden), rule);
     if (this.mode === "generic") rows.push(this.footer);
     else rows.push(...(this.popup ?? (this.box.length > 0 && this.statusWithText !== null ? this.statusWithText : this.status)));
     return (this.height === null ? rows : rows.slice(-this.height)).join("\n");

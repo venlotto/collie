@@ -141,7 +141,8 @@
 // A box that scrolls its draft (`idle.frame.scroll`; OMP keeps the last 17 rows in view): once it stands
 // at that height (Frame.scrolled) the head of a long text is out of view. S1, and Submit and Discard's
 // own check, then compare the rows in view with the END of the typed text (boxHolds), as strictly as a
-// box that fits; a box under that height, and a text written as one paste, are compared in full. The
+// box that fits, a text written as one paste included once it landed literally (Claude Code 2.1.332,
+// 54 x 23, 2026-11-27); a box under that height is compared in full. The
 // receipt's detail says only the end was compared. Discard and Replace count their clear keys before
 // the first one: what a box shows, or on a scrolled box the length of the text Collie typed (a
 // Discard). With no length known the request is refused `draft_present` before any key, so a clear
@@ -2792,15 +2793,23 @@ export function boxMatchesTail(box: string, prefix: string, lines: readonly stri
  * Whether a framed box holds the typed text: `all` of it ({@link boxMatches}), or, on a box at the
  * height where its profile scrolls the draft (`idle.frame.scroll` keeps the last rows,
  * {@link Frame.scrolled}), its `tail` ({@link boxMatchesTail}); null otherwise. A box that shows fewer
- * rows than that height shows its whole draft, so it is never compared by its tail, and neither is a
- * text written as one paste, which the harness may fold.
+ * rows than that height shows its whole draft, so it is never compared by its tail.
+ *
+ * A text written as one paste (`whole`) is compared by its tail too when it landed literally: Claude
+ * Code 2.1.332 in a 54 x 23 pane scrolls a 376-character line under `↑ 2 more` (live, 2026-11-27,
+ * fixture claude--v2332-long-paste-scrolled--w54), and since every plain Claude message is one paste,
+ * a tail-blind compare left every long one typed and never submitted. A folded paste is one short row
+ * whose token ends no typed text, so it never passes this way. Where the harness took images off the
+ * paste, the end of the kept text is in view, or, on a version that kept the paths, the end as typed.
  */
-function boxHolds(frame: Frame, prefix: string, lines: readonly string[], collapse: RegExp | null, whole: WholePaste | null): "all" | "tail" | null {
+export function boxHolds(frame: Frame, prefix: string, lines: readonly string[], collapse: RegExp | null, whole: WholePaste | null): "all" | "tail" | null {
   const box = boxText(frame);
   // A scrolled box whose rows in view hold no text confirms nothing, by the whole compare or the tail.
   if (frame.scrolled === true && wsFree(box).length === 0) return null;
   if (boxMatches(box, prefix, lines, collapse, whole)) return "all";
-  return frame.scrolled === true && whole === null && boxMatchesTail(box, prefix, lines) ? "tail" : null;
+  if (frame.scrolled !== true) return null;
+  if (boxMatchesTail(box, prefix, lines)) return "tail";
+  return whole !== null && whole.images > 0 && boxMatchesTail(box, prefix, whole.literal) ? "tail" : null;
 }
 
 /**

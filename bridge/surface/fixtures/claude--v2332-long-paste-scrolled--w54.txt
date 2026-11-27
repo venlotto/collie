@@ -1,0 +1,23 @@
+
+           [1mClaude Code[0m [38;5;246mv2.1.332[39m
+[38;5;174m ▐[48;5;16m▛███▛█[39m[49m   [38;5;246mOpus 5.5 with low effort[39m
+[38;5;174m▝▜[48;5;16m█████[49m█▀[39m  [38;5;246mAPI Usage Billing[39m
+[38;5;174m ▝▝   ▝▝ [39m  [38;5;246m/tmp/lp-lab[39m
+
+
+
+
+
+
+
+
+                          [38;5;211mNot logged in · run /login[39m
+[38;5;244m───[39m [2m↑ 2 more[0m [38;5;244m─────────────────────────────────────────
+[39m  en un pane estrecho de Claude. Por favor responde
+  solo OK y para. Esta es una frase un poco larga
+  para probar el ajuste de linea en un pane estrecho
+  de Claude. Por favor responde solo OK y para.
+  Esta es una frase un poco larga para probar el
+  ajuste de linea en un pane estrecho
+[38;5;244m──────────────────────────────────────────────────────
+[39m  [38;5;220m⏵⏵ auto mode on[38;5;246m (shift+tab to cycle)[39m
