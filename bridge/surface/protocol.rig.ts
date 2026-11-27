@@ -397,6 +397,8 @@ export function rig(
     paste?: boolean;
     /** The multiplexer frames a whole-text paste itself (Herdr's `pasteBlock`). */
     block?: boolean;
+    /** Herdr has pasteBlock but no separate one-line pasteText; false models that exact surface. */
+    linePaste?: boolean;
     /** The paths the protocol takes for image files on disk. */
     imageFiles?: readonly string[];
     pane?: FakePane;
@@ -416,7 +418,9 @@ export function rig(
     options.paste === false
       ? { readGrid: pane.readGrid, typeText: pane.typeText }
       : options.block === true
-        ? { readGrid: pane.readGrid, typeText: pane.typeText, pasteText: pane.pasteText, pasteBlock: pane.pasteBlock }
+        ? options.linePaste === false
+          ? { readGrid: pane.readGrid, typeText: pane.typeText, pasteBlock: pane.pasteBlock }
+          : { readGrid: pane.readGrid, typeText: pane.typeText, pasteText: pane.pasteText, pasteBlock: pane.pasteBlock }
         : { readGrid: pane.readGrid, typeText: pane.typeText, pasteText: pane.pasteText };
   const gate = new KeyGate(pane, now);
   const store = new RequestStore(options.storeDir ?? join(dir, "sends"), now);

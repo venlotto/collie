@@ -986,6 +986,8 @@ export interface Profile {
   readonly probe: {
     readonly char: string;
     readonly status: "verified" | "provisional";
+    /** Paste the probe as one bracketed block so a hotkey lead cannot open harness UI. Requires paste.block. */
+    readonly paste?: boolean;
     readonly note: string;
   };
   /** How a send writes its text (M56 spec 05). Optional: a profile without it is written as typed keys. */
@@ -1926,7 +1928,9 @@ export function parseProfile(raw: JsonValue): Profile {
   keys = parseSteer(keysNode, keys);
 
   const probeNode = object(field(root, "probe", ""), "probe");
-  const probe = {
+  const probePaste = probeNode.paste;
+  if (probePaste !== undefined && probePaste !== true && probePaste !== false) fail("probe.paste", "must be true or false");
+  let probe: Profile["probe"] = {
     char: text(field(probeNode, "char", "probe"), "probe.char"),
     status: oneOf(field(probeNode, "status", "probe"), "probe.status", PROBE_STATUSES),
     note: text(field(probeNode, "note", "probe"), "probe.note"),
@@ -1963,6 +1967,10 @@ export function parseProfile(raw: JsonValue): Profile {
       if (block !== true) fail("paste.image", "needs paste.block");
       paste = { ...paste, image: pattern(pasteNode.image, "paste.image").source };
     }
+  }
+  if (probePaste === true) {
+    if (paste?.block !== true) fail("probe.paste", "needs paste.block");
+    probe = { ...probe, paste: true };
   }
 
   let ask: Profile["ask"];

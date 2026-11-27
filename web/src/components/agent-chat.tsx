@@ -2538,7 +2538,7 @@ export function AgentChat({
   useShortcutHandler("switch_pane", !switcherReachable ? undefined : () => setDrawer("switcher"));
   useShortcutHandler("find", display && !chatShown && !agentView.showing ? openFind : undefined);
   useShortcutHandler("toggle_chat_terminal", gridless ? undefined : () => paneViewChange(chatShown ? "terminal" : "chat"));
-  useShortcutHandler("focus_composer", () => composerRef.current?.focusInput());
+  useShortcutHandler("focus_composer", drawer === null ? () => composerRef.current?.focusInput() : undefined);
 
   // ── The Actions palette's commands (ADR 0165): each runs what the pane menu's row, or the belt's
   // control, already runs, and is offered on exactly the terms that row is drawn on.

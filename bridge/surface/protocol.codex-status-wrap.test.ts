@@ -85,7 +85,7 @@ describe("a send to a Codex pane whose status row wrapped (#838), on the rig's p
   test("a dialog that opens after the probe blocks: no submit key", async () => {
     const pane = wrappedPane();
     pane.afterInput = (self, what) => {
-      if (what.startsWith("type:")) self.dialog = APPROVAL;
+      if (what.startsWith("type:") || what.startsWith("paste:") || what.startsWith("block:")) self.dialog = APPROVAL;
     };
     const answer = await rig({ pane, harness: "codex", version: "0.166.0" }).send("reply with one word: ready");
     expect(answer.receipt?.outcome).not.toBe("sent");

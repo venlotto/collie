@@ -98,6 +98,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Bot replies stay open in every agent state.** You can keep writing and sending while an agent is ready, working or starting, and questions keep their protected answer controls. A finished background run offers a clear new-chat action instead of typing into the shell that displays its log.
 - **Long, multi-line and question-mark messages reach Codex.** Collie now pastes each message into Codex's input box in one piece instead of typing it key by key. Typed keys lost a leading "?" to Codex's shortcuts screen and could leave a long draft stuck in the box, and fast multi-line typing briefly looked like an open dialog, so the message stayed unsent with an error.
 - **The terminal draft notice no longer covers the bot's message field.** After a message stays in the agent's box, the "Draft in terminal" card now sits above the floating composer, so you can keep typing, take the draft over or dismiss it.
+- **Codex sends no longer leak probe or shortcut keystrokes.** Before sending, Collie checks that Codex's input box accepts text; that check now uses a literal paste instead of a typed character, so it cannot open a shortcut panel. Ctrl+M also leaves focus alone while Messages or another chat sheet is open.
 
 ## [1.31.0] - 2026-11-24
 

@@ -159,7 +159,9 @@ describe("the Codex profile pastes every message (2026-11-27)", () => {
 
   test("a fold that counts another length is not the text: no submit key", async () => {
     const pane = codexPane();
+    const ordinaryPaste = pane.pasteBlock;
     pane.pasteBlock = (_paneId, text) => {
+      if (text !== FOLDED) return ordinaryPaste(_paneId, text);
       pane.calls.push(`block:${text}`);
       pane.box += `[Pasted Content ${String(text.length + 1)} chars]`;
       pane.revision++;
@@ -174,7 +176,8 @@ describe("the Codex profile pastes every message (2026-11-27)", () => {
     const pane = codexPane();
     const answer = await rig({ pane, harness: "codex", version: VERSION, block: true }).send("/status", { mode: "command" });
     expect(answer.receipt?.outcome).toBe("sent");
-    expect(pane.calls.some((call) => call.startsWith("block:"))).toBe(false);
+    expect(pane.calls.at(-1)).toBe("paste:/status");
+    expect(pane.calls).not.toContain("block:/status");
   });
 
   test("one paste for any text but a reserved lead or nothing", () => {

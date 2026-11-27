@@ -64,7 +64,7 @@ describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)
     pane.transcript = ["• first", "• second", "• third", "• fourth", "• fifth", "• sixth", "• seventh", "• eighth"];
     pane.afterInput = (p, what) => {
       // The fourth row: below the three rows at the very top that may come back from the scrollback.
-      if (what.startsWith("type:")) p.transcript = [...p.transcript.slice(0, 3), "• fourth, and a new line of output", ...p.transcript.slice(4)];
+      if (what.startsWith("type:") || what.startsWith("paste:") || what.startsWith("block:")) p.transcript = [...p.transcript.slice(0, 3), "• fourth, and a new line of output", ...p.transcript.slice(4)];
     };
     // Only the box and the rows under it decide the probe now; rows above that moved route the commit to the queue key.
     const answer = await send("please list the files in this folder");
@@ -75,7 +75,7 @@ describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)
   test("a row under the Codex box that is no hint still fails the probe", async () => {
     const { pane, send } = codex({ version: "0.164.0" });
     pane.afterInput = (p, what) => {
-      if (what.startsWith("type:")) p.codexHint = "  a row that is no hint";
+      if (what.startsWith("type:") || what.startsWith("paste:") || what.startsWith("block:")) p.codexHint = "  a row that is no hint";
     };
     const answer = await send("please list the files in this folder");
     expect(answer.receipt).toMatchObject({ outcome: "refused", reason: "probe_failed" });
