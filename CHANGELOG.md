@@ -96,6 +96,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **A successful Codex send no longer says the screen is unreadable.** On a narrow pane, Codex can wrap the session title onto a footer row with no separator. Collie now reads that continuation without mistaking a dialog's key row for it, so the warning appears only when the screen really blocks the reply.
 - **Every bot opens in Messages unless you choose Terminal.** The chat menu's View setting saves that choice for the bot on the server and shares it across your devices, without restarting the pane or losing the conversation. Kimi now opens its Claude-backed conversation correctly, Kimi and GLM leave Starting once their first screen is read, and a conversation that cannot be read yet offers a reversible View terminal action instead of silently leaving Messages.
 - **Bot replies stay open in every agent state.** You can keep writing and sending while an agent is ready, working or starting, and questions keep their protected answer controls. A finished background run offers a clear new-chat action instead of typing into the shell that displays its log.
+- **Long, multi-line and question-mark messages reach Codex.** Collie now pastes each message into Codex's input box in one piece instead of typing it key by key. Typed keys lost a leading "?" to Codex's shortcuts screen and could leave a long draft stuck in the box, and fast multi-line typing briefly looked like an open dialog, so the message stayed unsent with an error.
 
 ## [1.31.0] - 2026-11-24
 

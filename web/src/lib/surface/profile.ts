@@ -1013,6 +1013,15 @@ export interface Profile {
      */
     readonly foldLines?: "breaks" | "lines";
     /**
+     * With `block`: the longest one-line text still written as before rather than as ONE paste.
+     * Optional: absent keeps the bridge's own floor (800, where Claude Code starts to fold a paste).
+     * 0 sends every message as one paste. Codex 0.172.0 (lab, 2026-11-27, 56 columns) eats a typed
+     * `?` on an empty box (it opens its shortcuts overlay instead) and redraws a fast typed burst with
+     * blank rows before the text shows; a bracketed paste of the same text lands literally, so Codex
+     * sets 0 and a message never goes in as typed keys there.
+     */
+    readonly blockMinChars?: number;
+    /**
      * The token the harness draws for an image file it takes off a whole-text paste, as a regular
      * expression source (Claude Code: `[Image #N]`). Optional, and only with `block`: without it, a
      * send that names an image file is not modelled, so such a box stays unproven. With `block`, this
@@ -1943,6 +1952,12 @@ export function parseProfile(raw: JsonValue): Profile {
       if (foldLines !== "breaks" && foldLines !== "lines") fail("paste.foldLines", 'must be "breaks" or "lines"');
       if (block !== true) fail("paste.foldLines", "needs paste.block");
       paste = { ...paste, foldLines };
+    }
+    if (pasteNode.blockMinChars !== undefined) {
+      const min = asJsonNumber(pasteNode.blockMinChars);
+      if (min === undefined || !Number.isInteger(min) || min < 0 || min > 100_000) fail("paste.blockMinChars", "must be a whole number from 0 to 100000");
+      if (block !== true) fail("paste.blockMinChars", "needs paste.block");
+      paste = { ...paste, blockMinChars: min };
     }
     if (pasteNode.image !== undefined) {
       if (block !== true) fail("paste.image", "needs paste.block");
