@@ -1085,6 +1085,8 @@ export const zh: Dictionary = {
   "newPage.starters.title": "新会话",
   "newPage.title.inSpace": "在此工作区中新建",
   "prompt.feedback.cancel": "取消",
+  "prompt.feedback.other.help": "在终端中选择“Other”，在那里输入你的回答并发送。",
+  "prompt.questionStep": "第 {index} 题，共 {total} 题",
   "prompt.feedback.typedAria": "终端中的反馈内容",
   "prompt.feedback.planChange.offer": "向 Claude 提供修改意见",
   "prompt.feedback.planChange.editorLabel": "需要调整哪些内容？",

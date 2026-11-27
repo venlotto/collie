@@ -1096,6 +1096,8 @@ export const ja: Dictionary = {
   "newPage.starters.title": "新しい会話",
   "newPage.title.inSpace": "このSpaceで新規作成",
   "prompt.feedback.cancel": "キャンセル",
+  "prompt.feedback.other.help": "ターミナルで「Other」を選び、そこに回答を入力して送信します。",
+  "prompt.questionStep": "質問 {index}/{total}",
   "prompt.feedback.typedAria": "ターミナル内のフィードバック",
   "prompt.feedback.planChange.offer": "変更内容をClaudeに送信",
   "prompt.feedback.planChange.editorLabel": "変更内容を入力",

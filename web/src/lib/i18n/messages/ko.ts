@@ -1097,6 +1097,8 @@ export const ko: Dictionary = {
   "newPage.starters.title": "새 대화",
   "newPage.title.inSpace": "이 스페이스에 새로 만들기",
   "prompt.feedback.cancel": "취소",
+  "prompt.feedback.other.help": "터미널에서 「Other」를 고르고 거기에 답변을 입력해 전송합니다.",
+  "prompt.questionStep": "질문 {index}/{total}",
   "prompt.feedback.typedAria": "터미널 내 피드백",
   "prompt.feedback.planChange.offer": "Claude에 수정 요청",
   "prompt.feedback.planChange.editorLabel": "Claude가 수정할 내용",

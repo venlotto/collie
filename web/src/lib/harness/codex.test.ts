@@ -65,11 +65,19 @@ const DIALOG = [
   "codex--v0172-trust--w52.txt",
   "codex--v0172-async-question--w52.txt",
   "codex--v0172-async-panel--w52.txt",
+  // 0.172.0, a scratch tmux server at 52 and 60 columns (2026-11-27): two async questions at once, and the
+  // `Other` row focused, typed into and sent.
+  "codex--v0172-async-two-reminder--w52.txt",
+  "codex--v0172-async-two-panel--w52.txt",
+  "codex--v0172-async-two-next--w60.txt",
+  "codex--v0172-async-other-focused--w52.txt",
+  "codex--v0172-async-other-typed--w52.txt",
+  "codex--v0172-async-other-sent--w52.txt",
 ];
 
 // A notice over the live box (a reminder that a question waits): the box keeps the keyboard, so the
 // composer reads ready under it, unlike every other capture in DIALOG.
-const LIVE_BOX_NOTICES: ReadonlySet<string> = new Set(["codex--v0172-async-question--w52.txt"]);
+const LIVE_BOX_NOTICES: ReadonlySet<string> = new Set(["codex--v0172-async-question--w52.txt", "codex--v0172-async-two-reminder--w52.txt"]);
 const MODAL = DIALOG.filter((f) => !LIVE_BOX_NOTICES.has(f));
 
 const ownFixtures = DIALOG;

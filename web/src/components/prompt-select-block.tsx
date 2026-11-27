@@ -282,6 +282,10 @@ function SubjectCutNote() {
 // A function (not a module-level object) for the same locale-freshness reason as familyCaption.
 function feedbackCopyFor(purpose: PromptFeedbackPurpose): FeedbackCopy {
   if (purpose === "answer") return answerFieldCopy(t("prompt.feedback.answer.help"));
+  // Codex's `Other` row is the question's answer too, typed by the plan field's recipe: the answer copy,
+  // with a help line that says the row is picked first. While the terminal's pointer is on the row the
+  // recipe does not type (someone may be typing there), so the focused line is the read-only row's.
+  if (purpose === "other") return { ...answerFieldCopy(t("prompt.feedback.other.help")), focused: t("prompt.feedback.freeText.focused") };
   if (purpose === "free-text") {
     // No phone composer: neither Claude recipe fits this row.
     return {
@@ -382,7 +386,11 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled, paneId, s
 
   return (
     <PromptPanel ariaLabel={prompt.question} raw={lines} fit={promptCardFits(prompt)}>
-      <OptionGroupCaption>{prompt.caption ?? familyCaption(prompt.family)}</OptionGroupCaption>
+      <OptionGroupCaption>
+        {prompt.caption ?? familyCaption(prompt.family)}
+        {/* A question asked one at a time with others (Codex's `1 of 2`) says where it stands. */}
+        {prompt.step ? ` · ${t("prompt.questionStep", { index: prompt.step.index, total: prompt.step.total })}` : null}
+      </OptionGroupCaption>
       {prompt.subjectCut ? <SubjectCutNote /> : null}
       {subject.header ? <SubjectTitle header={subject.header} /> : null}
       {subject.body.length > 0 ? <SubjectBody lines={subject.body} /> : null}

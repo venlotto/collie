@@ -5,7 +5,7 @@ import { readCues } from "./cues";
 import { findInputFrame, rowText } from "./frame";
 import { requireProfile } from "./profile";
 import { askOf, isFree } from "./surface";
-import { CORPUS_WALK, FIXTURES, labelOf, NEGATIVE, own, towardFree } from "../../test/surface-fold";
+import { CORPUS_WALK, FIXTURES, labelOf, LABELS, NEGATIVE, own, towardFree } from "../../test/surface-fold";
 
 // M56 spec 13: the Codex profile over the Codex fixtures.
 
@@ -172,7 +172,9 @@ describe("the codex profile over the Codex fixtures (M56 spec 13)", () => {
       expect(read(name).surface.composer, name).toBe("draft");
       expect(isFree(read(name).surface), name).toBe(false);
     }
-    for (const name of codexFixtures.filter((n) => labelOf(n).state === "running")) {
+    // A known mismatch (surface-labels.json, with its reason) is the corpus's own exception, as in the
+    // profile rule of test/surface-fold.ts.
+    for (const name of codexFixtures.filter((n) => labelOf(n).state === "running" && LABELS.knownMismatches[n] === undefined)) {
       expect(read(name).surface.turn, name).toBe("running");
     }
   });

@@ -1084,6 +1084,8 @@ export const zhTW: Dictionary = {
   "newPage.starters.title": "新對話",
   "newPage.title.inSpace": "在此工作區新增",
   "prompt.feedback.cancel": "取消",
+  "prompt.feedback.other.help": "在終端機中選擇「Other」，在那裡輸入你的回答並傳送。",
+  "prompt.questionStep": "第 {index} 題，共 {total} 題",
   "prompt.feedback.typedAria": "終端機中的回饋內容",
   "prompt.feedback.planChange.offer": "向 Claude 提供修改意見",
   "prompt.feedback.planChange.editorLabel": "需要調整哪些內容？",

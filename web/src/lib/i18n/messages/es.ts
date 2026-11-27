@@ -1111,6 +1111,8 @@ export const es: Dictionary = {
   "newPage.starters.title": "Nueva conversación",
   "newPage.title.inSpace": "Nuevo en este espacio",
   "prompt.feedback.cancel": "Cancelar",
+  "prompt.feedback.other.help": "Se elige «Other» en la terminal, se escribe ahí su respuesta y se envía.",
+  "prompt.questionStep": "Pregunta {index} de {total}",
   "prompt.feedback.typedAria": "Entrada en la terminal",
   "prompt.feedback.planChange.offer": "Indicar cambios a Claude",
   "prompt.feedback.planChange.editorLabel": "Cambios requeridos para Claude",

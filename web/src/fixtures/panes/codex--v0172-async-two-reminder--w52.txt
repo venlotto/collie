@@ -1,0 +1,40 @@
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.172.0)[0m
+     [2m/tmp/sp-lab/work[0m
+[2m  permissions: [0;1m[38;5;5mYOLO mode[0m
+
+[1m⚠ Heads up, you have less than 25% of your weekly[0m
+  [1mlimit left. Run /status for a breakdown.[0m
+
+[38;2;238;238;238m[48;2;68;68;68m [39m
+[1;2m[38;2;238;238;238m› [0m[38;2;238;238;238m[48;2;68;68;68mCall[39m [38;2;238;238;238mrequest_user_input_async[39m [38;2;238;238;238mONCE[39m [38;2;238;238;238mwith[39m [38;2;238;238;238mtwo[39m
+[38;2;238;238;238m  questions: 'Pet?' (options Cat, Dog) and[39m
+[38;2;238;238;238m  'Day?' (options Mon, Tue). Then run sleep[39m [38;2;238;238;238m240[39m [38;2;238;238;238mand[39m
+[38;2;238;238;238m  reply ok.[39m
+[38;2;238;238;238m [39m
+[49m
+[2m• [0mI’ll ask both questions together, then wait 240
+  seconds and reply.
+
+[38;2;99;168;248m? Pet?[39m
+
+  [38;2;148;226;213m• [39mCat
+  [38;2;148;226;213m• [39mDog
+
+[38;2;99;168;248m? Day?[39m
+
+  [38;2;148;226;213m• [39mMon
+  [38;2;148;226;213m• [39mTue
+
+[1m[38;2;138;138;138m•[0m [2mWaiting for background terminal[0m [2m(32s • [0;1mesc[0;2m to int…
+  └ sleep 240[0m
+
+[2m• [0mQueued follow-up inputs
+[2m  ? [0;1m[38;2;99;168;248m2 questions[0;2m · 3s[0m
+    [1mshift+←[0;2m to answer[0m
+                           [38;2;196;167;103m⚠ weekly limit: 18% left[39m
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  [38;2;246;226;183mGPT-6-Astra low[39m · [38;2;171;223;167m/tmp/sp-lab/work[39m · [38;2;243;139;168mRequest pet[39m
+  [38;2;243;139;168mand day choices[39m
+  [1m←[0m for agents             ⚠ [38;2;196;167;103m1 warning[39m · [1mf2[0m to view

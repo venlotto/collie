@@ -1114,6 +1114,8 @@ export const de: Dictionary = {
   "newPage.starters.title": "Neue Unterhaltung",
   "newPage.title.inSpace": "Neu in diesem Space",
   "prompt.feedback.cancel": "Abbrechen",
+  "prompt.feedback.other.help": "Wählt im Terminal „Other“, tippt dort deine Antwort ein und sendet sie.",
+  "prompt.questionStep": "Frage {index} von {total}",
   "prompt.feedback.typedAria": "Feedback im Terminal",
   "prompt.feedback.planChange.offer": "Änderungen an Claude übermitteln",
   "prompt.feedback.planChange.editorLabel": "Gewünschte Änderungen",
