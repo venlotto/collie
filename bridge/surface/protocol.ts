@@ -5850,7 +5850,7 @@ export class SendProtocol {
     state.probeAt = this.now();
     // A probe write not confirmed in time is read like any other: the probe's reads decide where it went.
     await this.probeWrite(state, async () => {
-      await this.writeText(state, probe, false);
+      await this.writeProbeText(state, probe);
     });
     state.keys.push("probe");
     let away = false;
@@ -6713,14 +6713,29 @@ export class SendProtocol {
    * A write the multiplexer took and did not confirm in time (`unconfirmed`) may still land: it is no
    * refusal, and the multiplexer's sentence comes back for the caller's read to decide on.
    */
-  private async writeText(state: RunState, text: string, allowPaste: boolean): Promise<string | null> {
+  private async writeText(state: RunState, text: string, allowPaste: boolean, whole = false): Promise<string | null> {
     this.guard(state);
     const { mux } = this.deps;
-    const paste = allowPaste && state.match?.profile.paste?.bracketed === true && mux.pasteText !== undefined;
+    const bracketed = allowPaste && state.match?.profile.paste?.bracketed === true;
+    const pasteBlock = bracketed && whole && mux.pasteBlock !== undefined;
+    const pasteText = bracketed && mux.pasteText !== undefined;
     this.firstKey(state);
-    const ack = await this.within(state, paste ? mux.pasteText!(state.target.paneId, text) : mux.typeText(state.target.paneId, text));
+    const ack = await this.within(
+      state,
+      pasteBlock
+        ? mux.pasteBlock!(state.target.paneId, text)
+        : pasteText
+          ? mux.pasteText!(state.target.paneId, text)
+          : mux.typeText(state.target.paneId, text),
+    );
     this.deps.gate.noteWrite(state.target.paneId);
     return writeAck(ack);
+  }
+
+  /** The probe keeps its proof, but a measured paste-capable profile receives it without a hotkey. */
+  private async writeProbeText(state: RunState, probe: string): Promise<string | null> {
+    const literal = state.match?.profile.probe.paste === true;
+    return this.writeText(state, probe, literal, literal);
   }
 
   /**
@@ -6791,7 +6806,7 @@ export class SendProtocol {
     state.probeAt = this.now();
     // A probe write not confirmed in time is read like any other: the probe's reads decide where it went.
     await this.probeWrite(state, async () => {
-      await this.writeText(state, probe, false);
+      await this.writeProbeText(state, probe);
     });
     state.keys.push("probe");
     let landing: Landing | null = null;

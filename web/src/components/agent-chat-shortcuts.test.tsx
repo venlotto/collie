@@ -142,6 +142,16 @@ describe("AgentChat — desktop shortcuts", () => {
     expect(screen.getByPlaceholderText(/type a reply/i)).toHaveFocus();
   });
 
+  it("focus_composer never moves focus behind the Messages sheet", async () => {
+    renderChat();
+    expect(run("walky_messages")).toBe(true);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    const reply = screen.getByPlaceholderText(/type a reply/i);
+    reply.blur();
+    expect(run("focus_composer")).toBe(false);
+    expect(reply).not.toHaveFocus();
+  });
+
   it("toggle_chat_terminal flips the device's choice between the terminal and Chat", async () => {
     localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     renderChat();

@@ -113,6 +113,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Send notices no longer add an English line in other languages.** The line under a notice is now translated where it adds advice, such as a test character left in the box, and hidden where the notice already says it.
 
 - **Dropped files attach and sent photos stay visible in chat.** Desktop drops share the photo editor and file picker, failed uploads keep an error beside the composer, and sent attachments show a preview or filename instead of a server path.
+- **Codex sends no longer leak probe or shortcut keystrokes.** Before sending, Collie checks that Codex's input box accepts text; that check now uses a literal paste instead of a typed character, so it cannot open a shortcut panel. Ctrl+M also leaves focus alone while Messages or another chat sheet is open.
 
 ## [1.31.0] - 2026-11-24
 
