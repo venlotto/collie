@@ -209,3 +209,63 @@ describe("Add to it over the same draft", () => {
     expect(pane.transcript.at(-1)).toBe(`› ${DRAFT} ${NEW}`);
   });
 });
+
+// The same Replace, live again on 2026-11-27 (codexp `w2D:p7`, receipt 1758ed42): one Replace of two
+// ended refused `not_emptied` with "The box went away while it was being emptied." 274 ms into the
+// clear, after all 391 Backspaces went out, and the box emptied anyway. A read while Codex redrew the
+// shrinking box found no box at all, and the clear took that one read for a box that went away.
+describe("a read that finds no box while Codex redraws (2026-11-27)", () => {
+  /** A frameless screen: the transcript and the status row, as a read mid-redraw can find it. */
+  function gapAfterFirstBatch(pane: DrainingCodex, reads: number): void {
+    let left = 0;
+    let armed = true;
+    const keys = pane.writeKeys;
+    pane.writeKeys = (paneId, sent) => {
+      if (armed && sent.length > 1 && sent.every((key) => key === "Backspace")) {
+        armed = false;
+        left = reads;
+      }
+      return keys(paneId, sent);
+    };
+    const render = pane.render.bind(pane);
+    pane.render = () => {
+      if (left > 0) {
+        left--;
+        return [...pane.transcript, "", "", "", pane.codexStatus].join("\n");
+      }
+      return render();
+    };
+  }
+
+  test("one read with no box right after the keys, then an empty box: the clear holds and the message is sent", async () => {
+    const { pane, send } = codex();
+    pane.perRead = 1000;
+    gapAfterFirstBatch(pane, 1);
+    const answer = await send(NEW, { mode: "replace", rowsHash: OFFERED });
+    expect(answer.receipt?.outcome).toBe("sent");
+    expect(writes(pane)).toEqual([`block:${NEW}`]);
+    expect(pane.transcript.at(-1)).toBe(`› ${NEW}`);
+    neverEscape(pane);
+  });
+
+  test("a read with no box while the box is still emptying: the clear goes on and the message is sent", async () => {
+    const { pane, send } = codex();
+    gapAfterFirstBatch(pane, 1);
+    const answer = await send(NEW, { mode: "replace", rowsHash: OFFERED });
+    expect(answer.receipt?.outcome).toBe("sent");
+    expect(writes(pane)).toEqual([`block:${NEW}`]);
+    expect(pane.keysSeen.filter((key) => key === "Backspace").length).toBeLessThanOrEqual(2 + DRAFT.length + 16);
+  });
+
+  test("a box that stays gone ends refused (not_emptied) as before, and the message is never typed", async () => {
+    const { pane, send } = codex();
+    pane.perRead = 1000;
+    gapAfterFirstBatch(pane, Number.MAX_SAFE_INTEGER);
+    const answer = await send(NEW, { mode: "replace", rowsHash: OFFERED });
+    expect(answer.receipt?.outcome).toBe("refused");
+    expect(answer.cause).toBe("not_emptied");
+    expect(answer.receipt?.detail).toContain("The box went away while it was being emptied.");
+    expect(writes(pane)).toEqual([]);
+    neverEscape(pane);
+  });
+});

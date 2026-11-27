@@ -610,6 +610,16 @@ const CLEAR_SPARE_READS = 2;
  * that with room for a loaded host. A box that empties sooner ends the clear at the read that sees it.
  */
 const CLEAR_DRAIN_MS_PER_KEY = 10;
+/**
+ * Reads a clear may take again, after its keys went out, over a read that found no box and nothing in its
+ * place (no cue, no dialog it names, no other screen): a harness redrawing a box as it shrinks can be read
+ * between two frames (Codex 0.172.0, live 2026-11-27: one Replace of two ended "the box went away" at the
+ * first read after its 391 Backspaces, and the box was empty a moment later). The whole clear gets this
+ * many, each {@link CLEAR_GAP_MS} after the last; a box still missing after them went away.
+ */
+const CLEAR_GAP_READS = 2;
+/** The wait before each of those reads. */
+const CLEAR_GAP_MS = 120;
 /** The cause of a Replace whose draft did not empty: the person's text was never typed (2026-11-27). */
 const NOT_EMPTIED: SendCause = "not_emptied";
 /** The detail of that refusal. */
@@ -7650,7 +7660,8 @@ export class SendProtocol {
    * The bound is one read per batch plus {@link CLEAR_SPARE_READS}, never under the S2 bound it borrowed
    * before, at {@link CLEAR_READ_MS} each; the request's own bound grows by what that adds. A batch
    * goes only after a read showed the box changed since the last one, so a late redraw costs a read,
-   * never a second batch. A box that went away, a cue, or the bound end it `unknown(no_evidence)`.
+   * never a second batch. A box that went away, a cue, or the bound end it `unknown(no_evidence)`; a read
+   * after the keys that found no box and nothing in its place is read again first ({@link CLEAR_GAP_READS}).
    */
   private async clear(state: RunState, from: Snap, known: number | null): Promise<Snap> {
     const clearKey = state.match?.profile.keys.clear ?? GENERIC_CLEAR;
@@ -7671,15 +7682,28 @@ export class SendProtocol {
     const reads = Math.max(CLEAR_BOUND.reads, Math.ceil(budget / CLEAR_BATCH) + CLEAR_SPARE_READS + drain) + (clearAll === undefined ? 0 : CLEAR_ALL_READS);
     const ms = reads * CLEAR_READ_MS;
     this.stretch(state, ms - CLEAR_BOUND.ms);
-    const until = Math.min(this.now() + ms, state.deadline);
+    let until = Math.min(this.now() + ms, state.deadline);
     let snap = from;
     // The box as the last batch left it; null before the first batch.
     let pressedAt: string | null = null;
+    // Whether any clear key went out, and the reads left for a box missing between two frames (CLEAR_GAP_READS).
+    let pressed = false;
+    let gapReads = CLEAR_GAP_READS;
     // The text the clear started on, and whether a suggestion that showed once it went was probed (issue 854).
     const cleared = boxText(from.frame);
     let suggestionProbed = false;
     for (let read = 0; read < reads; read++) {
       if (this.now() > until) throw late();
+      // A read after the keys that found no box and nothing in its place is read again, a little later:
+      // an empty box there ends the clear, a box with text goes on, and a box still missing went away.
+      if (pressed) {
+        for (; gapReads > 0 && betweenFrames(snap); gapReads--) {
+          this.stretch(state, CLEAR_GAP_MS + CLEAR_READ_MS);
+          until = Math.min(until + CLEAR_GAP_MS + CLEAR_READ_MS, state.deadline);
+          await this.sleep(CLEAR_GAP_MS);
+          snap = await this.readClear(state, until);
+        }
+      }
       if (snap.frame === null || snap.cueStrength !== "none") throw gone();
       let text = boxText(snap.frame);
       // A box whose draft went shows the harness's suggestion again where it may wear any style (omp, issue
@@ -7702,6 +7726,7 @@ export class SendProtocol {
         // `left` is above 0 here: this very read showed a draft the Backspace batches did not move.
         allPressed = true;
         await this.keysThroughGate(state, [clearAll.key], "unknown");
+        pressed = true;
         pressedAt = null;
       } else if (text !== pressedAt) {
         // A box that shows its whole draft is pressed for what it shows; one at its scroll height for
@@ -7717,23 +7742,29 @@ export class SendProtocol {
         } else {
           const count = Math.min(CLEAR_BATCH, want);
           await this.keysThroughGate(state, Array.from({ length: count }, () => clearKey.key), "unknown");
+          pressed = true;
           budget -= count;
           pressedAt = text;
         }
       }
       await this.sleep(FIRST_GAP_MS);
-      let next: Snap | null;
-      try {
-        next = await this.read(state, "clear", until);
-      } catch (err) {
-        if (err instanceof StepLate) throw late();
-        throw err;
-      }
-      if (next === null) throw new Ended("unknown", "no_evidence", { detail: "The pane could not be read while it was being emptied." });
-      snap = next;
+      snap = await this.readClear(state, until);
     }
     if (snap.frame !== null && boxText(snap.frame).length === 0) return snap;
     throw late();
+  }
+
+  /** One read of {@link clear}: a read past its bound ends it late, a pane that cannot be read `unknown`. */
+  private async readClear(state: RunState, until: number): Promise<Snap> {
+    let next: Snap | null;
+    try {
+      next = await this.read(state, "clear", until);
+    } catch (err) {
+      if (err instanceof StepLate) throw new Ended("unknown", "no_evidence", { detail: "The box did not empty inside the bound." });
+      throw err;
+    }
+    if (next === null) throw new Ended("unknown", "no_evidence", { detail: "The pane could not be read while it was being emptied." });
+    return next;
   }
 
   /**
@@ -7782,6 +7813,15 @@ export class SendProtocol {
  * a box at its scroll height with no length Collie knows (TALL_DRAFT), or a draft past
  * {@link CLEAR_MAX_CHARS} (LONG_DRAFT). A Replace asks it at S0 too, before its probe.
  */
+/**
+ * Whether a read found no box and nothing in its place, as a read between two frames of a redraw does: no
+ * frame, no cue framed or bare, no ask or dialog the screen names (modal `unknown`), no other screen.
+ * A dialog, a picker or another screen that took the box's place is none of this: the box went away.
+ */
+function betweenFrames(snap: Snap): boolean {
+  return snap.frame === null && snap.cueStrength === "none" && snap.bareCues === "none" && snap.surface.modal === "unknown" && snap.otherScreen === null;
+}
+
 function clearLength(from: Snap, frame: Frame, known: number | null): number {
   const shown = [...boxText(frame)].length;
   const scrolled = frame.scrolled === true;
