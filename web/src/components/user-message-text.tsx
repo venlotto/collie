@@ -17,10 +17,10 @@ function SentAttachment({ id }: { id: string }) {
     void fetchAttachment(id, { host, session }, abort.signal).then(value => {
       if (!abort.signal.aborted) setMeta(value);
       return undefined;
-    }).catch(() => { /* Pruned or older bridge: keep the saved filename as a chip. */ });
+    }).catch(() => { /* Pruned or older bridge: keep a short minted label as a chip. */ });
     return () => abort.abort();
   }, [id, host, session]);
-  const name = meta?.name ?? id;
+  const name = meta?.name ?? id.slice(id.lastIndexOf("-") + 1);
   return <span data-slot="sent-attachment" className="inline-block max-w-full align-middle">
     {meta?.image && <JournalImage ref_={`/api/attachments/${id}/image`} alt={name} scope={scope} />}
     <Badge variant="value" className="max-w-full whitespace-normal break-all">

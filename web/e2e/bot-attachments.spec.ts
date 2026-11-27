@@ -8,10 +8,10 @@ import { installApiStub, installPaneWorld, pinLocale } from "./fixtures/api";
 const expect = baseExpect.configure({ timeout: 15_000 });
 const PNG = readFileSync(new URL("./fixtures/attachments/photo-small.png", import.meta.url));
 const saved = "/home/ubuntu/.local/state/collie/uploads/term.fixture.mwz50y8g-12345678.png";
-async function open(page: Page, status = 200, entries: TranscriptEntry[] = []) {
+async function open(page: Page, status = 200, entries: TranscriptEntry[] = [], harness = "kiro") {
   await pinLocale(page, "es");
   await installApiStub(page);
-  const agent = { ...fixtureAgents[0]!, agent: "kiro", hasSession: true, status: "idle" as const,
+  const agent = { ...fixtureAgents[0]!, agent: harness, hasSession: true, status: "idle" as const,
     surface: { revision: 1, turn: "idle" as const, modal: "none" as const, composer: "empty" as const } };
   await installPaneWorld(page, { paneId: agent.paneId,
     snapshot: { ...fixtureSnapshot, agents: [agent], shellPanes: [] },
@@ -46,6 +46,10 @@ async function photo(page: Page, size: number) {
 }
 async function attach(page: Page) {
   await page.getByRole("dialog").getByRole("button", { name: "Adjuntar", exact: true }).click();
+}
+function uploadTurn(uuid: string, text: string): TranscriptEntry {
+  return { uuid, role: "user", ts: "2026-11-27T17:00:00Z",
+    parts: [{ kind: "text", text: `${text} COL-21 retest: describe la foto adjunta y para.` }] };
 }
 test("desktop file drop shares the editor and supports multiple files", async ({ page }) => {
   test.skip(test.info().project.name !== "desktop", "Desktop drag-and-drop");
@@ -110,4 +114,52 @@ test("stored user turns keep a photo preview and text filename after reload", as
   await expect(bubble).toContainText("nota.txt");
   await expect(bubble).toContainText("Revisa estos adjuntos");
   await shot(page, "history");
+});
+
+test("Codex Mensajes renders whole and terminal-wrapped upload paths as named photos", async ({ page }) => {
+  const codexPath = "/home/ubuntu/.local/state/collie/uploads/term.dd6ec3955c53ba9d4dd7652681c869d822f259447f3ee5be8e617aebd13620a7.mwz88mwb-270abe08.png";
+  const wrapped = codexPath.match(/.{1,44}/gu)!.join("\n");
+  await open(page, 200, [uploadTurn("codex-whole", codexPath), uploadTurn("codex-wrapped", wrapped)], "codex");
+  const bubbles = page.locator(".bot-turn-user");
+  await expect(bubbles).toHaveCount(2);
+  await expect(page.locator(".bot-terminal")).toHaveCount(0);
+  await expect(bubbles.getByRole("img", { name: "photo-small.png" })).toHaveCount(2);
+  for (const bubble of await bubbles.all()) {
+    await expect(bubble).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
+    await expect(bubble).toContainText("photo-small.png");
+    await expect(bubble).toContainText("COL-21 retest: describe la foto adjunta y para.");
+  }
+  await shot(page, "codex-history");
+});
+
+test("Codex Mensajes uses a short chip when the attachment sidecar is gone", async ({ page }) => {
+  const id = "term.dd6ec3955c53ba9d4dd7652681c869d822f259447f3ee5be8e617aebd13620a7.mwz88mwb-270abe08.png";
+  await open(page, 200, [uploadTurn("codex-pruned", `/home/ubuntu/.local/state/collie/uploads/${id}`)], "codex");
+  await page.route(`**/api/attachments/${id}`, route => route.fulfill({ status: 404, json: { error: "pruned" } }));
+  await page.reload();
+  const bubble = page.locator(".bot-turn-user").last();
+  await expect(bubble.locator('[data-slot="sent-attachment"]')).toContainText("270abe08.png");
+  await expect(bubble).not.toContainText(id);
+  await expect(bubble).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
+  await expect(bubble).toContainText("COL-21 retest: describe la foto adjunta y para.");
+  await shot(page, "codex-history-fallback");
+});
+
+test("a pending Codex send in Terminal uses the same attachment renderer", async ({ page }) => {
+  await open(page, 200, [], "codex");
+  await page.getByRole("button", { name: "Opciones del chat" }).click();
+  const view = page.getByRole("radiogroup", { name: "Vista", exact: true });
+  await view.getByRole("radio", { name: "Terminal", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".bot-terminal")).toBeVisible();
+  await page.getByRole("textbox").fill("COL-21 provisional");
+  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({ name: "photo-small.png", mimeType: "image/png", buffer: PNG });
+  await attach(page);
+  await page.getByRole("button", { name: "Enviar", exact: true }).click();
+  const bubble = page.locator('[data-slot="mirror-pending"]');
+  await expect(bubble).toBeVisible();
+  await expect(bubble).not.toContainText("/home/ubuntu/.local/state/collie/uploads/");
+  await expect(bubble.getByRole("img", { name: "photo-small.png" })).toBeVisible();
+  await expect(bubble).toContainText("COL-21 provisional");
+  await shot(page, "codex-pending-terminal");
 });
