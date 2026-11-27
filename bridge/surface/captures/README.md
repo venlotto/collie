@@ -15,3 +15,13 @@ port, so no model was reached. No account, key or private text is in them.
 | `codex--v0172-typed-question-lead--w56.txt` | `?Explica…` (376 characters) typed as raw keys on an empty box: the `?` opened the shortcuts overlay, the next key closed it, and the box holds the text without its `?`. Codex wraps at word breaks and drops the space at each break |
 | `codex--v0172-pasted-content--w56.txt` | 1231 characters on 8 lines as one bracketed paste: Codex folds it to `[Pasted Content 1231 chars]`, the count taking in the line breaks. 1000 characters or fewer land literally |
 | `codex--v0172-shortcuts-overlay--w56.txt` | `?` alone typed on an empty box: the shortcuts overlay, `? / esc close` under the status row |
+
+# Codex 0.172.0 at 56 columns: Replace over a long draft (2026-11-27)
+
+The same lab, for `protocol.codex-draft-replace.test.ts`. The draft is the live one: "Explica en una
+frase por que el cielo es azul." eight times, 376 characters, pasted and never submitted.
+
+| Fixture | State |
+| --- | --- |
+| `codex--v0172-draft-376--w56.txt` | The draft in an idle box: one sentence per row, since a 54-character row does not fit the 53 the box takes |
+| `codex--v0172-draft-draining--w56.txt` | 250 ms after a batch of 256 Backspaces went out: seven rows still show. Codex took all 393 in about 1.5 s |

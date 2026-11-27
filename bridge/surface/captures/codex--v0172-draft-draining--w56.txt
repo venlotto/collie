@@ -1,0 +1,30 @@
+
+  [38;2;99;168;248m>_ [1m[39mOpenAI Codex[0;2m (v0.172.0)
+[0m     [2m/tmp/cx-scratch[0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1m›[0m Explica en una frase por que el cielo es azul.
+  Explica en una frase por que el cielo es azul.
+  Explica en una frase por que el cielo es azul.
+  Explica en una frase por que el cielo es azul.
+  Explica en una frase por que el cielo es azul.
+  Explica en una frase por que el cielo es azul.
+  Explica
+
+  [38;2;246;226;183mgpt-5 default[39m · [38;2;171;223;167m/tmp/cx-scratch[39m
+

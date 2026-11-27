@@ -564,8 +564,11 @@ export interface SendAnswer {
  * Collie's earlier probe characters, which the agent drew after the probe had stopped looking, and its
  * proof did not show in time either (Claude Code 2.1.314 busy under its agents footer, #623); the
  * bridge's detail says to wait and send again, and the phone shows it under its sentence.
+ * `not_emptied`: a Replace whose clear did not leave the box empty (the harness was still taking the
+ * Backspaces, the box went away, a read failed); the person's text was never typed, so the answer is a
+ * refusal, `draft_present` over what is left of the draft, else `not_free` (2026-11-27).
  */
-export const SEND_CAUSES = ["notice_key", "stale_screen", "short_pane", "late_keys"] as const;
+export const SEND_CAUSES = ["notice_key", "stale_screen", "short_pane", "late_keys", "not_emptied"] as const;
 export type SendCause = (typeof SEND_CAUSES)[number];
 
 /**

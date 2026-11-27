@@ -597,6 +597,16 @@ const CLEAR_BATCH = 256;
 const CLEAR_READ_MS = CLEAR_BOUND.ms / CLEAR_BOUND.reads;
 /** Reads a clear keeps beyond one per batch: the read that sees the box empty, and one late redraw. */
 const CLEAR_SPARE_READS = 2;
+/**
+ * How long a harness may take one clear key after it went out, for the reads a clear waits on it. Codex
+ * 0.172.0 took 393 Backspaces in about 1.5 s at 56 columns (lab, 2026-11-27: some 3.7 ms a key); this is
+ * that with room for a loaded host. A box that empties sooner ends the clear at the read that sees it.
+ */
+const CLEAR_DRAIN_MS_PER_KEY = 10;
+/** The cause of a Replace whose draft did not empty: the person's text was never typed (2026-11-27). */
+const NOT_EMPTIED: SendCause = "not_emptied";
+/** The detail of that refusal. */
+const NOT_EMPTIED_DETAIL = "Collie could not empty the draft, so your message was not typed. Check the box, then send again.";
 /** The longest draft one request empties: 64 batches, about 33 s. A longer one is refused before any key. */
 const CLEAR_MAX_CHARS = 16_384;
 /** The detail of a Replace or Discard refused on a box that hides the head of a draft Collie cannot measure. */
@@ -5492,8 +5502,14 @@ export class SendProtocol {
     if (state.starting && state.probed) this.noteFramed(state);
     if (clears) {
       // The draft is the person's (or one a refusal left there): Collie knows only what the box shows.
-      // Emptying the box is its own step with its own bound.
-      s0 = await this.clear(state, s0, null);
+      // Emptying the box is its own step with its own bound. A clear that ends without an empty box ends
+      // before the text: the receipt says so, never that the message may have arrived (2026-11-27).
+      try {
+        s0 = await this.clear(state, s0, null);
+      } catch (err) {
+        if (err instanceof Ended && err.outcome === "unknown") throw await this.notEmptied(state, s0, err);
+        throw err;
+      }
       state.marks.s0 = s0;
       this.lap(state, "clear");
     }
@@ -7546,7 +7562,9 @@ export class SendProtocol {
     const clearAll = state.match?.profile.keys.clearAll;
     let allPressed = false;
     let unchanged = 0;
-    const reads = Math.max(CLEAR_BOUND.reads, Math.ceil(budget / CLEAR_BATCH) + CLEAR_SPARE_READS) + (clearAll === undefined ? 0 : CLEAR_ALL_READS);
+    // The reads the harness needs to take every key after the last one went out (CLEAR_DRAIN_MS_PER_KEY).
+    const drain = Math.ceil((budget * CLEAR_DRAIN_MS_PER_KEY) / CLEAR_READ_MS);
+    const reads = Math.max(CLEAR_BOUND.reads, Math.ceil(budget / CLEAR_BATCH) + CLEAR_SPARE_READS + drain) + (clearAll === undefined ? 0 : CLEAR_ALL_READS);
     const ms = reads * CLEAR_READ_MS;
     this.stretch(state, ms - CLEAR_BOUND.ms);
     const until = Math.min(this.now() + ms, state.deadline);
@@ -7585,10 +7603,12 @@ export class SendProtocol {
         // A box that shows its whole draft is pressed for what it shows; one at its scroll height for
         // what is left of the length counted before the first key.
         const want = snap.frame.scrolled === true ? budget : Math.min(budget, left + clearKey.slack);
-        if (want <= 0 && (clearAll === undefined || allPressed)) break;
         if (want <= 0) {
-          // Backspace has no key left (its length plus slack went out) and the box still shows text: the
-          // stroke key may follow once a few more reads show the box as it is, so a late redraw is no cause.
+          // Backspace has no key left (its length plus slack went out) and the box still shows text. The
+          // harness may still be taking them: Codex 0.172.0 takes about 270 a second, so a 376-character
+          // draft read half full after its last batch and the clear gave up on a box that emptied a second
+          // later (live, 2026-11-27). The reads go on while the box moves, and the stroke key may follow
+          // once a few more reads show the box as it is, so a late redraw is no cause.
           pressedAt = text;
         } else {
           const count = Math.min(CLEAR_BATCH, want);
@@ -7610,6 +7630,32 @@ export class SendProtocol {
     }
     if (snap.frame !== null && boxText(snap.frame).length === 0) return snap;
     throw late();
+  }
+
+  /**
+   * The end of a Replace whose clear did not empty the box ({@link clear} ended it `unknown`): the text
+   * was never typed, so the outcome is a refusal, cause `not_emptied`, with the clear's own words kept in
+   * the detail. One more read says what the box holds now: a draft that is left (a part of the old one)
+   * gets the draft offers again over it and its rows hash, so the person can Replace it again; anything
+   * else is `not_free`. The person's text stays on the phone either way.
+   */
+  private async notEmptied(state: RunState, s0: Snap, err: Ended): Promise<Ended> {
+    this.lap(state, "clear");
+    const why = err.extra.detail;
+    const detail = why === undefined ? NOT_EMPTIED_DETAIL : `${NOT_EMPTIED_DETAIL} ${why}`;
+    let now: Snap | null = null;
+    try {
+      // A read of its own, past the request's bound if it ran out: it only says what is there, it types nothing.
+      now = await this.read(state, "clear", this.now() + BOUNDS.s0.ms);
+    } catch {
+      now = null;
+    }
+    const snap = now ?? state.lastRead ?? s0;
+    if (snap.frame !== null && snap.cueStrength === "none" && boxText(snap.frame).length > 0) {
+      const refusal = draftRefusal(state, snap);
+      return new Ended("refused", "draft_present", { ...refusal.extra, detail, cause: NOT_EMPTIED });
+    }
+    return new Ended("refused", "not_free", { surface: snap.surface, framed: snap.frame !== null, offers: ["keys"], detail, cause: NOT_EMPTIED });
   }
 
   /**

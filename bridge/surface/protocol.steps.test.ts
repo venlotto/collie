@@ -441,7 +441,7 @@ describe("the offers as new requests", () => {
     expect(reads).toBeGreaterThan(2);
   });
 
-  test("replace: a clear that runs past its bound ends unknown, and no text is written", async () => {
+  test("replace: a clear that runs past its bound ends refused (not_emptied), and no text is written", async () => {
     const r = rig();
     r.pane.box = "old draft";
     // The probe's own Backspace still works; the clear's do not.
@@ -452,7 +452,11 @@ describe("the offers as new requests", () => {
       return ack;
     };
     const answer = await r.send("new words", { mode: "replace", rowsHash: OFFERED });
-    expect(answer.receipt).toMatchObject({ outcome: "unknown", reason: "no_evidence" });
+    // The text was never typed, so the phone hears that, not "cannot tell whether it arrived" (2026-11-27):
+    // the draft is still there, offered again.
+    expect(answer.receipt).toMatchObject({ outcome: "refused", reason: "draft_present" });
+    expect(answer.cause).toBe("not_emptied");
+    expect(answer.offers).toContain("replace");
     expect(r.pane.calls).toEqual(["type:⌁"]);
     neverEscape(r.pane);
   });
