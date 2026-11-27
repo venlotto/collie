@@ -118,6 +118,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Codex shell mode no longer blocks every message.** A "!" command now runs and is confirmed. If the box is left in shell mode, Collie leaves it before typing your message so the message is never run as a shell command, and says how to leave it on the key pad when it cannot.
 - **Codex photo attachments keep their preview and filename in chat.** Messages now recognises upload paths wrapped onto several terminal lines, and the immediate sent-message bubble uses the same photo and filename display as the saved conversation. If the saved name is no longer available, a short file label replaces the long server path.
 - **Codex photos stay readable after you reload Messages.** When no saved conversation is available, Messages now recognises the terminal's echoed upload turn, including a path wrapped by Codex's input box, and shows the same thumbnail, filename and caption as the sent bubble instead of the server path. Explicit Terminal remains verbatim.
+- **Reloaded Codex photos survive padded terminal line wraps.** Messages now reassembles an upload path split across rows even when Codex pads those rows and indents their continuations, so a reload keeps the thumbnail, original filename and caption instead of the raw server path. Composer prompts and unrecognised paths stay untouched, and Terminal still shows the original screen.
 
 ## [1.31.0] - 2026-11-24
 

@@ -35,7 +35,14 @@ export function liftCodexUploadEchoes(blocks: readonly RawBlock[]): readonly Cod
         if (text.trim() === "" || /^\s*› /u.test(text)) break;
         end++;
       }
-      const body = [marker[1]!, ...block.lines.slice(at + 1, end).map(lineText)].join("\n");
+      const rows = [marker[1]!, ...block.lines.slice(at + 1, end).map(lineText)];
+      // Codex pads every well row to the terminal width and indents its soft-wrap continuations by
+      // two spaces. Strip that presentation padding before the shared parser reassembles the path;
+      // an id is still required, so prose and ordinary paths cannot become uploads here.
+      const body = rows.map((row, index) => {
+        const unpadded = row.replace(/[ \t]+$/gu, "");
+        return index === 0 ? unpadded : unpadded.replace(/^ {2}/u, "");
+      }).join("\n");
       const parts = messageAttachments(body);
       if (!parts.some((part) => "id" in part)) {
         for (let i = at; i < end; i++) rawLines.push(block.lines[i]!);
