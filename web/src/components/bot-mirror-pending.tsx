@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import type { ChatMessageListHandle } from "@/components/ui/chat/chat-message-list";
+import { UserMessageText } from "@/components/user-message-text";
 import { dropPending, usePending, HANDOVER_KEEP_MS, PENDING_KEEP_MS, type PendingLine } from "@/lib/durable-pending";
 import { mirrorEchoCount } from "@/lib/mirror-echo";
 
@@ -16,7 +17,7 @@ function MirrorLine({ address, line, screen }: { address: string; line: PendingL
     return () => clearTimeout(timer);
   }, [address, line.at, line.requestId, line.handover, echoed]);
 
-  return echoed ? null : <p data-slot="mirror-pending" className="bot-turn bot-turn-user whitespace-pre-wrap">{line.text}</p>;
+  return echoed ? null : <div data-slot="mirror-pending" className="bot-turn bot-turn-user whitespace-pre-wrap"><UserMessageText text={line.text} /></div>;
 }
 
 export function BotMirrorPending({ address, screen, listRef }: {
