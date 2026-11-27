@@ -216,6 +216,82 @@ test("«Other» de Codex: un campo de texto en la tarjeta elige Other, escribe l
   await shot(page, "codex-other-enviado");
 });
 
+// A 23-row pane (the live failure, 2026-11-27): the opened panel takes 12 rows, so the transcript's
+// `? Pet?` cell has already scrolled away and the typed row is proven only by its place and our words.
+const OTHER_23 = {
+  opened: paneCapture("codex--v0172-async-two-panel-23rows--w52"),
+  focused: paneCapture("codex--v0172-async-other-focused-23rows--w52"),
+  typed: paneCapture("codex--v0172-async-other-typed-23rows--w52"),
+  sent: paneCapture("codex--v0172-async-other-sent-23rows--w52"),
+};
+
+async function setupOther23(page: Page) {
+  const ctx = await setup(page, {
+    harness: "codex", status: "blocked", start: "opened", surface: RUNNING_FREE, title: ACTION_REQUIRED, screens: OTHER_23,
+    script: [{ on: "opened", keys: ["3"], to: "focused" }, { on: "typed", keys: ["Enter"], to: "sent" }],
+  });
+  const replies: { text: string; submit: boolean }[] = [];
+  await page.route((url) => url.pathname.endsWith("/reply"), async (route) => {
+    replies.push(route.request().postDataJSON());
+    ctx.world.show("typed");
+    await route.fulfill({ json: { ok: true } });
+  });
+  return { ...ctx, replies };
+}
+
+async function typeOther(page: Page, text: string) {
+  await expect(page.getByRole("button", { name: /Cat/ })).toBeVisible();
+  await page.getByRole("button", { name: "Escriba su propia respuesta" }).click();
+  await page.getByRole("textbox", { name: "Texto de la respuesta" }).fill(text);
+  await page.getByRole("button", { name: "Enviar respuesta" }).click();
+}
+
+test("«Other» de Codex en un pane de 23 filas: sin la celda del transcript, el texto exacto en su fila basta para el Enter", async ({ page }) => {
+  const { world, replies } = await setupOther23(page);
+  await openBot(page);
+  await typeOther(page, "Fish 42, maybe 3");
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["3", "Enter"]);
+  expect(replies).toEqual([expect.objectContaining({ text: "Fish 42, maybe 3", submit: false })]);
+  await expect(page.getByText("Respuesta enviada")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Tue/ })).toBeVisible();
+  await expect(page.getByText(/Pregunta 1 de 2/)).toHaveCount(0);
+  await shot(page, "codex-other-23-enviado");
+});
+
+test("«Other» de Codex que no se pudo enviar: aviso en español, la tarjeta se queda y «Reintentar envío» manda el Enter", async ({ page }) => {
+  const { world } = await setupOther23(page);
+  // The bridge refuses the first bound Enter (the screen moved between the read and the write): the
+  // words stay typed in the field, unsent.
+  let refused = 0;
+  await page.route((url) => url.pathname.endsWith("/keys"), async (route) => {
+    // SAFETY: the body is the app's own: `lib/api.ts`'s `sendKeys` is the only caller and it posts `{ keys, … }`.
+    const body = route.request().postDataJSON() as { keys: string[] };
+    if (route.request().method() === "POST" && body.keys.join("+") === "Enter" && refused === 0) {
+      refused++;
+      world.sent.push(body);
+      return route.fulfill({ status: 409, json: { error: "prompt changed", code: "prompt_changed" } });
+    }
+    return route.fallback();
+  });
+  await openBot(page);
+  await typeOther(page, "Fish 42, maybe 3");
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["3", "Enter"]);
+  const alert = page.locator('[data-slot="prompt-other-stranded"]');
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText("No pude enviar tu respuesta");
+  await expect(page.getByText("(Fish 42, maybe 3)")).toBeVisible();
+  // The card stays while the panel is open in Codex, its answers locked: a digit would be typed as text.
+  await expect(page.getByRole("button", { name: /Cat/ })).toBeDisabled();
+  await expect(page.getByText(/Pregunta 1 de 2/)).toBeVisible();
+  await shot(page, "codex-other-23-no-enviado");
+
+  await page.getByRole("button", { name: "Reintentar envío" }).click();
+  await expect.poll(() => world.sent.map((s) => s.keys.join("+"))).toEqual(["3", "Enter", "Enter"]);
+  await expect(page.getByRole("button", { name: /Tue/ })).toBeVisible();
+  await expect(alert).toHaveCount(0);
+  await shot(page, "codex-other-23-reintentado");
+});
+
 test("vista Terminal: la pregunta encolada de Codex queda a la vista como tarjeta, sin perderse por el scroll", async ({ page }) => {
   await setup(page, { harness: "codex", status: "blocked", start: "queued", surface: RUNNING_FREE, title: ACTION_REQUIRED,
     screens: { queued: paneCapture("codex--v0172-async-question--w52") } });

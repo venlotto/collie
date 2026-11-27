@@ -1,0 +1,23 @@
+[1;2m[38;2;238;238;238m[48;2;68;68;68m› [0m[38;2;238;238;238m[48;2;68;68;68mCall request_user_input_async ONCE with two ques…[39m
+[49m  [38;2;148;226;213m• [39mTue
+
+[38;2;238;238;238m[48;2;68;68;68m [39m
+[38;2;121;180;249m↪ [2mRe: Pet?[0m[48;2;68;68;68m
+[38;2;238;238;238m [39m
+  [38;2;238;238;238mFish[39m [38;2;238;238;238m42,[39m [38;2;238;238;238mmaybe[39m [38;2;238;238;238m3[39m
+[38;2;238;238;238m [39m
+[49m
+[1m[38;2;128;128;128m•[0m [2mWorking[0m [2m(49s • [0;1mesc[0;2m to interrupt)[0m
+
+[2m• [0mQueued follow-up inputs
+
+
+  [38;2;99;168;248mDay?[39m
+
+    1. Mon
+    2. Tue
+  [1m[38;2;99;168;248m› 3. [0mTuesday afternoon works best for the whole
+       team review
+
+  [1menter[0m submit   [1m^][0m skip   [1mshift+→[0m main prompt
+

@@ -111,6 +111,12 @@ export interface PromptFeedback {
   /** Set on `answer` rows only: where the pointer stands, which the walk onto a filled field reads.
    *  Not part of the dialog's identity (`identityDiff`): the walk moves it on purpose. */
   pointer?: AnswerFieldPointer;
+  /** Set on an `other` row the screen alone cannot prove is the field: a pointed last row holding
+   *  text, with the transcript's cell for the question out of reach. A third answer under the pointer
+   *  reads the same. The card treats it as focused (every answer locks) and the only write it lets
+   *  through is the typing recipe's own Enter over the exact words that recipe typed, at the row it
+   *  typed into (lib/prompt-action.ts). Not part of the dialog's identity. */
+  unproven?: boolean;
 }
 
 /** A recognised single-choice dialog: the question, its selectable options, and the family. */

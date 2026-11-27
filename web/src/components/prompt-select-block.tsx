@@ -10,6 +10,10 @@ import type {
   StyledLine,
 } from "@/lib/blocks";
 import { FEEDBACK_MAX_LENGTH } from "@/lib/prompt-action";
+import { sanitizeTypedText } from "@/lib/harness/guard";
+import { forgetStranded, rememberStranded, strandedText } from "@/lib/stranded-answer";
+import { Button } from "@/components/ui/button";
+import { Notice, NOTICE_ACTION } from "@/components/ui/notice";
 import {
   AnswerFieldSurface,
   TypedFieldCard,
@@ -32,7 +36,9 @@ import { cn } from "@/lib/utils";
 /** What a tap on this block asks for: an option's keystroke plan, or feedback typed on the phone. */
 export type PromptBlockAction =
   | { kind: "option"; option: PromptOption }
-  | { kind: "feedback"; text: string };
+  | { kind: "feedback"; text: string }
+  /** Send again a Codex `Other` answer this card typed and could not send: `text` is those words. */
+  | { kind: "confirm-feedback"; text: string };
 
 export interface PromptSelectBlockProps {
   /** The detected dialog: its subject and question (shown, and the group's label) + options. */
@@ -359,9 +365,16 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled, paneId, s
   const answerLocked = Boolean(disabled) || offline || sending !== null;
   const feedbackCopy = feedback ? feedbackCopyFor(feedback.purpose ?? "plan-change") : null;
   const subject = subjectParts(prompt.subject);
+  // A Codex `Other` answer this card typed and could not send, while the field still holds exactly those
+  // words (lib/stranded-answer.ts). Remembered per pane, so a remounted card still knows they were ours.
+  const strandedKey = `${paneId ?? ""}\n${JSON.stringify(scope ?? null)}`;
+  const [, rememberedAt] = useState(0);
+  const stranded = strandedText(strandedKey, prompt);
 
   async function press(id: string, action: PromptBlockAction): Promise<boolean> {
-    if (action.kind === "feedback" && isAnswer ? answerLocked : locked) return false;
+    // The retry answers a field the terminal shows focused (our own words in it), so focus does not lock it.
+    const blocked = action.kind === "confirm-feedback" || (action.kind === "feedback" && isAnswer) ? answerLocked : locked;
+    if (blocked) return false;
     setSending(id);
     try {
       // A handler that returns nothing is taken at its word (the presentational tests inject one);
@@ -377,7 +390,24 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled, paneId, s
     // The editor closes only on a send that actually landed. A refused one (the guard saw the dialog
     // move) would otherwise throw away up to FEEDBACK_MAX_LENGTH characters someone thumb-typed on a
     // phone — the longest text this app ever asks anyone to type — with no way to get them back.
-    await editor.send(feedback, asked, (text) => press("feedback", { kind: "feedback", text }), isAnswer ? answerLocked : locked);
+    await editor.send(feedback, asked, async (text) => {
+      const sent = await press("feedback", { kind: "feedback", text });
+      // A Codex `Other` send that did not go may have left our words in the field: remember them, and the
+      // card says so for as long as the field shows exactly them.
+      if (feedback.purpose === "other") {
+        if (sent) forgetStranded(strandedKey);
+        else rememberStranded(strandedKey, prompt, sanitizeTypedText(text, FEEDBACK_MAX_LENGTH));
+        rememberedAt(Date.now());
+      }
+      return sent;
+    }, isAnswer ? answerLocked : locked);
+  }
+
+  async function resendStranded(text: string) {
+    if (await press("retry", { kind: "confirm-feedback", text })) {
+      forgetStranded(strandedKey);
+      rememberedAt(Date.now());
+    }
   }
 
   const busyIcon = (
@@ -464,6 +494,30 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled, paneId, s
           {busyIcon}
           {feedbackCopy.sending}
         </div>
+      ) : feedback && stranded !== null ? (
+        <Notice
+          tone="caution"
+          variant="box"
+          announce="alert"
+          icon={<Icon name="error" />}
+          action={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-slot="prompt-other-retry"
+              className={NOTICE_ACTION}
+              disabled={answerLocked}
+              onClick={() => void resendStranded(stranded)}
+            >
+              {sending === "retry" ? busyIcon : null}
+              {t("prompt.feedback.other.retry")}
+            </Button>
+          }
+        >
+          <span data-slot="prompt-other-stranded">{t("prompt.feedback.other.stranded")}</span>
+          <span className="font-content text-muted-foreground"> ({stranded})</span>
+        </Notice>
       ) : feedback && feedbackCopy && terminalFocused ? (
         <div className="rounded-lg border border-dashed border-status-working/50 px-3 py-2 text-xs text-status-working">
           {feedbackCopy.focused}
