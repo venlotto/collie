@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const de: Dictionary = {
+  "bot.edit.title": "Bot bearbeiten",
   "settings.language.title": "Sprache",
   "settings.language.description": "Der Terminal-Spiegel wird nie übersetzt.",
 
@@ -497,6 +498,7 @@ export const de: Dictionary = {
   "composer.expand": "Ausklappen",
   "composer.collapse": "Einklappen",
   "composer.attach.title": "Anhängen",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Fotos",
   "composer.attach.files": "Dateien",
   "composer.attach.listAria": "Anhänge",
@@ -1923,6 +1925,11 @@ export const de: Dictionary = {
   "dialog.menu.moveUp": "Nach oben",
   "dialog.menu.moveDown": "Nach unten",
   "dialog.menu.noticeDraft": "Leere zuerst das Eingabefeld: Eine Ziffer würde an den Text dort angehängt.",
+  "dialog.queuedQuestion.one": "Der Agent hat dir eine Frage gestellt",
+  "dialog.queuedQuestion.many": "Der Agent hat dir {n} Fragen gestellt",
+  "dialog.queuedQuestion.hint": "Tippe auf Antworten, um die Optionen zu sehen.",
+  "dialog.queuedQuestion.answer": "Antworten",
+  "bot.desk.questionWaiting": "Eine Frage wartet auf dich · Antworten",
   "dialog.menu.leftAria": "Links: {verb} ({label})",
   "dialog.menu.rightAria": "Rechts: {verb} ({label})",
   "dialog.menu.levelAria": "{verb} zu {label}",

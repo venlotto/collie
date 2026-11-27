@@ -6,6 +6,7 @@ import type { Dictionary } from "./en";
 // Instructions name the translated controls (입력, 화면, 전송), not their English labels.
 
 export const ko: Dictionary = {
+  "bot.edit.title": "봇 편집",
   "settings.language.title": "언어",
   "settings.language.description": "터미널 출력 내용은 번역되지 않습니다.",
 
@@ -482,6 +483,7 @@ export const ko: Dictionary = {
   "composer.expand": "펼치기",
   "composer.collapse": "접기",
   "composer.attach.title": "첨부",
+  "composer.attach.videos": "동영상",
   "composer.attach.photos": "사진",
   "composer.attach.files": "파일",
   "composer.attach.listAria": "첨부 파일",
@@ -1899,6 +1901,11 @@ export const ko: Dictionary = {
   "dialog.menu.moveUp": "위로 이동",
   "dialog.menu.moveDown": "아래로 이동",
   "dialog.menu.noticeDraft": "먼저 입력란을 비우세요. 숫자가 입력란의 글에 덧붙여집니다.",
+  "dialog.queuedQuestion.one": "에이전트가 질문을 했습니다",
+  "dialog.queuedQuestion.many": "에이전트가 질문 {n}개를 했습니다",
+  "dialog.queuedQuestion.hint": "답변을 누르면 선택지가 보입니다.",
+  "dialog.queuedQuestion.answer": "답변",
+  "bot.desk.questionWaiting": "질문이 기다리고 있습니다 · 답변",
   "dialog.menu.leftAria": "왼쪽: {verb} ({label})",
   "dialog.menu.rightAria": "오른쪽: {verb} ({label})",
   "dialog.menu.levelAria": "{label}에 {verb}",

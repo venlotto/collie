@@ -1157,11 +1157,15 @@ canvas skips the sheet and attaches the photo as it is, and its thumbnail has no
 | `COLLIE_MAX_UPLOAD_MB` | `10` | Largest file accepted, in whole megabytes. Out of range or not a whole number falls back to the default and logs a warning. |
 | `COLLIE_UPLOAD_EXTRA_TYPES` | *(empty)* | Extra text types to accept, beyond the list below. Comma-separated bare extensions; a leading dot is forgiven and anything that is not letters and digits is dropped with a warning. |
 
-Two kinds of file are accepted, and they are checked differently.
+Three kinds of file are accepted, and they are checked differently.
 
 **Images** are identified by their signature bytes, never by their name or their declared type:
 `png`, `jpg`, `gif` and `webp`. SVG is refused on purpose, because it is script-bearing markup
 rather than a picture.
+
+**Videos** use the **Videos** entry in the attachment menu: MP4, MOV and WebM containers are
+identified by their header bytes. They join the draft as file chips, under the same size limit as
+images. The agent receives a local path; its ability to inspect a video depends on its tools.
 
 **Text** is identified by its extension, with the bytes as a veto: a file whose first 4 KB contain a
 NUL or a stray control byte is refused whatever it is called. The shipped list is `md`, `markdown`,

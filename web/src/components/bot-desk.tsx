@@ -19,6 +19,7 @@ import { useNav } from "@/hooks/use-nav";
 import { usePaneScreen } from "@/hooks/use-pane-screen";
 import { activityStatusOf } from "@/lib/activity-status";
 import { parseAnsi } from "@/lib/ansi";
+import { t } from "@/lib/i18n";
 import { splitLines } from "@/lib/blocks";
 import { arrange, arrive, closeWindow, gridOf, minimise, nextFocus, toggleMax, updateDesk, useDesk, type Capacity } from "@/lib/bot-desk";
 import { paneRowKey, paneScope } from "@/lib/hosts";
@@ -122,6 +123,14 @@ function DeskPeek({ pane, scope, onReply }: { pane: AgentView; scope: Scope; onR
         {lines.length > 0 && <div className="bot-terminal"><RawMirror lines={lines} wrap /></div>}
       </div></div>}
     <footer ref={footer} className="agent-run-status bot-desk-reply-row">
+      {/* A window without the focus draws no dialog card (the focused chat owns the screen's cards), so
+          a question it waits on would stay invisible on the desk. One line says so and hands it the focus,
+          where the card is. Only while the bridge says it needs you (blocked-settle.ts keeps that honest). */}
+      {activityStatusOf(pane) === "blocked" && (
+        <button type="button" className="bot-desk-waiting" onClick={e => { e.stopPropagation(); onReply(); }}>
+          {t("bot.desk.questionWaiting")}
+        </button>
+      )}
       <button type="button" className="bot-desk-reply" onClick={e => { e.stopPropagation(); onReply(); }}>
         {pane.kind === "shell" && !run ? "Escribir un comando…" : `Preguntar a ${bot.name}…`}
       </button>
