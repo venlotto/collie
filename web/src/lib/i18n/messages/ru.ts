@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const ru: Dictionary = {
+  "bot.edit.title": "Изменить бота",
   "settings.language.title": "Язык",
   "settings.language.description": "Зеркало терминала не переводится.",
   "settings.title": "Настройки",
@@ -440,6 +441,7 @@ export const ru: Dictionary = {
   "composer.expand": "Развернуть",
   "composer.collapse": "Свернуть",
   "composer.attach.title": "Прикрепить",
+  "composer.attach.videos": "Видео",
   "composer.attach.photos": "Фото",
   "composer.attach.files": "Файлы",
   "composer.attach.listAria": "Вложения",

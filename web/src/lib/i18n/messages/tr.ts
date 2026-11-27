@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const tr: Dictionary = {
+  "bot.edit.title": "Botu düzenle",
   "settings.language.title": "Dil",
   "settings.language.description": "Uçbirim yansısı hiçbir zaman çevrilmez.",
   "settings.title": "Ayarlar",
@@ -438,6 +439,7 @@ export const tr: Dictionary = {
   "composer.expand": "Genişlet",
   "composer.collapse": "Daralt",
   "composer.attach.title": "Ekle",
+  "composer.attach.videos": "Videolar",
   "composer.attach.photos": "Fotoğraflar",
   "composer.attach.files": "Dosyalar",
   "composer.attach.listAria": "Ekler",

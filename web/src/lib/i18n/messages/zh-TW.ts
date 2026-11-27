@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
+  "bot.edit.title": "編輯機器人",
   "settings.language.title": "語言",
   "settings.language.description": "終端機鏡像輸出不會被翻譯。",
 
@@ -470,6 +471,7 @@ export const zhTW: Dictionary = {
   "composer.expand": "展開",
   "composer.collapse": "摺疊",
   "composer.attach.title": "附加",
+  "composer.attach.videos": "影片",
   "composer.attach.photos": "照片",
   "composer.attach.files": "檔案",
   "composer.attach.listAria": "附件",

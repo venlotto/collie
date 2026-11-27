@@ -45,6 +45,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Wide screens keep several chats open side by side.** Open a second bot from the list and it joins the first instead of replacing it. Each window can be minimised to a tray under the chats, maximised to fill the space, or closed without stopping its bot, and the set of open chats is remembered on that device. One chat, a narrow window and the phone look as before.
 
 - **Finished background runs can resume or implement their plans.** Reply in the same bot to continue with its saved session or a contextual summary. A finished plan also offers Implement, which opens a separate implementation bot with your chosen agent and instructions to work on a new branch and open a PR.
+- **Hold a chat title to edit its bot.** Change its name, appearance and workspace with the creation form, keeping its running agent.
+
+- **Attach videos alongside images in your messages.** The attachment menu accepts MP4, MOV and WebM videos, checks their container headers, and keeps video previews alongside image attachments.
 
 ### Changed
 
@@ -98,6 +101,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Bot replies stay open in every agent state.** You can keep writing and sending while an agent is ready, working or starting, and questions keep their protected answer controls. A finished background run offers a clear new-chat action instead of typing into the shell that displays its log.
 - **Long, multi-line and question-mark messages reach Codex.** Collie now pastes each message into Codex's input box in one piece instead of typing it key by key. Typed keys lost a leading "?" to Codex's shortcuts screen and could leave a long draft stuck in the box, and fast multi-line typing briefly looked like an open dialog, so the message stayed unsent with an error.
 - **The terminal draft notice no longer covers the bot's message field.** After a message stays in the agent's box, the "Draft in terminal" card now sits above the floating composer, so you can keep typing, take the draft over or dismiss it.
+
+- **Touching a focused reply field can reopen its keyboard.** A fresh touch restores mobile keyboard focus when the caret stayed active after the keyboard closed.
+
+- **Bot controls fit phones, tablets and desktop chat windows.** Long workspace names wrap, menus and forms stay within the screen, and the jump-to-latest control clears the reply box. Touch controls have more room and the hub respects the corrected iOS viewport height.
+- **The unread chip sits above the search bar instead of over your chats.** When a chat below the fold is unread, its chip takes a row of its own above search, the list fades out above it, and the last chat still scrolls clear of both.
+- **A finished agent's reply box stays whole on a phone.** The "Continue with the agent" button moves to its own full-width row under the field on a narrow screen, so the field, its placeholder and the attach button are no longer squeezed.
 
 ## [1.31.0] - 2026-11-24
 

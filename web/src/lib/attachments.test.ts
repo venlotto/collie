@@ -273,3 +273,19 @@ describe("collapsible paste helpers", () => {
     expect(expandAttachmentInText("   ", chip)).toBe("line 1\nline 2");
   });
 });
+
+
+describe("video capabilities", () => {
+  const limits: UploadCapability = { maxBytes: 10, imageTypes: ["png"], textTypes: [], videoTypes: ["mp4", "mov", "webm"] };
+  it("offers videos only when the bridge publishes them", () => {
+    expect(acceptAttribute(limits)).toBe("image/*,.png,.mp4,.mov,.webm");
+    expect(offersFiles(limits)).toBe(true);
+    expect(rejectAttachment(new File(["x"], "clip.MP4", { type: "video/mp4" }), limits)).toBeNull();
+    expect(rejectAttachment(new File(["x"], "clip.mp4"), uploadLimits(null))).toBe("badType");
+    expect(rejectAttachment(new File(["x"], "clip.avi"), limits)).toBe("badType");
+  });
+  it("keeps the file chip and enforces the host size cap", () => {
+    expect(attachmentKind(new File(["x"], "clip.webm"), limits)).toBe("file");
+    expect(rejectAttachment(new File(["x".repeat(11)], "clip.mov"), limits)).toBe("tooLarge");
+  });
+});

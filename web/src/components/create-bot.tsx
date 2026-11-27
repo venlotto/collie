@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchLaunchers, renamePane } from "@/lib/api";
+import { actOnBot, createWorkspace, fetchLaunchers, renamePane } from "@/lib/api";
 import { useMuxCapability } from "@/lib/mux-capability";
 import { setStatus } from "@/lib/status";
 import { X } from "lucide-react";
@@ -11,7 +11,9 @@ import { readBotPrefs, cacheBotPrefs } from "@/lib/bot-create-prefs";
 import { BOT_CREATE_PROFILES } from "@/lib/bot-create-profiles";
 import { type AgentView, type LaunchersResponse, type WorkspaceView } from "@/lib/types";
 import { type SpaceTarget } from "@/lib/api";
-import { BlobAvatar } from "./bot-identity";
+import { t } from "@/lib/i18n";
+import { useLocale } from "@/hooks/use-locale";
+import { BlobAvatar, identityOf } from "./bot-identity";
 import { colorNames, colors, saveBot, silhouetteCount } from "@/lib/bot-identity";
 import { setBotDisplay } from "@/lib/bot-display";
 import { randomBotName } from "@/lib/bot-default-names";
@@ -31,14 +33,17 @@ export function unassignedTarget(spaces: readonly WorkspaceView[]): SpaceTarget 
 type SpaceMode = "none" | "existing" | "new";
 const NO_SPACES: readonly WorkspaceView[] = [];
 
-export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }: {
-  scope: Scope; beside?: AgentView; spaces?: readonly WorkspaceView[]; writable: boolean; close: () => void;
+export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close, edit }: {
+  scope: Scope; beside?: AgentView; spaces?: readonly WorkspaceView[]; writable: boolean; close: () => void; edit?: AgentView;
 }) {
+  useLocale();
+  const editing = edit !== undefined;
+  const original = edit && identityOf(edit, scope);
   const dialog = useRef<HTMLDialogElement>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(original?.name ?? "");
   const [fallbackName] = useState(() => randomBotName());
-  const [silhouette, setSilhouette] = useState(12);
-  const [color, setColor] = useState(8);
+  const [silhouette, setSilhouette] = useState(original?.silhouette ?? 12);
+  const [color, setColor] = useState(original?.color ?? 8);
   const [error, setError] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [catalog, setCatalog] = useState<LaunchersResponse>();
@@ -46,11 +51,11 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
   const [reload, setReload] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryOnly, setRetryOnly] = useState(false);
-  const [spaceMode, setSpaceMode] = useState<SpaceMode>("none");
-  const [spaceId, setSpaceId] = useState("");
+  const [spaceMode, setSpaceMode] = useState<SpaceMode>(edit ? "existing" : "none");
+  const [spaceId, setSpaceId] = useState(edit?.workspaceId ?? "");
   const [spaceName, setSpaceName] = useState("");
   const pickedSpace = spaces.find(w => w.workspaceId === spaceId) ?? spaces[0];
-  const target: SpaceTarget | undefined = spaceMode === "existing" ? (pickedSpace && { id: pickedSpace.workspaceId })
+  const target: SpaceTarget | undefined = spaceMode === "existing" ? (spaceId ? { id: spaceId } : pickedSpace && { id: pickedSpace.workspaceId })
     : spaceMode === "new" ? (spaceName.trim() ? { label: spaceName.trim() } : undefined)
     : unassignedTarget(spaces);
   const { host, session } = scope;
@@ -61,7 +66,7 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
     setError("");
     const cached = readBotPrefs(host);
     setPrefs(cached);
-    if (writable) void fetchLaunchers({ host, session }).then(result => {
+    if (writable && !editing) void fetchLaunchers({ host, session }).then(result => {
       if (!active) return;
       const profiles = result.botCreate;
       if (profiles) {
@@ -77,7 +82,7 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
       if (active) { setError(describeThrownError(err)); setLoadFailed(true); }
     });
     return () => { active = false; };
-  }, [host, session, writable, reload]);
+  }, [host, session, writable, reload, editing]);
   const serverProfiles = catalog?.botCreate?.agents;
   const profiles = serverProfiles?.length ? serverProfiles : BOT_CREATE_PROFILES;
   const shownProfile = profiles.find(agent => agent.id === prefs.agent);
@@ -102,12 +107,38 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
   }, [leaving]);
   const dismiss = () => { if (!busy) setLeaving(true); };
 
-  const ready = writable && !!catalog && (catalog.botCreate === undefined || !!profile) && !!target;
+  const ready = writable && (edit ? !!name.trim() : !!catalog && (catalog.botCreate === undefined || !!profile)) && !!target;
 
   async function create() {
     if (!ready || !target || busy || leaving) return;
     setError("");
     setPreparing(true);
+    if (edit) {
+      try {
+        const label = name.trim();
+        if (label !== original?.name && rename.capable) {
+          const result = await renamePane(edit.paneId, label, scope);
+          if (!result.ok) throw new Error(result.error);
+        }
+        saveBot(scope, edit.terminalId ?? edit.paneId, { name: label, silhouette, color });
+        let destination = "id" in target ? target.id : undefined;
+        if (!destination) {
+          const result = await createWorkspace({ label: "label" in target ? target.label : undefined, requestId: request.current }, scope);
+          if (!result.ok) throw new Error(result.error);
+          destination = result.pane.workspaceId;
+        }
+        if (destination !== edit.workspaceId) {
+          const result = await actOnBot("move", edit, scope, destination);
+          if (!result.ok) throw new Error(t("settings.worktreeFolder.failed"));
+        }
+        setLeaving(true);
+      } catch (err) {
+        setError(describeThrownError(err));
+      } finally {
+        setPreparing(false);
+      }
+      return;
+    }
     const installed = catalog?.harnesses?.filter(h => h.found);
     const harness = installed?.find(h => h.id === beside?.agent) ?? installed?.[0];
     const outcome = await start({
@@ -136,15 +167,15 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
     onCancel={(e) => { e.preventDefault(); dismiss(); }}>
     <button type="button" aria-label="Descartar" tabIndex={-1} className="bot-backdrop" onClick={dismiss} />
     <form className="bot-sheet" onSubmit={(e) => { e.preventDefault(); void create(); }}>
-      <header><button type="button" className="bot-circle" onClick={dismiss} aria-label="Cerrar"><X /></button><h2 id="create-bot-title">Crear nuevo Bot</h2></header>
+      <header><button type="button" className="bot-circle" onClick={dismiss} aria-label="Cerrar"><X /></button><h2 id="create-bot-title">{edit ? t("bot.edit.title") : "Crear nuevo Bot"}</h2></header>
       <div className="bot-preview"><BlobAvatar silhouette={silhouette} color={color} large /></div>
-      <input aria-label="Nombre del bot" placeholder={fallbackName} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
-      <fieldset className="bot-shapes" aria-label="Forma">{Array.from({ length: silhouetteCount }, (_, i) =>
+      <input aria-label="Nombre del bot" placeholder={fallbackName} maxLength={80} disabled={busy || (!!edit && !rename.capable)} value={name} onChange={(e) => setName(e.target.value)} />
+      <fieldset disabled={busy} className="bot-shapes" aria-label="Forma">{Array.from({ length: silhouetteCount }, (_, i) =>
         <button key={i} type="button" aria-label={`Forma ${i + 1}`} aria-pressed={silhouette === i} onClick={() => setSilhouette(i)}><BlobAvatar silhouette={i} color={color} /></button>)}</fieldset>
-      <fieldset className="bot-colors" aria-label="Color">{colors.map((hex, i) =>
+      <fieldset disabled={busy} className="bot-colors" aria-label="Color">{colors.map((hex, i) =>
         <button key={hex} type="button" aria-label={colorNames[i]} aria-pressed={color === i} onClick={() => setColor(i)}><span style={{ background: hex }} /></button>)}</fieldset>
       <div className="bot-launch-fields">
-        <fieldset disabled={!canChoose} aria-label="Agente">
+        {!edit && <><fieldset disabled={!canChoose} aria-label="Agente">
           <legend>Agente</legend>
           {profiles.map(agent => <button type="button" key={agent.id} aria-pressed={agent.id === prefs.agent} onClick={() => {
             setPrefs({ agent: agent.id, effort: agent.efforts.includes(prefs.effort) ? prefs.effort : "high" });
@@ -156,7 +187,8 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
             <button type="button" key={effort} aria-pressed={effort === prefs.effort}
               onClick={() => setPrefs({ ...prefs, effort })}>{effort}</button>)}
         </fieldset>
-        <fieldset disabled={!writable || busy || retryOnly} aria-label="Workspace">
+        </>}
+        <fieldset disabled={!writable || busy || retryOnly || (!!edit && !edit.terminalId)} aria-label="Workspace">
           <legend>Workspace</legend>
           <button type="button" aria-pressed={spaceMode === "none"} onClick={() => setSpaceMode("none")}>{UNASSIGNED_SPACE}</button>
           <button type="button" aria-pressed={spaceMode === "existing"} disabled={!spaces.length} onClick={() => setSpaceMode("existing")}>Existente</button>
@@ -173,7 +205,7 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close }
       </div>
       {loadFailed && <button type="button" onClick={() => setReload(n => n + 1)}>Reintentar</button>}
       {error && <p role="alert">{error}</p>}
-      <button className="bot-create" disabled={!ready || busy || leaving}>{busy ? "Creando…" : "Crear"}</button>
+      <button className="bot-create" disabled={!ready || busy || leaving}>{edit ? t("settings.worktreeFolder.save") : busy ? "Creando…" : "Crear"}</button>
     </form>
   </dialog>;
 }

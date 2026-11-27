@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
+  "bot.edit.title": "编辑机器人",
   "settings.language.title": "语言",
   "settings.language.description": "终端镜像输出不会被翻译。",
 
@@ -471,6 +472,7 @@ export const zh: Dictionary = {
   "composer.expand": "展开",
   "composer.collapse": "折叠",
   "composer.attach.title": "添加附件",
+  "composer.attach.videos": "视频",
   "composer.attach.photos": "照片",
   "composer.attach.files": "文件",
   "composer.attach.listAria": "附件",

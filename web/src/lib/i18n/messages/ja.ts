@@ -3,6 +3,7 @@ import type { Dictionary } from "./en";
 // Japanese. See de.ts for the typing contract. One plural category, so both suffixes match.
 
 export const ja: Dictionary = {
+  "bot.edit.title": "ボットを編集",
   "settings.language.title": "言語",
   "settings.language.description": "ターミナル出力は翻訳されません。",
 
@@ -480,6 +481,7 @@ export const ja: Dictionary = {
   "composer.expand": "展開",
   "composer.collapse": "折りたたむ",
   "composer.attach.title": "添付",
+  "composer.attach.videos": "動画",
   "composer.attach.photos": "写真",
   "composer.attach.files": "ファイル",
   "composer.attach.listAria": "添付ファイル",

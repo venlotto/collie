@@ -3,6 +3,7 @@ import type { Dictionary } from "./en";
 // Spanish. See de.ts for the typing contract.
 
 export const es: Dictionary = {
+  "bot.edit.title": "Editar bot",
   "settings.language.title": "Idioma",
   "settings.language.description": "La salida del terminal nunca se traduce.",
 
@@ -494,6 +495,7 @@ export const es: Dictionary = {
   "composer.expand": "Expandir",
   "composer.collapse": "Contraer",
   "composer.attach.title": "Adjuntar",
+  "composer.attach.videos": "Videos",
   "composer.attach.photos": "Fotos",
   "composer.attach.files": "Archivos",
   "composer.attach.listAria": "Adjuntos",

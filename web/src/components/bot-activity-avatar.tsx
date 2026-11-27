@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 import type { ActivityStatus } from "@/lib/activity-status";
@@ -13,10 +14,10 @@ export function BotActivityAvatar({ bot, status }: { bot: BotIdentity; status: A
   </span>;
 }
 
-export function BotActivityPill({ bot, status }: { bot: BotIdentity; status: ActivityStatus }) {
+export function BotActivityPill({ bot, status, interaction }: { bot: BotIdentity; status: ActivityStatus; interaction?: HTMLAttributes<HTMLDivElement> }) {
   useLocale();
   const label = activityLabel(status);
-  return <div className="bot-pill" title={label || undefined}>
+  return <div className="bot-pill" title={label || undefined} {...interaction}>
     <BotActivityAvatar bot={bot} status={status} /><strong>{bot.name}</strong>
     <span className="sr-only" role="status">{label}</span>
   </div>;
