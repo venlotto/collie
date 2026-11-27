@@ -1,0 +1,23 @@
+[0m[38;2;215;119;87m ▐[0m[38;2;215;119;87m[48;2;0;0;0m▛███▛█   [0m[38;2;153;153;153mOpus 5.5 with low effort[0m
+[0m[38;2;215;119;87m▝▜[0m[38;2;215;119;87m[48;2;0;0;0m█████[0m[38;2;215;119;87m█▀  [0m[38;2;153;153;153mAPI Usage Billing[0m
+[0m[38;2;215;119;87m ▝▝   ▝▝   [0m[38;2;153;153;153m/tmp/lp-h3/p[0m
+
+[0m[38;2;215;119;87m▎[0m [0m[1mAuto mode is now Claude Code's default permission [0m
+[0m[38;2;215;119;87m▎ [0m[1mmode.[0m
+[0m[38;2;215;119;87m▎ [0m[38;2;153;153;153mAuto mode lets Claude handle permission prompts [0m
+[0m[38;2;215;119;87m▎ [0m[38;2;153;153;153mautomatically. Claude checks each tool call for [0m
+[0m[38;2;215;119;87m▎ [0m[38;2;153;153;153mrisky actions and prompt injection before [0m
+[0m[38;2;215;119;87m▎ [0m[38;2;153;153;153mexecuting, runs the ones it assesses as lower-risk,[0m
+[0m[38;2;215;119;87m▎ [0m[38;2;153;153;153mand blocks the rest.[0m
+[0m[38;2;215;119;87m▎ [0m[38;2;153;153;153mhttps://code.claude.com/docs/en/permission-modes[0m
+                         [0m[38;2;255;107;128mNot logged in · run /login[0m
+[0m[38;2;136;136;136m───[0m [0m[2m↑ 2 more[0m [0m[38;2;136;136;136m────────────────────────────────────────[0m
+  linea en un pane estrecho de Claude. Por favor
+  responde solo OK y para. Esta es una frase un
+  poco larga para probar el ajuste de linea en un
+  pane estrecho de Claude. Por favor responde solo
+  OK y para. Esta es una frase un poco larga para
+  probar el ajuste de linea en un pane estrecho [0m[7m [0m
+[0m[38;2;136;136;136m─────────────────────────────────────────────────────[0m
+  [0m[38;2;255;193;7m⚠ Transcript saving is off — inherited CLAUDE_CO…[0m
+  [0m[38;2;255;193;7m⏵⏵ auto mode on[0m[38;2;153;153;153m (shift+tab to cycle)[0m

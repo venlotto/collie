@@ -15,7 +15,11 @@ import { FakePane, OFFERED, PROBE, rig, useScratchDir } from "./protocol.rig.ts"
 useScratchDir();
 
 const FIXTURES = fileURLToPath(new URL("fixtures/", import.meta.url));
-const CAPTURE = "claude--v2332-long-paste-scrolled--w54.txt";
+/**
+ * The same paste read back from Claude Code 2.1.332 with `"tui": "fullscreen"` (the live operator's setting;
+ * the default renderer grows the box instead), once over tmux and once over Herdr's headless 54 x 23 pane.
+ */
+const CAPTURES = ["claude--v2332-long-paste-scrolled--w54.txt", "claude--v2332-long-paste-scrolled-herdr--w54.txt"];
 const SENTENCE = "Por favor responde solo OK y para. Esta es una frase un poco larga para probar el ajuste de linea en un pane estrecho de Claude.";
 /** The live receipts' text: one line, 376 characters, cut mid-sentence with its trailing space. */
 const LONG = [SENTENCE, SENTENCE, SENTENCE].join(" ").slice(0, 376);
@@ -41,8 +45,8 @@ describe("Claude Code 2.1.332, a 376-character line in a 54 x 23 pane", () => {
     expect(LONG).not.toContain("\n");
   });
 
-  test("the real capture: the paste landed literally, the box scrolled, and its rows in view are the end of the text", () => {
-    const read = readScreen(fixtureRows(CAPTURE, FIXTURES), agentOf("claude"), idleFor("claude"));
+  test.each(CAPTURES)("the real capture %s: the paste landed literally, the box scrolled, and its rows in view are the end of the text", (capture) => {
+    const read = readScreen(fixtureRows(capture, FIXTURES), agentOf("claude"), idleFor("claude"));
     const frame = read.frame;
     if (frame === null) throw new Error("the capture's box was not read");
     expect(frame.scrolled).toBe(true);
