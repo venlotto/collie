@@ -93,6 +93,7 @@ const FORWARDABLE_GET_ONLY: readonly RegExp[] = [
   // member that predates it (1.28.x) answers 404 too, which the phone reads as "no accounts here" and
   // hides the pick, as on a Windows member, which answers its own 404 `accounts.unavailable`.
   /^accounts$/,
+  /^attachments\/[^/]+(?:\/image)?$/,
 ];
 
 /**
@@ -357,7 +358,7 @@ export function forwardKind(route: string, method?: string): ForwardKind {
   if (route === "worktree/folder/set") return "write";
   // A blob read serves a file off the owning member's disk and changes nothing there — the same
   // shape as `pane/:id/history`, and attempted against a stale member for the same reason (§10.3).
-  if (route.startsWith("blobs/")) return "read";
+  if (route.startsWith("blobs/") || route.startsWith("attachments/")) return "read";
   // A project picture is a file off the member's disk too, changed by nothing: a read like a blob.
   if (route.startsWith("project-picture/")) return "read";
   // A workspace's Changes list is the pane route's `changes`, asked by space: a read. Its Files view
@@ -390,7 +391,7 @@ const CREATE_ROUTES: ReadonlySet<string> = new Set(["launch", "tab", "workspace"
  * parses it whole), and ends by a total deadline (guarded-body.ts, `wholeDeadlineMs`).
  */
 export function streamsToPhone(route: string): boolean {
-  return route.startsWith("blobs/") || route.startsWith("project-picture/") || /^(?:pane|workspace)\/[^/]+\/files\/image$/.test(route);
+  return /^attachments\/[^/]+\/image$/.test(route) || route.startsWith("blobs/") || route.startsWith("project-picture/") || /^(?:pane|workspace)\/[^/]+\/files\/image$/.test(route);
 }
 
 /**
@@ -456,7 +457,7 @@ export function forwardAuditAction(route: string, method?: string): string | nul
   if (route === "sent/clear") return "sent.clear";
   if (route === "sent") return null;
   if (route === "folders" || route === "folders/star" || route === "folders/browse") return null; // reads, and a preference
-  if (route.startsWith("blobs/")) return null; // a read
+  if (route.startsWith("blobs/") || route.startsWith("attachments/")) return null; // a read
   if (route.startsWith("project-picture/")) return null; // a read
   if (isWorkspaceRead(route)) return null; // a read
   if (route.startsWith("durable/")) return route.endsWith("/reopen") ? "durable.reopen" : null; // the list and the items are reads

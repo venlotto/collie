@@ -110,6 +110,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The unread chip sits above the search bar instead of over your chats.** When a chat below the fold is unread, its chip takes a row of its own above search, the list fades out above it, and the last chat still scrolls clear of both.
 - **A finished agent's reply box stays whole on a phone.** The "Continue with the agent" button moves to its own full-width row under the field on a narrow screen, so the field, its placeholder and the attach button are no longer squeezed.
 
+- **Dropped files attach and sent photos stay visible in chat.** Desktop drops share the photo editor and file picker, failed uploads keep an error beside the composer, and sent attachments show a preview or filename instead of a server path.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

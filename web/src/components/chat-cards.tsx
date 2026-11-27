@@ -32,6 +32,7 @@
 // translated: a path, a command, a query, a URL, a sub-agent's name, a tool's own name and a
 // harness's own name are the agent's words or the machine's, and they go through as they arrived.
 
+import { UserMessageText } from "./user-message-text";
 import { createContext, memo, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { DiffView, TokenLine, useSyntaxTokens } from "@/components/changes-view";
@@ -552,7 +553,7 @@ function Compacted({ item }: { item: Extract<ChatItem, { kind: "compacted" }> })
  */
 function ViewUserTurn({ text, ts, simple }: { text: string; ts?: string; simple?: boolean }) {
   const shown = useViewTurnText(text);
-  if (simple) return <p className="whitespace-pre-wrap">{shown}</p>;
+  if (simple) return <div className="whitespace-pre-wrap"><UserMessageText text={shown} /></div>;
   return ts === undefined ? <UserTurn text={shown} /> : <UserTurn text={shown} ts={ts} />;
 }
 
@@ -618,7 +619,7 @@ export function UserTurn({ text, ts, pending, pendingAt, notInLog = false, clamp
           </span>
         )}
       </div>
-      <p className={cn("font-content whitespace-pre-wrap break-words text-sm", clamp && "line-clamp-4")}>{text}</p>
+      <div className={cn("font-content whitespace-pre-wrap break-words text-sm", clamp && "line-clamp-4")}><UserMessageText text={text} /></div>
     </div>
   );
 }
@@ -695,8 +696,8 @@ function BareUserTurn({
     >
       {/* The caption row is gone, so the speaker is named for the screen reader alone. */}
       <span className="sr-only">{t("transcript.youLabel")}</span>
-      <p className={cn(USER_WELL_TEXT, clamp && "line-clamp-4")}>
-        {text}
+      <div className={cn(USER_WELL_TEXT, clamp && "line-clamp-4")}>
+        <UserMessageText text={text} />
         {meta && (
           <span className={USER_WELL_META}>
             {time && <span className={USER_WELL_TIME}>{time}</span>}
@@ -729,7 +730,7 @@ function BareUserTurn({
             )}
           </span>
         )}
-      </p>
+      </div>
     </div>
   );
 }
