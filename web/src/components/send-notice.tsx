@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Notice, NOTICE_ACTION } from "@/components/ui/notice";
 import { capSentence, noteKey, type NextStep, type SendNote, type SendReading, type SendReply, type StepButton } from "@/lib/send-protocol";
 import { shortHash, type Surface } from "@/lib/surface/surface";
-import { t as translate, tn, type MessageKey } from "@/lib/i18n";
+import { getLocaleSnapshot, t as translate, tn, DEFAULT_LOCALE, type MessageKey } from "@/lib/i18n";
 import type { ClearReason, ClearReceipt } from "@/lib/surface/clear";
 import type { StopReason, StopReceipt } from "@/lib/surface/stop";
 
@@ -21,8 +21,9 @@ export function answerSentence(reading: SendReading): string {
     reading.cap === null
       ? translate(noteKey(reading.note))
       : capSentence(reading.cap, (vars) => translate("composer.protocol.capConfirmPast", vars));
-  // A draft refusal already says what the screen held, and "The agent is working" already says the turn runs.
-  if (reading.surface === null || reading.note === "draft" || reading.note === "draftCommand" || reading.note === "draftUnseen" || reading.note === "agentBusy") return note;
+  // A draft refusal already says what the screen held (a Replace whose draft did not empty too), and "The
+  // agent is working" already says the turn runs.
+  if (reading.surface === null || reading.note === "draft" || reading.note === "draftCommand" || reading.note === "draftUnseen" || reading.note === "notEmptied" || reading.note === "agentBusy") return note;
   // What Collie saw comes first, then the verdict and its next step (M102 spec 02), so the sentence ends
   // on what the person can do.
   return `${translate(`composer.surface.${reading.surface}`)} ${note}`;
@@ -200,11 +201,22 @@ export function RefusalActions({ step, wait, onCard, onScreen, onKeys }: Refusal
   );
 }
 
+/**
+ * The line under the sentence. The bridge speaks English, so its own words show only in English; in any
+ * other language the catalog's line for the answer's code shows, or none where the sentence says it all
+ * (2026-11-27: a Spanish notice carried "The probe character changed more than the box…" under it).
+ */
+export function readingDetail(reading: Pick<SendReading, "detail" | "detailKey">): string | null {
+  if (reading.detail === null || reading.detail === "") return null;
+  if (getLocaleSnapshot().locale === DEFAULT_LOCALE) return reading.detail;
+  return reading.detailKey === undefined || reading.detailKey === null ? null : translate(reading.detailKey);
+}
+
 /** The notice for an answer that did not send, from the bridge's reading of it. */
 export function readingRefusal(reading: SendReading): SendRefusal {
   return {
     sentence: answerSentence(reading),
-    detail: reading.detail,
+    detail: readingDetail(reading),
     toCard: reading.toCard,
     screen: READ_THE_SCREEN.has(reading.note),
     tone: reading.note === "discarded" ? "neutral" : "caution",

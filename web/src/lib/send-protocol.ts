@@ -316,6 +316,7 @@ export type SendNote =
   | "draft"
   | "draftCommand"
   | "draftUnseen"
+  | "notEmptied"
   | "typed"
   | "overrideTyped"
   | "menuOpen"
@@ -388,8 +389,17 @@ export interface SendReading {
   readonly offers: readonly SendOffer[];
   /** What the bridge saw on the screen, said after the note; null when the answer carried no Surface. */
   readonly surface: SurfaceNote | null;
-  /** The bridge's own sentence, shown under the note; null when it said nothing. */
+  /**
+   * The bridge's own sentence, shown under the note; null when it said nothing. The bridge writes it in
+   * English: the notice shows it only to a person who reads English, and {@link detailKey} in every
+   * other language (send-notice.tsx `readingRefusal`).
+   */
   readonly detail: string | null;
+  /**
+   * The catalog's words for what the bridge's line adds to the note, by the answer's reason and cause,
+   * or null where the note already says all of it. Absent on a reading built by hand: null.
+   */
+  readonly detailKey?: DetailKey | null;
   /** The screen holds an ask or a screen Collie cannot read: the notice's control goes to the card. */
   readonly toCard: boolean;
   /** Set when the cap asks for one more confirm; its words name the count and the version. */
@@ -577,6 +587,26 @@ export function receiptSentence(
   return say(noteKey(sendNote(row.outcome, row.reason)));
 }
 
+/** The lines under a note that the catalog translates: what a bridge's English detail adds, by code. */
+export type DetailKey = "composer.detail.probeLeft" | "composer.detail.shortPane" | "composer.detail.lateKeys" | "composer.detail.multiline";
+
+/** The words the bridge puts in a detail that says one of its probe characters may still stand in the box. */
+const PROBE_LEFT = /may remain in the box/u;
+
+/**
+ * The translated line under a note (2026-11-27: a Spanish notice showed the bridge's English line under
+ * it). Only where the line tells the person something the note does not: a pane too short to draw the
+ * box, keys the agent drew late, a text that must go one line at a time, a probe character that may be
+ * left in the box. Every other detail is said by its note already, so it shows only in English.
+ */
+export function detailKeyOf(reply: Pick<SendReply, "reason" | "cause" | "detail">): DetailKey | null {
+  if (reply.cause === "short_pane") return "composer.detail.shortPane";
+  if (reply.cause === "late_keys") return "composer.detail.lateKeys";
+  if (reply.reason === "multiline") return "composer.detail.multiline";
+  if (reply.detail !== null && PROBE_LEFT.test(reply.detail)) return "composer.detail.probeLeft";
+  return null;
+}
+
 /** The verdict half of a reading: whether the draft goes, the sentence, the offers. */
 type Verdict = Pick<SendReading, "clear" | "note" | "offers">;
 
@@ -589,6 +619,8 @@ function noteAndOffers(reply: SendReply, offers: readonly SendOffer[]): Verdict 
   // A box that did not take the probe, and a second read of the same rows (2026-10-25). A line longer
   // than the plain one says a probe character may remain in the live editor: that has its own sentence.
   if (reply.outcome === "refused" && reply.cause === "stale_screen") return { clear: false, note: reply.detail === null || reply.detail === STALE_SCREEN ? "staleScreen" : "staleScreenProbe", offers };
+  // A Replace whose draft did not empty (2026-11-27): the text was never typed, whatever the box holds now.
+  if (reply.outcome === "refused" && reply.cause === "not_emptied") return { clear: false, note: "notEmptied", offers };
   const note = sendNote(reply.outcome, reply.reason);
   // A discard has its own outcome: the box emptied, but nothing went to the agent, so the phone's draft stays.
   // A send queued behind the running turn went out all the same: it clears, and its sentence says it waits.
@@ -650,7 +682,10 @@ export function readSend(reply: SendReply, mode: SendMode = "send"): SendReading
   const cap = base.note === "capConfirm" ? reply.cap : null;
   const step = base.clear ? null : nextStep(reply, base, toCard, surface);
   const waits = step === "sendAgain" && reply.reason === "busy" && (reply.detail === null || reply.detail === ANOTHER_SEND);
-  return { ...base, surface, detail: base.clear || cap !== null || ownSentence(reply) ? null : reply.detail, toCard, cap, step, waits };
+  const quiet = base.clear || cap !== null || ownSentence(reply);
+  const reading: SendReading = { ...base, surface, detail: quiet ? null : reply.detail, toCard, cap, step, waits };
+  const detailKey = quiet ? null : detailKeyOf(reply);
+  return detailKey === null ? reading : { ...reading, detailKey };
 }
 
 /**
@@ -711,6 +746,8 @@ const PLAIN_NOT_FREE = "The input box is not free.";
 function ownSentence(reply: SendReply): boolean {
   if (reply.outcome !== "refused" || reply.reason === null) return false;
   if (reply.cause === "stale_screen") return true;
+  // A draft that did not empty: the note says it, and the bridge's line only names the step that stopped.
+  if (reply.cause === "not_emptied") return true;
   if (reply.cause === "short_pane") return false;
   if (REPEATS_THE_NOTE.has(reply.reason)) return true;
   // A full hold queue names its count under the sentence; only the plain "still running" repeats it.

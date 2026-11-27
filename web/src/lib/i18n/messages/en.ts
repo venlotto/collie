@@ -686,6 +686,11 @@ export const en = {
   "composer.protocol.unknown": "Collie cannot tell if this was sent. Read the screen, then send again if it did not go. Your draft is kept.",
   "composer.protocol.busy": "Another send to this pane is still running. Send this one again when it ends.",
   "composer.protocol.notFree": "The input box is not free, so nothing was typed. Answer or close what is open there, then send again.",
+  "composer.protocol.notEmptied": "Collie could not empty the draft, so your message was not typed. It is still here. Check the box, then send again.",
+  "composer.detail.probeLeft": "A Collie test character may still be in the box. Check the pane before you type.",
+  "composer.detail.shortPane": "The pane is too short to show the input box. Make it taller on the computer, then send again.",
+  "composer.detail.lateKeys": "The agent showed Collie's test keys late. Wait a moment, then send again.",
+  "composer.detail.multiline": "Send one line at a time, or type the rest with the keys.",
   // A line of the text reads like a view head (`bad_head`): only Collie writes one, from the view itself.
   "composer.protocol.badHead": "A line of this message reads like a message head that only Collie writes. Change that line.",
   "composer.protocol.agentBusy": "The agent is working and does not take a message now. Stop the turn, or send again when it ends.",
