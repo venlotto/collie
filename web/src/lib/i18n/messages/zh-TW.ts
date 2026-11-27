@@ -1894,7 +1894,7 @@ export const zhTW: Dictionary = {
   "dialog.menu.moveDown": "下移",
   "dialog.menu.noticeDraft": "請先清空輸入框：數字會接在框裡的文字後面。",
   "dialog.queuedQuestion.one": "代理向你提了一個問題",
-  "dialog.queuedQuestion.many": "代理向你提了 {n} 個問題",
+  "dialog.queuedQuestion.other": "代理向你提了 {count} 個問題",
   "dialog.queuedQuestion.hint": "點按「回答」查看選項。",
   "dialog.queuedQuestion.answer": "回答",
   "bot.desk.questionWaiting": "有一個問題在等你 · 回答",

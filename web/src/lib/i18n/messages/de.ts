@@ -1931,7 +1931,7 @@ export const de: Dictionary = {
   "dialog.menu.moveDown": "Nach unten",
   "dialog.menu.noticeDraft": "Leere zuerst das Eingabefeld: Eine Ziffer würde an den Text dort angehängt.",
   "dialog.queuedQuestion.one": "Der Agent hat dir eine Frage gestellt",
-  "dialog.queuedQuestion.many": "Der Agent hat dir {n} Fragen gestellt",
+  "dialog.queuedQuestion.other": "Der Agent hat dir {count} Fragen gestellt",
   "dialog.queuedQuestion.hint": "Tippe auf Antworten, um die Optionen zu sehen.",
   "dialog.queuedQuestion.answer": "Antworten",
   "bot.desk.questionWaiting": "Eine Frage wartet auf dich · Antworten",

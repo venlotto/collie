@@ -1802,7 +1802,7 @@ export const tr: Dictionary = {
   "dialog.menu.moveDown": "Aşağı taşı",
   "dialog.menu.noticeDraft": "Önce kutuyu boşaltın: Bir rakam oradaki metne eklenir.",
   "dialog.queuedQuestion.one": "Ajan size bir soru sordu",
-  "dialog.queuedQuestion.many": "Ajan size {n} soru sordu",
+  "dialog.queuedQuestion.other": "Ajan size {count} soru sordu",
   "dialog.queuedQuestion.hint": "Seçenekleri görmek için Yanıtla'ya dokunun.",
   "dialog.queuedQuestion.answer": "Yanıtla",
   "bot.desk.questionWaiting": "Sizi bekleyen bir soru var · Yanıtla",

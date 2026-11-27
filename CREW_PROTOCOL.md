@@ -4853,3 +4853,12 @@ Additive inside protocol version 2 (§7.1). A lead before 1.29.0 sends nothing, 
 1.29.0 answers `404`, which the lead reads as "keeps no copy"; the Hill copy reads the same, on its
 own. A deputy's absent report reads as "holds
 nothing". `CREW_PROTOCOL_VERSION` stays `2`.
+
+### Uploaded attachment display (additive-optional, COL-21)
+
+`GET attachments/<saved-name>` returns `{ name: string, image: boolean }` for a file
+listed in the owning member's uploads folder. `GET attachments/<saved-name>/image`
+streams its sniffed raster bytes. Both are paired reads, have `private, no-store`,
+and accept no filesystem path. Real-path containment still applies after lookup.
+Other methods do not cross the link. An older member answers 404; the phone keeps
+a filename chip. Upload POST and the terminal's path-based message are unchanged.

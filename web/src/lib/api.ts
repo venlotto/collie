@@ -351,9 +351,10 @@ function withScope(path: string, scope?: Scope): string {
  * the bytes and is scoped to nothing.
  */
 const BLOB_REF = /^\/api\/blobs\/[0-9a-f]{64}$/i;
+const ATTACHMENT_IMAGE_REF = /^\/api\/attachments\/[A-Za-z0-9_.-]+-[0-9a-f]{8}\.[a-z0-9]+\/image$/;
 
 export function imageSrc(ref: string, scope?: Scope): string | null {
-  if (BLOB_REF.test(ref)) return withScope(ref, scope);
+  if (ATTACHMENT_IMAGE_REF.test(ref) || BLOB_REF.test(ref)) return withScope(ref, scope);
   return ref.startsWith("data:image/") ? ref : null;
 }
 
@@ -3447,6 +3448,11 @@ export function revokeDevice(label: string): Promise<DevicesResponse> {
     method: "POST",
     body: JSON.stringify({ label }),
   });
+}
+
+/** Display metadata of an upload, scoped to the machine that owns the conversation. */
+export function fetchAttachment(name: string, scope?: Scope, signal?: AbortSignal): Promise<{ name: string; image: boolean }> {
+  return req(withScope(`/api/attachments/${encodeURIComponent(name)}`, scope), { signal });
 }
 
 /**

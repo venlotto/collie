@@ -1807,7 +1807,7 @@ export const it: Dictionary = {
   "dialog.menu.moveDown": "Sposta giù",
   "dialog.menu.noticeDraft": "Svuota prima la casella: una cifra si aggiungerebbe al testo che c'è.",
   "dialog.queuedQuestion.one": "L'agente ti ha fatto una domanda",
-  "dialog.queuedQuestion.many": "L'agente ti ha fatto {n} domande",
+  "dialog.queuedQuestion.other": "L'agente ti ha fatto {count} domande",
   "dialog.queuedQuestion.hint": "Tocca Rispondi per vedere le opzioni.",
   "dialog.queuedQuestion.answer": "Rispondi",
   "bot.desk.questionWaiting": "Una domanda ti aspetta · Rispondi",

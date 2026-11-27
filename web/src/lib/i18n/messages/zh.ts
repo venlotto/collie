@@ -1898,7 +1898,7 @@ export const zh: Dictionary = {
   "dialog.menu.moveDown": "下移",
   "dialog.menu.noticeDraft": "请先清空输入框：数字会接在框里的文字后面。",
   "dialog.queuedQuestion.one": "代理向你提了一个问题",
-  "dialog.queuedQuestion.many": "代理向你提了 {n} 个问题",
+  "dialog.queuedQuestion.other": "代理向你提了 {count} 个问题",
   "dialog.queuedQuestion.hint": "点按“回答”查看选项。",
   "dialog.queuedQuestion.answer": "回答",
   "bot.desk.questionWaiting": "有一个问题在等你 · 回答",

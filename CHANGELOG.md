@@ -112,6 +112,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Replace now empties a long draft and sends your new message.** Codex takes deleted characters more slowly than Collie checked its box, so Replace over a long draft gave up halfway, never typed the new message and said it could not tell whether it arrived. Collie now waits while the box keeps emptying; if it still cannot empty it, it says your message was not typed and offers the draft choices again.
 - **Send notices no longer add an English line in other languages.** The line under a notice is now translated where it adds advice, such as a test character left in the box, and hidden where the notice already says it.
 
+- **Dropped files attach and sent photos stay visible in chat.** Desktop drops share the photo editor and file picker, failed uploads keep an error beside the composer, and sent attachments show a preview or filename instead of a server path.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

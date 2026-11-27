@@ -12,7 +12,7 @@ import {
 } from "@/lib/harness/menu-hints";
 import { OptionGroupCaption, PromptPanel } from "@/components/option-button";
 import { RawMirror } from "@/components/raw-mirror";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 
 /** What a tap asks for: the keys to send, and whether it is a non-committal arrow (which takes the
@@ -134,7 +134,7 @@ export function MenuBlock({ menu, lines, onAction, disabled }: MenuBlockProps) {
         <OptionGroupCaption>{menu.title}</OptionGroupCaption>
       ) : (
         <>
-          <OptionGroupCaption>{queued === 1 ? t("dialog.queuedQuestion.one") : t("dialog.queuedQuestion.many", { n: queued })}</OptionGroupCaption>
+          <OptionGroupCaption>{tn("dialog.queuedQuestion", queued)}</OptionGroupCaption>
           <p data-slot="prompt-question" className="font-content pl-0.5 text-sm leading-snug whitespace-pre-line text-foreground wrap-anywhere">
             {menu.title}
           </p>

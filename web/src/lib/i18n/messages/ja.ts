@@ -1909,7 +1909,7 @@ export const ja: Dictionary = {
   "dialog.menu.moveDown": "下へ移動",
   "dialog.menu.noticeDraft": "先に入力欄を空にしてください。数字は入力中の文字に付け足されます。",
   "dialog.queuedQuestion.one": "エージェントから質問があります",
-  "dialog.queuedQuestion.many": "エージェントから{n}件の質問があります",
+  "dialog.queuedQuestion.other": "エージェントから{count}件の質問があります",
   "dialog.queuedQuestion.hint": "「回答」をタップすると選択肢が表示されます。",
   "dialog.queuedQuestion.answer": "回答",
   "bot.desk.questionWaiting": "質問が待っています · 回答",

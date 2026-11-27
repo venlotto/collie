@@ -1805,7 +1805,7 @@ export const fr: Dictionary = {
   "dialog.menu.moveDown": "Descendre",
   "dialog.menu.noticeDraft": "Videz d'abord la zone : un chiffre s'ajouterait au texte qui s'y trouve.",
   "dialog.queuedQuestion.one": "L'agent vous a posé une question",
-  "dialog.queuedQuestion.many": "L'agent vous a posé {n} questions",
+  "dialog.queuedQuestion.other": "L'agent vous a posé {count} questions",
   "dialog.queuedQuestion.hint": "Touchez Répondre pour voir les options.",
   "dialog.queuedQuestion.answer": "Répondre",
   "bot.desk.questionWaiting": "Une question vous attend · Répondre",

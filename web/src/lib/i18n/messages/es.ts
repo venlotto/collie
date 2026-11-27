@@ -1930,7 +1930,7 @@ export const es: Dictionary = {
   "dialog.menu.moveDown": "Bajar",
   "dialog.menu.noticeDraft": "Vacía primero la caja: un dígito se sumaría al texto que hay.",
   "dialog.queuedQuestion.one": "El agente te hizo una pregunta",
-  "dialog.queuedQuestion.many": "El agente te hizo {n} preguntas",
+  "dialog.queuedQuestion.other": "El agente te hizo {count} preguntas",
   "dialog.queuedQuestion.hint": "Toca Responder para ver las opciones.",
   "dialog.queuedQuestion.answer": "Responder",
   "bot.desk.questionWaiting": "Te espera una pregunta · Responder",
