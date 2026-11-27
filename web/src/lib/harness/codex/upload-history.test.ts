@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { StyledLine } from "@/lib/blocks";
+import { parseAnsi } from "@/lib/ansi";
+import { lineText, splitLines, type Block, type StyledLine } from "@/lib/blocks";
+import { buildBlocks } from "@/lib/harness";
 import { liftCodexUploadEchoes } from "./upload-history";
 
 const id = "term.abc.mwz50y8g-12345678.png";
 const path = `/home/ubuntu/.local/state/collie/uploads/${id}`;
+const liveId = "term.8e157ec6c195a5165416515fd82dacb5e24cfaf307dfdc58008fd9fb0082dde2.mwzcmgas-ff7603b9.png";
 function raw(text: string) {
   return { kind: "raw" as const,
     lines: text.split("\n").map((row) => ({ segments: [{ text: row, style: {}, muted: false }] } satisfies StyledLine)) };
@@ -30,12 +34,43 @@ describe("liftCodexUploadEchoes", () => {
     for (const text of [
       "› 1. /home/ubuntu/project/photo.png",
       `› /home/ubuntu/project/uploads/not-minted.png`,
+      "› /home/ubuntu/project/uploads/   \n  not-minted.png  \n  sigue siendo prosa",
       path,
       `$ ls ${path}`,
     ]) {
       const blocks = [raw(text)];
       expect(liftCodexUploadEchoes(blocks)).toBe(blocks);
     }
+  });
+
+  it("lifts the real padded input-well capture through the terminal pipeline", () => {
+    const capture = readFileSync(new URL("../../../fixtures/panes/codex--upload-history-padded-well.txt", import.meta.url), "utf8");
+    const blocks = buildBlocks(splitLines(parseAnsi(capture)), { agent: "codex" });
+    const rawBlocks = blocks.filter((block): block is Extract<Block, { kind: "raw" }> => block.kind === "raw");
+    const parts = liftCodexUploadEchoes(rawBlocks);
+
+    expect(parts.filter((part) => part.kind === "user-upload")).toEqual([
+      { kind: "user-upload", text: `/uploads/${liveId} COL-21: responde OK y para.` },
+    ]);
+    const rawText = parts.flatMap((part) => part.kind === "raw" ? part.lines.map(lineText) : []).join("\n");
+    expect(rawText).toContain("• OK");
+    expect(rawText).toContain("⚠ weekly limit: 18% left");
+    expect(rawText).not.toContain("/home/ubuntu/.local/state/collie/uploads/");
+
+    const composer = [raw("› Ask Codex to do anything")];
+    expect(liftCodexUploadEchoes(composer)).toBe(composer);
+  });
+
+  it("trims padding and continuation indentation in a synthetic wrapped id", () => {
+    const wrapped = [
+      "› /home/ubuntu/.local/state/collie/uploads/           ",
+      "  term.8e157ec6c195a5165416515fd82dacb5e24cfaf307dfdc ",
+      "  58008fd9fb0082dde2.mwzcmgas-ff7603b9.png COL-21:    ",
+      "  responde OK y para.                                 ",
+    ].join("\n");
+    expect(liftCodexUploadEchoes([raw(wrapped)])).toEqual([
+      { kind: "user-upload", text: `/uploads/${liveId} COL-21: responde OK y para.` },
+    ]);
   });
 
   it("keeps an unmarked reply out of the following upload turn", () => {
