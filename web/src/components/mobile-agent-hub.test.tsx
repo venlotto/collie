@@ -5,6 +5,7 @@ import { wipeDevice } from "@/lib/wipe";
 import { vi } from "vitest";
 import { fixtureAgents, fixtureShellPanes, fixtureWorkspaces } from "@/test/handlers";
 import { MobileAgentHub } from "./mobile-agent-hub";
+import { setLocale } from "@/lib/i18n";
 
 const props = {
   panes: [...fixtureAgents, ...fixtureShellPanes], workspaces: fixtureWorkspaces,
@@ -13,6 +14,21 @@ const props = {
 };
 beforeEach(() => server.use(http.get("/api/chat-order", () => HttpResponse.json([]))));
 afterEach(async () => { cleanup(); await wipeDevice("unpair"); });
+
+it("shows minutes for chats and workspaces, then pending cleanup once the deadline passes", () => {
+  setLocale("en");
+  const now = Date.now();
+  const pane = fixtureAgents[0]!;
+  const panes = [
+    { ...pane, paneId: "trash-chat", terminalId: "trash-chat", trash: { trashedAt: now - 2 * 60_000, originalWorkspaceId: pane.workspaceId } },
+    { ...pane, paneId: "trash-space", terminalId: "trash-space", trash: { trashedAt: now - 9 * 60_000, originalWorkspaceId: "removed-space", workspaceLabel: "Removed workspace" } },
+    { ...pane, paneId: "trash-expired", terminalId: "trash-expired", trash: { trashedAt: now - 15 * 60_000, originalWorkspaceId: pane.workspaceId } },
+  ];
+  render(<MobileAgentHub {...props} panes={panes} />);
+  expect(screen.getByText("Deletes in 13 min")).toBeInTheDocument();
+  expect(screen.getByText(/Deletes in 6 min/)).toBeInTheDocument();
+  expect(screen.getByText("Pending deletion")).toBeInTheDocument();
+});
 
 it("folds one workspace and searches across folded sections", () => {
   const { container, unmount } = render(<MobileAgentHub {...props} />);

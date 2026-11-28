@@ -1,3 +1,4 @@
+import { trashMinutesRemaining } from "@/lib/trash-retention";
 import { t } from "@/lib/i18n";
 import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -287,7 +288,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     const status = p.trash ? "idle" : activityStatusOf(p);
     const current = !!active && paneRowKey(active) === paneRowKey(p);
     const matching = mode === (p.trash ? "trash" : "chats");
-    const days = p.trash && Math.max(0, Math.ceil(7 - (Date.now() - p.trash.trashedAt) / 86_400_000));
+    const minutes = p.trash && trashMinutesRemaining(p.trash.trashedAt);
     return <li key={paneRowKey(p)} data-drag-pane={!p.trash && selectable(p) && p.terminalId ? chatOrderId(p) : undefined}><BotRow current={current}
       checked={mode ? matching && (covered(p) || selection.has(rowId(p))) : undefined}
       disabled={busy || (!!mode && (!selectable(p) || !matching || covered(p)))}
@@ -298,7 +299,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       <BotActivityAvatar bot={bot} status={status} />
       <span className="bot-copy">
         <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
-        {days !== undefined ? <span className="bot-line">Se elimina en {days} {days === 1 ? "día" : "días"}</span> :
+        {minutes !== undefined ? <span className="bot-line">{minutes ? t("bot.trash.remaining", { minutes }) : t("bot.trash.pending")}</span> :
           <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} status={status} label={activityLabel(status)} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
       </span>
     </BotRow></li>;
@@ -342,7 +343,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           {(!folded.has("trash") || !!needle) && <ul>{trashedSpaces.map(space =>
             <li className="bot-trashed-workspace" key={sectionKey(space.scope, space.id)}>
               <FolderInput size={22} aria-hidden /><span><strong>{space.title}</strong>
-                <small>{space.count} {space.count === 1 ? "chat" : "chats"} · Se elimina en {Math.max(0, Math.ceil(7 - (Date.now() - space.at) / 86_400_000))} días</small></span>
+                <small>{space.count} {space.count === 1 ? "chat" : "chats"} · {trashMinutesRemaining(space.at) ? t("bot.trash.remaining", { minutes: trashMinutesRemaining(space.at) }) : t("bot.trash.pending")}</small></span>
               <button disabled={!writable || busy || !!mode || !!space.scope.host} onClick={() => void recover(space)}>Restaurar workspace</button>
             </li>)}{trashRows.map(row)}</ul>}
         </section>}
