@@ -88,3 +88,20 @@ it("right-click selects only the chosen external bot without a terminal", async 
   await waitFor(() => expect(writes).toEqual([{ action: "trash", runId: "run0" }]));
   expect(props.onOpen).not.toHaveBeenCalled();
 });
+
+it("swiping an external bot sends only that bot to Trash and refreshes the list", async () => {
+  const writes: unknown[] = [];
+  server.use(http.post("/api/bot-action", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ ok: true }); }));
+  const external = Object.assign({}, panes[0]!, { paneLabel: "Externo", paneId: "agent-run:external", terminalId: undefined,
+    agentRun: { id: "external", rootId: "external", status: "done" as const, start: 1, end: 2 } });
+  const page = render(<MobileAgentHub {...props} panes={[external, panes[1]!]} />);
+  const row = page.getByRole("button", { name: /^Externo/ });
+  const finger = { button: 0, pointerId: 1, pointerType: "touch", isPrimary: true, clientX: 20, clientY: 50 };
+  fireEvent.pointerDown(row, finger);
+  fireEvent.pointerMove(row, { ...finger, clientX: 150 });
+  fireEvent.pointerUp(row, { ...finger, clientX: 150 });
+  fireEvent.click(row, { detail: 1 });
+  await waitFor(() => expect(writes).toEqual([{ action: "trash", runId: "external" }]));
+  expect(props.onChanged).toHaveBeenCalledOnce();
+  expect(props.onOpen).not.toHaveBeenCalled();
+});

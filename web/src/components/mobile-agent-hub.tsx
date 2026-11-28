@@ -240,13 +240,16 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     setLeaving(false);
     setError("");
   }
-  async function apply(action: BotAction, workspaceId?: string) {
-    if (!writable || lock.current || leaving || !chosenCount || (chosenWorkspaces.length > 0 && action !== "trash")) return;
+  async function apply(action: BotAction, workspaceId?: string, swiped?: AgentView) {
+    if (swiped && (mode || swiped.trash || !selectable(swiped))) return;
+    const targets = swiped ? [swiped] : chosen;
+    const targetWorkspaces = swiped ? [] : chosenWorkspaces;
+    if (!writable || lock.current || leaving || !(targets.length + targetWorkspaces.length) || (targetWorkspaces.length > 0 && action !== "trash")) return;
     lock.current = true;
     setBusy(true);
     setError("");
     try {
-      for (const space of chosenWorkspaces) {
+      for (const space of targetWorkspaces) {
         const result = await trashWorkspace(space.scope, space.id);
         if (!result.ok) throw new Error(result.error);
         const key = sectionKey(space.scope, space.id);
@@ -255,7 +258,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         setWorkspaceSelection(prev => { const next = new Set(prev); next.delete(key); return next; });
         setSelection(prev => { const next = new Set(prev); for (const p of members) next.delete(rowId(p)); return next; });
       }
-      for (const p of chosen) {
+      for (const p of targets) {
         const scope = scopeOf(p);
         const portrait = identityOf(p, scope);
         const result = await actOnBot(action, p, scope, workspaceId);
@@ -289,6 +292,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       checked={mode ? matching && (covered(p) || selection.has(rowId(p))) : undefined}
       disabled={busy || (!!mode && (!selectable(p) || !matching || covered(p)))}
       onHold={selectable(p) ? () => select(p, true) : undefined}
+      onSwipeRight={!mode && !p.trash && selectable(p) ? () => { void apply("trash", undefined, p); } : undefined}
       onPress={() => { if (!mode && !p.trash) onPress(p); }}
       onOpen={() => { if (mode || p.trash) select(p, false); else onOpen(p); }}>
       <BotActivityAvatar bot={bot} status={status} />

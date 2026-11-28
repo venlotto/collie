@@ -129,6 +129,10 @@ export function useBotDrag(listRef: RefObject<HTMLDivElement | null>, enabled: b
       clientX = x;
       clientY = y;
       if (ghost || Math.hypot(x - pending.x, y - pending.y) < SLOP) return;
+      // A rightward touch belongs to the row's trash gesture, even after the drag arm delay.
+      if (pending.touch && pending.node.dataset.swipeable && x - pending.x > SLOP && x - pending.x > Math.abs(y - pending.y) * 1.5) {
+        clear(); return;
+      }
       const elapsed = performance.now() - pending.start;
       if (elapsed >= HOLD || (pending.touch && elapsed < ARM_TOUCH)) { clear(); return; }
       window.clearTimeout(timer);

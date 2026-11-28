@@ -458,3 +458,13 @@
     grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; white-space: normal;
   }
 }
+
+/* The row stays in normal layout; the revealed action never intercepts a touch. */
+.bot-swipe { position: relative; overflow: hidden; border-radius: 14px; }
+.bot-swipe-hint { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; padding-left: 22px; background: #9c3038; color: white; font-size: 12px; font-weight: 600; opacity: 0; pointer-events: none; }
+.bot-swipe:has([data-swiping]) > .bot-swipe-hint { opacity: 1; }
+.bot-swipe:has([data-swipe-ready]) > .bot-swipe-hint { background: #c53643; }
+.bot-index .bot-row[data-swiping] { position: relative; background: #18181b; transform: translateX(var(--bot-swipe-x, 0px)); transition: none; }
+.bot-swipe { transform: var(--drag-shift, none); transition: transform 170ms ease-out; }
+.bot-swipe > .bot-row { --drag-shift: none; }
+@media (prefers-reduced-motion: reduce) { .bot-swipe { transition: none; } }

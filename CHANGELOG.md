@@ -51,6 +51,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Answer several Codex questions, or write your own answer, from Messages.** When Codex asks more than one question at once, the card lists them and opens them one after another, each with its own options. Where Codex offers "Other", the card has a field for your own words: Collie picks Other, types them and sends them, and never types over words already in that field.
 - **Open chats offer deletion and workspace assignment from their menu.** Move a bot to another workspace or send it to Trash for seven days without selecting it in the chat list first.
 
+- **Swipe a bot right to send it to Trash.** Release after a full swipe to delete a chat, including background bots created by another agent. Short swipes and vertical scrolling leave the chat in place, and Trash keeps it recoverable.
+
 ### Changed
 
 - **Chat controls float over the conversation in dark glass.** Headers, search, reply controls and action sheets share a translucent surface. Reducing transparency gives them an opaque background.
