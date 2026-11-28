@@ -150,6 +150,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Working agents no longer have a circular outline.** Their avatars stay still in the chat list and header while the working status remains visible.
 
 - **Bots created by other agents can enter the Trash.** Right-click or hold a background bot to delete it, restore it within seven days, or delete it permanently, even when it has no terminal.
+- **Live activity has one status and closes from below.** The activity heading shows its step count while the working indicator stays at the end of the chat. Collapse is also available below the expanded detail, without scrolling back to its heading.
+
 
 ## [1.31.0] - 2026-11-24
 

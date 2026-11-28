@@ -53,7 +53,11 @@ for (const harness of ["claude", "codex"] as const) {
     await expect(page.locator(".bot-activity-detail")).toContainText("wc -l noviembre.csv");
     await expect(page.getByText("Revisar las fechas", { exact: true })).toBeVisible();
     if (harness === "claude") await shot(page, "pasos");
-    await steps.click();
+    const collapse = page.locator(".bot-activity").getByRole("button", { name: "Contraer", exact: true });
+    await collapse.scrollIntoViewIfNeeded();
+    await expect(collapse).toBeInViewport();
+    expect((await collapse.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await collapse.click();
     await expect(page.locator(".bot-activity-detail")).toHaveCount(0);
   });
 }
@@ -71,8 +75,9 @@ test("only the latest turn is working and the screen is reached through the menu
   const latest = journal("codex-attention").slice(0, 2);
   await openThread(page, "codex", [...journal("codex"), ...latest], "working");
   await expect(page.getByRole("button", { name: "8 pasos", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sigue trabajando…" })).toHaveAttribute("aria-expanded", "false");
-  await expect(page.locator('[data-slot="stream-live"]')).toHaveCount(0);
+  await expect(page.locator(".bot-activity").last().getByRole("button")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByText("Sigue trabajando…", { exact: true })).toHaveCount(1);
+  await expect(page.locator('[data-slot="stream-live"]')).toHaveCount(1);
   await page.getByRole("button", { name: "Opciones del chat" }).click();
   await page.getByRole("radio", { name: "Terminal", exact: true }).click();
   await page.keyboard.press("Escape");

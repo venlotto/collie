@@ -1235,7 +1235,7 @@ export function SessionStream({
           >
             {!botStyle && opensRun && <AgentHead agent={agent} ts={first.ts} />}
             {botKind === "activity" ? (
-              <BotActivity items={group} working={group === activeSteps} />
+              <BotActivity items={group} />
             ) : drawn ? (
               <ItemView item={first} simpleUser={botStyle} />
             ) : (

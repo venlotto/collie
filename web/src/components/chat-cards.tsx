@@ -33,7 +33,7 @@
 // harness's own name are the agent's words or the machine's, and they go through as they arrived.
 
 import { UserMessageText } from "./user-message-text";
-import { createContext, memo, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, memo, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { DiffView, TokenLine, useSyntaxTokens } from "@/components/changes-view";
 import { JournalImage } from "@/components/journal-image";
@@ -754,19 +754,31 @@ export function Disclosure({
   label,
   icon,
   children,
+  collapseLabel,
 }: {
   label: ReactNode;
   icon: IconKey;
   children: () => ReactNode;
+  collapseLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
   return (
     <div className="flex flex-col">
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={cn(FOLD_ROW, "justify-start px-0")}>
+      <button ref={trigger} type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={cn(FOLD_ROW, "justify-start px-0")}>
         <Icon name={icon} className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-90")} />
         {label}
       </button>
       {open && children()}
+      {open && collapseLabel && (
+        <button type="button" aria-expanded={open} onClick={() => {
+          setOpen(false);
+          trigger.current?.focus({ preventScroll: true });
+        }} className={cn(FOLD_ROW, "justify-start px-0")}>
+          <Icon name="disclosure" className="size-3.5 shrink-0 -rotate-90" />
+          {collapseLabel}
+        </button>
+      )}
     </div>
   );
 }

@@ -51,10 +51,10 @@ export function groupBotTurns(turns: { user: boolean; items: ChatItem[] }[], wor
   return { blocks, latestActivity };
 }
 
-export function BotActivity({ items, working }: { items: ChatItem[]; working: boolean }) {
+export function BotActivity({ items }: { items: ChatItem[] }) {
   useLocale();
   return (
-    <Disclosure icon="disclosure" label={working ? t("chat.stream.working") : tn("chat.run.steps", items.length)}>
+    <Disclosure icon="disclosure" label={tn("chat.run.steps", items.length)} collapseLabel={t("composer.collapse")}>
       {() => <div className="bot-activity-detail">{items.map(item =>
         item.kind === "thinking"
           ? <MarkdownText key={item.id} text={item.text} className="italic text-muted-foreground" />

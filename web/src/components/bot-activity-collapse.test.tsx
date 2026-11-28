@@ -21,15 +21,18 @@ it("folds live prose with steps, then keeps the finished answer outside", () => 
 });
 
 it("starts closed and preserves the reader's choice across incoming steps and completion", () => {
-  const view = render(<BotActivity items={[progress]} working />);
+  const view = render(<BotActivity items={[progress]} />);
   expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByText(progress.text)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button"));
   expect(screen.getByText(progress.text)).toBeVisible();
-  view.rerender(<BotActivity items={[progress, reply("next", "Running checks")]} working />);
+  view.rerender(<BotActivity items={[progress, reply("next", "Running checks")]} />);
   expect(screen.getByText("Running checks")).toBeVisible();
-  fireEvent.click(screen.getByRole("button"));
-  view.rerender(<BotActivity items={[progress, reply("next", "Checks complete")]} working={false} />);
+  const collapse = screen.getByRole("button", { name: "Collapse" });
+  expect(screen.getByText("Running checks").compareDocumentPosition(collapse) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fireEvent.click(collapse);
+  expect(screen.getByRole("button")).toHaveFocus();
+  view.rerender(<BotActivity items={[progress, reply("next", "Checks complete")]} />);
   expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByText("Checks complete")).not.toBeInTheDocument();
 });

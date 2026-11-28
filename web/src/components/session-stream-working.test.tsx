@@ -39,7 +39,8 @@ describe("the bot chat's working status", () => {
   it("keeps a live status after a progress message and later grouped steps until the turn ends", () => {
     const { rerender, ...view } = render(stream(true));
     expect(view.queryByText("I found the cause and am fixing it.")).not.toBeInTheDocument();
-    fireEvent.click(view.getByRole("button", { name: "Still working…" }));
+    expect(view.getAllByText("Still working…")).toHaveLength(1);
+    fireEvent.click(view.getByRole("button", { name: "2 steps" }));
     const progress = view.getByText("I found the cause and am fixing it.");
     const status = view.getByRole("status", { name: "Still working…" });
     expect(status).toHaveTextContent("Still working…");
