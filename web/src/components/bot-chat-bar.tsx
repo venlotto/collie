@@ -9,7 +9,6 @@ import { activityStatusOf } from "@/lib/activity-status";
 import type { AgentView } from "@/lib/types";
 import type { BotIdentity } from "./bot-identity";
 import { BotActivityPill } from "./bot-activity-avatar";
-import { BotViewControl } from "./bot-view-control";
 import type { PaneView } from "@/lib/pane-view";
 import { useDeskControls } from "./bot-desk-controls";
 import { BotChatActionSheet, type BotChatActions } from "./bot-chat-actions";
@@ -37,7 +36,8 @@ export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, t
     <div ref={placement.popup} id={menu} className="bot-popup" popover="auto">
       {edit && <button popoverTarget={menu} popoverTargetAction="hide" onClick={edit}>{t("bot.edit.title")}</button>}
       <button popoverTarget={menu} popoverTargetAction="hide" onClick={pin}>{t(pinned ? "bot.chat.unpin" : "bot.chat.pin")}</button>
-      {view !== undefined && onViewChange ? <BotViewControl value={view} onChange={onViewChange} /> :
+      {view !== undefined && onViewChange ? <button popoverTarget={menu} popoverTargetAction="hide"
+        onClick={() => onViewChange(view === "chat" ? "terminal" : "chat")}>{t(view === "chat" ? "bot.chat.viewTerminal" : "bot.chat.viewConversation")}</button> :
         toggleView && <button popoverTarget={menu} popoverTargetAction="hide" onClick={toggleView}>{t(terminal ? "bot.chat.viewConversation" : "bot.chat.viewTerminal")}</button>}
       {manageable && <>
         <button popoverTarget={menu} popoverTargetAction="hide" disabled={!actions.writable} onClick={() => setAction("move")}>{t("bot.chatActions.move")}</button>

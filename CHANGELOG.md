@@ -186,6 +186,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Each desktop chat opens its menu beside its own button.** Menus stay inside their chat window as the desk resizes, and destructive chat actions use red text.
 
+- **Chat menus switch between messages and terminal in one row.** Clicking the view action changes the body and closes the menu, keeping it as compact as the other actions.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

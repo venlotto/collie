@@ -20,7 +20,6 @@ import { branchOffOffered } from "@/lib/branch-off";
 import { setStatus } from "@/lib/status";
 import { stampTopology } from "@/lib/poll-intent";
 import { CrossfadeText } from "@/components/ui/crossfade-text";
-import { BotViewControl } from "@/components/bot-view-control";
 import { paneRowKey } from "@/lib/hosts";
 import { paneName } from "@/lib/pane-name";
 import { dropPin, pinMatcher, setPinned, usePins } from "@/lib/pins";
@@ -539,7 +538,14 @@ export function PaneActionsSheet({
               Close-then-act, for the reason the find row states. The label names WHERE IT TAKES
               YOU, the way every row above it does. */}
           {paneView !== undefined && onPaneViewChange && (botView ? (
-            <BotViewControl value={paneView} onChange={onPaneViewChange} />
+            <ActionRow
+              icon={<Icon name={paneView === "chat" ? "view-terminal" : "view-chat"} className={ROW_ICON} />}
+              label={t(paneView === "chat" ? "bot.chat.viewTerminal" : "bot.chat.viewConversation")}
+              onClick={() => {
+                onClose();
+                onPaneViewChange(paneView === "chat" ? "terminal" : "chat");
+              }}
+            />
           ) : (
             <ActionRow
               icon={

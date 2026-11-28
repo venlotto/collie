@@ -3,7 +3,7 @@ import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import type { PaneView } from "@/lib/pane-view";
 
-/** The per-bot body setting, shared by the ⋮ sheet and Display settings. */
+/** The per-bot body setting in Display settings; chat menus use a compact view action. */
 export function BotViewControl({ value, onChange }: { value: PaneView; onChange: (view: PaneView) => void }) {
   useLocale();
   return (
