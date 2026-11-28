@@ -52,9 +52,9 @@ const rowAt = (raw: readonly string[], start: string): number => {
 };
 
 describe("a status row that wrapped under the Codex box (#838)", () => {
-  it("is set in the Codex profile only, to one row", () => {
+  it("is set in the Codex profile only, to two continuation rows", () => {
     const setting = [...loadProfiles().values()].filter((profile) => profile.idle.frame.bottomWraps !== undefined).map((profile) => [profile.id, profile.idle.frame.bottomWraps]);
-    expect(setting).toEqual([["codex", 1]]);
+    expect(setting).toEqual([["codex", 2]]);
   });
 
   it("without the field no box is found on any of the four screens: the cause of #838", () => {

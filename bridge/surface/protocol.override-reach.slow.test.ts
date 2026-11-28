@@ -63,7 +63,9 @@ describe("2. the harm cases: an override never answers a question (M102 spec 12)
         else passed++;
       }
       expect(wrong).toEqual([]);
-      expect({ passed, guarded }).toEqual({ passed: 266, guarded: 456 });
+      expect(passed).toBe(266);
+      // New dialog captures must join the guarded cohort; none may gain a blind override.
+      expect(passed + guarded).toBe(dialogs.length);
     }, WALK_TIMEOUT_MS);
   }
 });
