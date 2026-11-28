@@ -266,7 +266,7 @@ test("workspace holds suppress text selection, tolerate thumb jitter and recover
   await header.dispatchEvent("pointermove", { ...touch, clientX: p.x + 12, buttons: 1 });
   await expect(page.getByRole("dialog", { name: "Ideas", exact: true })).toBeVisible();
   const remove = page.getByRole("button", { name: "Eliminar workspace", exact: true });
-  expect(await remove.evaluate(el => getComputedStyle(el).userSelect)).toBe("none");
+  expect(await remove.evaluate(el => (getComputedStyle(el).getPropertyValue("-webkit-user-select") || getComputedStyle(el).userSelect))).toBe("none");
   // Model the residual native range from the reported phone: it spans the page and the newly
   // opened dialog. A range can predate the CSS rule or be extended by the browser's selection UI.
   await page.evaluate(() => window.getSelection()!.selectAllChildren(document.body));
@@ -283,7 +283,7 @@ test("workspace holds suppress text selection, tolerate thumb jitter and recover
   await expect(page.getByRole("dialog", { name: "Ideas", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Renombrar", exact: true }).click();
   const name = page.getByRole("textbox", { name: "Nombre del workspace" });
-  expect(await name.evaluate((el: HTMLInputElement) => ({ select: getComputedStyle(el).userSelect, start: el.selectionStart, end: el.selectionEnd })))
+  expect(await name.evaluate((el: HTMLInputElement) => ({ select: getComputedStyle(el).getPropertyValue("-webkit-user-select") || getComputedStyle(el).userSelect, start: el.selectionStart, end: el.selectionEnd })))
     .toEqual({ select: "text", start: 0, end: 5 });
 });
 
