@@ -9,15 +9,15 @@ const ASK: Surface = { revision: 0, turn: "unknown", composer: "unknown", modal:
 describe("the first screen the bridge read", () => {
   it("reads a wrapper that runs the launched harness as that harness (kimi and glm run Claude Code)", () => {
     expect(firstScreenRead("claude", "kimi", FREE)).toBe(true);
-    expect(firstScreenRead("claude", "glm", ASK)).toBe(true);
+    expect(firstScreenRead("claude", "glm", FREE)).toBe(true);
     expect(firstScreenRead("claude", "kimi", { ...FREE, reason: "no-match" })).toBe(false);
     expect(firstScreenRead("codex", "kimi", FREE)).toBe(false);
   });
-  it("is a dialog or an input box of the launched harness, at any revision", () => {
-    expect(firstScreenRead("kiro", "kiro", ASK)).toBe(true);
+  it("waits through startup dialogs until the launched harness shows its input box", () => {
+    expect(firstScreenRead("kiro", "kiro", ASK)).toBe(false);
     expect(firstScreenRead("kiro", "kiro", FREE)).toBe(true);
     expect(firstScreenRead("kiro", "kiro", { ...FREE, composer: "draft" })).toBe(true);
-    expect(firstScreenRead("kiro", "kiro", { revision: 1, turn: "unknown", modal: "unreadable", composer: "unknown" })).toBe(true);
+    expect(firstScreenRead("kiro", "kiro", { revision: 1, turn: "unknown", modal: "unreadable", composer: "unknown" })).toBe(false);
   });
   it("is never a shell row, another agent, or a pane with no read", () => {
     expect(firstScreenRead("kiro", "shell", FREE)).toBe(false);

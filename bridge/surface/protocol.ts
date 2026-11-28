@@ -3134,6 +3134,8 @@ export function locateText(plain: readonly string[], text: string, partial = fal
 // ── The run ──────────────────────────────────────────────────────────────────────────────────────
 
 interface RunState {
+  /** Slow startup multiplexers need enough time to observe the probe and its cleanup. */
+  readMs?: number;
   readonly request: SendRequest;
   /** The person overrode a stop: the phone's commit passed the manual gate (M102 spec 01). Set in `gateManual` only. */
   overrode: boolean;
@@ -4015,7 +4017,8 @@ export class SendProtocol {
     if (isSecretSend(state)) return false;
     const clean = cleanProbe(state, end);
     // A draft proven live by its probe (2026-10-25) left the box as it was: it holds like an unprobed one did.
-    if (state.keys.length > 0 && !clean && !(end.reason === "draft_present" && (probeOnly(state) || state.placeholderProbe !== null))) return false;
+    const startupProbe = state.startWait === true && end.reason === "probe_failed" && (probeOnly(state) || (state.keys.length === 1 && state.keys[0] === "probe"));
+    if (state.keys.length > 0 && !clean && !startupProbe && !(end.reason === "draft_present" && (probeOnly(state) || state.placeholderProbe !== null))) return false;
     if (!HOLDABLE.has(state.request.mode) || state.neverHold === true) return false;
     if (end.reason === "turn_running") return true;
     if (state.manual || state.match === null) return false;
@@ -4297,7 +4300,7 @@ export class SendProtocol {
       // draft. A cause written at hold time goes stale (a /plan held for a turn showed `turn_running` on an
       // idle pane whose box held a returned draft, omp gang tester 14, 2026-10-25).
       const cause = surface === undefined ? null : causeOf(surface);
-      if (cause !== null) for (const entry of entries) if (entry.state === "held" && entry.cause !== cause) holds.setCause(entry.id, cause);
+      if (cause !== null) for (const entry of entries) if (entry.state === "held" && entry.cause !== "starting" && entry.cause !== cause) holds.setCause(entry.id, cause);
       const free = surface !== undefined && isFree(surface) && !unseen;
       // A free read clears a draft cause on a request no draft holds (live check W3): only a marked send is
       // held over a draft, and its own rule reads that cause.
@@ -4334,16 +4337,20 @@ export class SendProtocol {
       // text at least DRAFT_LEFT_MS apart (nobody is typing), the request goes, and its run probes the box
       // once: the placeholder sends it, a draft puts it back. The same text is never probed twice after a
       // proven draft, and only after PLACEHOLDER_RETRY_MS after a failed probe.
+      // A startup poll may paint the known placeholder as a draft. Release only to the normal
+      // probe proof (never submit on this label); a real draft still refuses and keeps the text.
+      const startupPlaceholder = next.cause === "starting" && profile?.probe.readyRows !== undefined && box !== null &&
+        (profile.idle.placeholders.patterns ?? []).some((source) => new RegExp(source, "u").test(box));
       const plainDraft =
-        next.draftHolds === true &&
-        holds.get(next.id)?.cause === "draft_present" &&
+        (next.draftHolds === true || startupPlaceholder) &&
+        (holds.get(next.id)?.cause === "draft_present" || startupPlaceholder) &&
         surface !== undefined &&
         surface.turn === "idle" &&
         surface.modal === "none" &&
         surface.composer === "draft" &&
         box !== null &&
         box !== "" &&
-        ((profile?.idle.placeholders.anyText === true && unstyledOf?.(paneId) === true) || profile?.idle.placeholders.anyStyle === true)
+        (startupPlaceholder || (profile?.idle.placeholders.anyText === true && unstyledOf?.(paneId) === true) || profile?.idle.placeholders.anyStyle === true)
           ? box
           : null;
       if (plainDraft === null) watch.plainDraft = null;
@@ -4877,7 +4884,17 @@ export class SendProtocol {
     } catch (thrown) {
       if (!(thrown instanceof Ended)) throw thrown;
       // A WalkyTalky message left typed takes its own text out of the box again (takeMailBack).
-      const err = thrown.outcome === "typed_not_submitted" && state.request.draftHolds === true ? await this.takeMailBack(state, thrown) : thrown;
+      let err = thrown.outcome === "typed_not_submitted" && state.request.draftHolds === true ? await this.takeMailBack(state, thrown) : thrown;
+      // Startup screen reads can time out while the process is painting its header. No key went
+      // out, so keep the original startup deadline instead of spending the queue's retry count.
+      if (state.starting && state.keys.length === 0 && err.reason === "bound" && (err.outcome === "refused" || state.phase === "s0")) {
+        state.startWait = true;
+        err = new Ended("refused", "probe_failed", { detail: notStartedDetail(match), cause: "starting" });
+      }
+      // A stale placeholder or delayed cleanup is still only a startup probe, not the message.
+      // Keep the first request too; pending markers and residue cleanup gate its next attempt.
+      if (state.starting && match?.profile.probe.readyRows !== undefined && err.reason === "probe_failed" &&
+          (state.keys.length === 0 || probeOnly(state) || (state.keys.length === 1 && state.keys[0] === "probe"))) state.startWait = true;
       // A released send that met a box still starting waits for it, whatever its probe left: the
       // character is counted as pending, and the hold goes once the box shows it (tickHolds).
       if (release && err.outcome === "refused" && state.startWait === true) return this.backToQueue(state, err);
@@ -5067,9 +5084,8 @@ export class SendProtocol {
    * starting pane; never throws.
    */
   private notePending(state: RunState): void {
-    if (!state.starting) return;
-    this.noteDeaf(state);
-    if (state.released === true) state.startWait = true;
+    if (!state.starting && state.match?.profile.probe.readyRows === undefined) return;
+    if (this.noteDeaf(state) && (state.released === true || state.match?.profile.probe.readyRows !== undefined)) state.startWait = true;
   }
 
   /** The probe characters pending on the run's pane ({@link SendDeps.pending}). A throw reads as 0. */
@@ -5437,10 +5453,12 @@ export class SendProtocol {
     // if a probe had proven them, so the text Collie types that starts it compares without its rest.
     this.knownSuggestion(state, s0);
     // The launch window: a harness is starting in the pane, and its box is not on screen yet. No probe
-    // either, for the probe would be typed into the shell. A dialog the pane's own profile lifts is the
-    // harness up and asking: it keeps its own path. A box on screen is not yet a box that reads keys
+    // either, for the probe would be typed into the shell. Startup dialogs hold text while their
+    // own cards take answers. A box on screen is not yet a box that reads keys
     // (omp draws its box long before it reads one): the window ends once the probe shows in it.
-    if (state.starting && s0.frame === null && (!state.startingNamed || askOf(s0.surface.modal) === null)) {
+    const readyRows = match?.profile.probe.readyRows;
+    const editorReady = readyRows === undefined || readyRows.some((source) => s0.texts.some((row) => new RegExp(source, "u").test(row)));
+    if (state.starting && ((s0.frame === null && (!state.startingNamed || askOf(s0.surface.modal) === null || readyRows !== undefined)) || !editorReady)) {
       // A plain send waits on disk for the first box; commands stay refusals (holdsEnd). No key may reach the shell.
       state.startWait = true;
       throw new Ended("refused", "probe_failed", { surface: s0.surface, framed: false, detail: notStartedDetail(match), cause: "starting" });
@@ -5454,7 +5472,7 @@ export class SendProtocol {
     // earlier send typed into a starting box has not shown, a request that would type into the box
     // types no probe of its own. Once it shows, the residue rule below takes it out first.
     if (writes && this.pendingOf(state) > 0 && this.residueOf(state, s0) === 0) {
-      if (state.released === true) state.startWait = true;
+      if (state.released === true || match?.profile.probe.readyRows !== undefined) state.startWait = true;
       throw new Ended("refused", "probe_failed", { surface: s0.surface, framed: s0.frame !== null, detail: pendingDetail(match, probeCharOf(match)) });
     }
     // The same text again onto the box an earlier send typed it into and left (2026-11-13): S0 read the box
@@ -6007,7 +6025,10 @@ export class SendProtocol {
       return strict ? box === draft && inkOf(snap) === inkOf(s0) : box === draft || box === "";
     };
     const back = await this.poll(state, "probe", { reads: BOUNDS.probe.reads, ms: BOUNDS.probe.ms }, (snap) => (given(snap) ? "pass" : "wait"));
-    if (back.verdict !== "pass" || back.snap === null) throw failed("Backspace did not give the box back as it was.", back.snap);
+    if (back.verdict !== "pass" || back.snap === null) {
+      this.notePending(state);
+      throw failed("Backspace did not give the box back as it was.", back.snap);
+    }
     return { landing: ghost ? "ghost" : "live", snap: back.snap };
   }
 
@@ -6603,7 +6624,9 @@ export class SendProtocol {
   /** A read without the lock check, for a look after a crash. */
   private async readNow(state: RunState, step: string, until = state.deadline): Promise<Snap | null> {
     const { paneId, harness } = state.target;
+    const readStarted = this.now();
     const grid = await this.within(state, this.deps.mux.readGrid(paneId, { scope: "viewport", lines: SEND_READ_LINES, styling: "preserve" }), until);
+    state.readMs = Math.max(state.readMs ?? 0, this.now() - readStarted);
     const gateRevision = this.deps.gate.noteRead(paneId);
     state.partialRead = false;
     if (!grid.ok) return null;
@@ -6710,8 +6733,10 @@ export class SendProtocol {
    * refusal (`bound`), never an unknown.
    */
   private async stableRead(state: RunState, step: string): Promise<Snap> {
-    const until = Math.min(this.now() + BOUNDS.s0.ms, state.deadline);
-    const late = (): Ended => new Ended("refused", "bound", { detail: `The screen did not read twice inside ${String(BOUNDS.s0.ms)} ms.` });
+    const span = state.starting ? 5000 : BOUNDS.s0.ms;
+    if (state.starting) this.stretch(state, span - BOUNDS.s0.ms);
+    const until = Math.min(this.now() + span, state.deadline);
+    const late = (): Ended => new Ended("refused", "bound", { detail: `The screen did not read twice inside ${String(span)} ms.` });
     const readInBound = async (): Promise<Snap | null> => {
       try {
         const snap = await this.read(state, step, until);
@@ -6795,7 +6820,11 @@ export class SendProtocol {
     test: (snap: Snap) => Verdict | "again",
     againMs = FIRST_GAP_MS,
   ): Promise<{ snap: Snap | null; verdict: Verdict; reads: number }> {
-    const until = Math.min(this.now() + bound.ms, state.deadline);
+    const span = state.starting && state.match?.profile.probe.readyRows !== undefined && step === "probe"
+      ? Math.max(bound.ms, Math.min(8000, 3 * (state.readMs ?? 0) + 500))
+      : bound.ms;
+    if (span > bound.ms) this.stretch(state, span - bound.ms);
+    const until = Math.min(this.now() + span, state.deadline);
     let gap = bound.firstGapMs ?? FIRST_GAP_MS;
     let again = false;
     let last: Snap | null = null;
@@ -6998,7 +7027,7 @@ export class SendProtocol {
     // drawn but reads no keys yet. The character waits in the terminal and shows later, where the next
     // send takes it out (residueOf). No Backspace now: it would wait too, and land in what comes next.
     if (typed.verdict === "wait" && s0.frame !== null && (typed.snap === null || countIn(typed.snap.texts, probe) === countIn(s0.texts, probe)) && this.noteDeaf(state)) {
-      if (state.released === true) state.startWait = true;
+      if (state.released === true || state.match?.profile.probe.readyRows !== undefined) state.startWait = true;
       throw new Ended("refused", "probe_failed", sawNote(typed.snap, { detail: deafDetail(state.match, probe), framed: true }));
     }
     if (typed.verdict !== "pass") {
@@ -7034,6 +7063,7 @@ export class SendProtocol {
     if (back.verdict !== "pass") {
       // The decision stands (refused, nothing sent); only the words follow what the reads prove.
       const unproven = state.starting || back.snap === null || (s0.frame !== null && back.snap.frame === null);
+      if ((state.released === true || state.match?.profile.probe.readyRows !== undefined) && this.noteDeaf(state)) state.startWait = true;
       throw failed(unproven ? unconfirmedClean(probe) : "Backspace did not give the box back as it was.", back.snap);
     }
     return { landing, base: s0 };

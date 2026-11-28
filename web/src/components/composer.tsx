@@ -2344,7 +2344,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     // A modal ask is a parsed fact: its own buttons answer it, and its word stands in the Send slot.
     // A typed text would be refused by the bridge anyway; the phone does not ask (spec 10). A send that
     // comes from elsewhere (a quick reply, a harness command) is told so at the Send slot.
-    if (slot === "answer") {
+    if (slot === "answer" && !starting) {
       // With no card for that dialog, "Answer it first" has nowhere to go: the pane opens the exit, the
       // screen and the Keys pad, and the words say so (M102 spec 10, diagnosis B). Nothing is typed.
       const unseen = !dialogCard && onAnswerUnseen !== undefined;
@@ -2817,34 +2817,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     void sendThroughProtocol(words, held.isDraft, mode, seen, offer === "commit" && held.capAck, undefined, undefined, undefined, undefined, offer === "commit");
   }
 
-  const startupQueue = useRef<{ key: string; line: string; when: SendWhen | undefined; pane: string; scope: Scope | undefined }[]>([]);
-  useEffect(() => () => {
-    // Leaving the bot returns unsent words to its existing persisted recovery list.
-    // Never abandon a submitted message when the composer unmounts.
-    for (const row of startupQueue.current.splice(0)) {
-      putAside({ draft: row.line, chips: [], pane: row.pane, scope: row.scope, line: row.line });
-    }
-  }, []);
-  const drainingStartup = useRef(false);
-  // Consume once before the asynchronous request; rerenders cannot duplicate delivery.
-  // Each row retains its destination so changing panes cannot send it to another bot.
-  useEffect(() => {
-    if (starting || locked || offline || sending || drainingStartup.current) return;
-    const index = startupQueue.current.findIndex((row) => row.key === paneScopeKey(scope, paneId));
-    if (index < 0) return;
-    const [row] = startupQueue.current.splice(index, 1);
-    if (!row) return;
-    drainingStartup.current = true;
-    void send(row.line, false, row.when).then((sent) => {
-      if (!sent) returnHeldWords(row.line, paneId);
-      return sent;
-    }).catch(() => returnHeldWords(row.line, paneId)).finally(() => {
-      drainingStartup.current = false;
-      setStartupTick((tick) => tick + 1);
-    });
-  });
-  const [, setStartupTick] = useState(0);
-
   // Gate the composer's Send through the destructive-input confirm: a matching command arms the
   // "Really send?" state instead of sending; the confirming second tap goes through. Non-destructive
   // input sends immediately (and any stray armed state is cleared).
@@ -2914,16 +2886,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     setDestructiveNote(null);
     armedWhen.current = undefined;
     forgetUnknownSend(scope, paneId, line, isShell); // the confirming tap ends it; an unknown answer arms it afresh
-    if (starting) {
-      if (!line.trim() || noEchoRef.current !== null || secretRefusal(false) !== null) return;
-      startupQueue.current.push({ key: paneScopeKey(scope, paneId), line, when, pane: paneId, scope });
-      inputValueRef.current = "";
-      attachmentsRef.current = [];
-      setInput("");
-      setAttachments([]);
-      setStatus(translate("composer.startup.queued"), "info", null);
-      return;
-    }
+    // The bridge persists startup holds before acknowledging; the draft survives until that receipt.
     void send(line, true, when);
   }
   // Armed on the composed line: an edited line no longer stands armed, and the note goes with it.
@@ -2934,7 +2897,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const confirmingSend = sendAction === undefined && (confirmingDestructive || confirmingAgain);
   // A modal ask owns the agent's keyboard: the Send slot and the placeholder say so (spec 10). A
   // finished run's named local action outranks it: no text may reach the shell showing the old log.
-  const askOwnsKeys = sendAction === undefined && slot === "answer" && !direct.active;
+  const askOwnsKeys = sendAction === undefined && slot === "answer" && !starting && !direct.active;
   // The mic beside Attach, for a box that holds a draft or a chip (issue 573): the round button is Send
   // then, and a second clip is how a person adds to what is already written. Two mics never show at
   // once. It stays away while the round slot holds a word ("Answer the dialog" / "Really send?"), where

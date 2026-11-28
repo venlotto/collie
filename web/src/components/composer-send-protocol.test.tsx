@@ -520,32 +520,28 @@ describe("Steer or queue on the Send button (M69)", () => {
     expect(steer.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("accepts startup messages and delivers their snapshots in order when ready", async () => {
+  it("hands startup messages to the bridge immediately, without waiting for a client readiness flag", async () => {
     const user = userEvent.setup();
     const { sends } = bridge([{ body: { receipt: receipt("sent"), offers: [] } }, { body: { receipt: receipt("sent"), offers: [] } }]);
     renderSteer({ surface: running, canSteer: true, starting: true });
     expect(field()).not.toHaveAttribute("readonly");
-    await user.type(field(), "first message");
+    fireEvent.change(field(), { target: { value: "first message" } });
     await user.click(screen.getByRole("button", { name: "Send" }));
     expect(field()).toHaveValue("");
-    await user.type(field(), "second message");
+    fireEvent.change(field(), { target: { value: "second message" } });
     await user.click(screen.getByRole("button", { name: "Send" }));
-    await user.type(field(), "next draft");
-    expect(sends).toEqual([]);
-    setStarting(false);
+    fireEvent.change(field(), { target: { value: "next draft" } });
     await waitFor(() => expect(sends.map((row) => row.text)).toEqual(["first message", "second message"]));
     expect(field()).toHaveValue("next draft");
   });
-  it("returns a failed startup send to the draft without retrying it", async () => {
-    const user = userEvent.setup();
+  it("keeps a failed startup send in the persisted draft", async () => {
     const { sends } = bridge([{ status: 500 }]);
     renderComposer({ starting: true });
-    await user.type(field(), "keep these words");
+    fireEvent.change(field(), { target: { value: "keep these words" } });
     fireEvent.keyDown(field(), { key: "Enter", ctrlKey: true });
-    expect(field()).toHaveValue("");
-    expect(sends).toHaveLength(0);
-    setStarting(false);
-    await waitFor(() => expect(field()).toHaveValue("keep these words"));
+    await waitFor(() => expect(sends).toHaveLength(1));
+    expect(field()).toHaveValue("keep these words");
+    expect(loadDraft(undefined, "w1:p1")).toBe("keep these words");
     expect(sends).toHaveLength(1);
   });
 

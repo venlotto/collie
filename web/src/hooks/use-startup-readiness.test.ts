@@ -29,12 +29,13 @@ describe("the startup gate", () => {
     expect(onReady).toHaveBeenCalledOnce();
   });
 
-  it("opens on a dialog the bridge lifted, so the composer's answer slot takes over", () => {
+  it("waits through a lifted dialog until the editor arrives", () => {
     const { result, rerender } = hook(input);
     rerender({ ...input, agent: "kiro", surface: ASK });
-    expect(result.current.starting).toBe(false);
-    // The dialog leaving does not close it again.
+    expect(result.current.starting).toBe(true);
     rerender({ ...input, agent: "kiro", surface: UNREAD_SURFACE });
+    expect(result.current.starting).toBe(true);
+    rerender({ ...input, agent: "kiro", surface: FREE });
     expect(result.current.starting).toBe(false);
   });
 
@@ -90,14 +91,14 @@ describe("the startup gate", () => {
   });
 
   // WHAT ENDS THE HOLD (the composer holds its box while `starting`). Each way out, one test.
-  it("opens on a first screen that is a prompt: a trust question, a sign-in field, an unreadable dialog", () => {
+  it("keeps startup pending through dialogs, and opens on the sign-in input", () => {
     const SIGN_IN: Surface = { revision: 3, turn: "unknown", modal: "none", composer: "empty", field: "secret" };
     const UNREADABLE: Surface = { revision: 4, turn: "unknown", modal: "unreadable", composer: "unknown" };
     for (const first of [ASK, SIGN_IN, UNREADABLE]) {
       const { result, rerender } = hook(input);
       expect(result.current.starting).toBe(true);
       rerender({ ...input, agent: "kiro", surface: first });
-      expect(result.current.starting).toBe(false);
+      expect(result.current.starting).toBe(first !== SIGN_IN);
     }
   });
 

@@ -8,7 +8,7 @@ export default defineConfig({
     "bot-attachments.spec.ts", "bot-activity.spec.ts", "bot-thread.spec.ts", "bot-workspaces.spec.ts", "bot-multiselect.spec.ts",
     "bot-drag.spec.ts", "bot-idle-resume.spec.ts", "bot-remember-sections.spec.ts", "bot-pinned-top.spec.ts", "bot-desk.spec.ts",
     "bot-display-mode.spec.ts", "bot-composer-open.spec.ts", "bot-send-reliability.spec.ts", "bot-questions.spec.ts", "bot-draft-replace.spec.ts", "send-unreadable.spec.ts",
-    "bot-keyboard-leak.spec.ts", "bot-probe-draft.spec.ts",
+    "bot-keyboard-leak.spec.ts", "bot-probe-draft.spec.ts", "bot-startup.spec.ts",
   ],
   workers: 2, timeout: 60_000, use: { baseURL, serviceWorkers: "block" },
   projects: [
