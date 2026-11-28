@@ -6,6 +6,7 @@
 // Pure: no DOM, no Bun API, no harness name.
 
 import { asJsonNumber, asJsonObject, asJsonString, type JsonValue } from "../json";
+import { isUploadPath } from "../upload-path";
 import type { ProfileStatus } from "./profile";
 import type { MenuSign } from "./menu-sign";
 import { modalWord, type Surface, type SurfaceReason } from "./surface";
@@ -634,13 +635,13 @@ export function sendLines(text: string): string[] {
 
 /**
  * The first word of a text is a file the bridge saved from an upload: an absolute path whose last two
- * segments are `uploads/<pane>-<base36 time>-<8 hex>.<ext>` (the name `bridge/server.ts` gives it).
+ * segments follow the saved-upload shape (legacy pane names or terminal-owned attachments).
  * Pure and shape only, so the phone and the bridge agree and neither touches the disk. A real command
  * name never holds a second slash.
  */
 export function startsWithUploadPath(text: string): boolean {
   const word = text.trimStart().split(/\s/u, 1)[0] ?? "";
-  return /^\/(?:[^/]+\/)*uploads\/[A-Za-z0-9_-]+-[a-z0-9]+-[0-9a-f]{8}\.[A-Za-z0-9]+$/u.test(word);
+  return isUploadPath(word);
 }
 
 /**

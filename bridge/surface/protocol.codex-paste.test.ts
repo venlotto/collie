@@ -140,6 +140,19 @@ describe("the Codex profile pastes every message (2026-11-27)", () => {
     expect(pane.calls.at(-1)).toBe(`block:${MULTI}`);
   });
 
+  test("a terminal-owned attachment leading a multi-line prompt is pasted once and sent intact", async () => {
+    const path = `/home/me/.local/state/collie/uploads/term.${"a".repeat(64)}.mx0g6qb2-475a0f8a.png`;
+    for (const text of [path, `${path} still working aparece dos veces\n\nse puede cambiar eso?`]) {
+      const pane = codexPane();
+      const answer = await rig({ pane, harness: "codex", version: VERSION, block: true, linePaste: false }).send(text);
+      expect(answer.receipt?.outcome).toBe("sent");
+      expect(pane.calls.at(-1)).toBe(`block:${text}`);
+      expect(pane.keysSeen).not.toContain("ctrl+j");
+      expect(sentRow(pane)).toBe(`› ${text.replace(/\n/gu, " ")}`);
+      expect(pane.box).toBe("");
+    }
+  });
+
   test("short texts with @, ! inside and ? at the end are pasted and sent as typed", async () => {
     for (const text of ["primera linea\nsegunda linea con @README y ? al final", "hola ?", "di hola!", "a/b"]) {
       const pane = codexPane();
