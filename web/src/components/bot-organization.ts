@@ -95,10 +95,11 @@ export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows:
       refresh();
     }
   }
-  const dragging = useBotDrag(list, enabled, drop => { void apply(drop); }, key => { if (!locked.current) setMenu(groups.get(key) ?? null); });
+  const openMenu = (key: string) => { if (enabled && !locked.current) setMenu(groups.get(key) ?? null); };
+  const dragging = useBotDrag(list, enabled, drop => { void apply(drop); }, openMenu);
   const space = menu && (groups.get(sectionKey(menu.scope, menu.id)) ?? menu);
-  return { dragging, error, menu: space && enabled ? {
-    space, spaces: [...groups.values()].filter(s => dragScope(s.scope) === dragScope(space.scope)),
+  return { dragging, error, openMenu, menu: space && enabled ? {
+    space, spaces: [...groups.values()].filter(s => s.id !== "agent-runs" && dragScope(s.scope) === dragScope(space.scope)),
     move: (before: string | null) => move(space, before), refresh, close: () => setMenu(null),
     clearFeatured: () => { for (const pane of groups.get(sectionKey(space.scope, space.id))?.rows ?? []) clearFeatured(pane); },
   } : null };

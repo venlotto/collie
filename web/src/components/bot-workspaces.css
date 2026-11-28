@@ -74,6 +74,9 @@
 }
 .bot-scroll { overflow-y: auto; overscroll-behavior: contain; flex: 1; padding: 8px 8px 74px; scrollbar-width: none; }
 .bot-scroll section + section { margin-top: 14px; }
+.bot-group-header { display: flex; align-items: center; }
+.bot-group-header .bot-group { min-width: 0; flex: 1; }
+.bot-group-menu { flex: none; display: grid; place-items: center; width: 44px; min-height: 44px; color: #8e8e93; }
 .bot-group { min-height: 44px; overflow-wrap: anywhere; display: flex; align-items: center; gap: 5px; width: 100%; padding: 8px 10px; font-size: 14px; color: #8e8e93; text-align: left; }
 .bot-group svg { flex: none; opacity: .72; transform: translateZ(0); transition: transform 250ms; }
 .bot-group[aria-expanded=false] svg { transform: translateZ(0) rotate(-90deg); }
@@ -302,7 +305,7 @@
 }
 .bot-index [data-lifted] { opacity: .2; }
 .bot-drag-ghost { position: fixed; top: 0; left: 0; margin: 0; z-index: 20; pointer-events: none; background: #28282b; border-radius: 14px; box-shadow: 0 8px 26px #000a; will-change: transform; }
-.bot-index section[data-over] > .bot-group { color: #b9dbff; background: #151b24; border-radius: 12px; }
+.bot-index section[data-over] .bot-group { color: #b9dbff; background: #151b24; border-radius: 12px; }
 .bot-drop-trash { position: absolute; z-index: 4; bottom: 0; left: 18px; right: 18px; height: 44px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 999px; background: #302123; color: #ff8883; font-weight: 600; transition: transform 140ms ease-out; }
 .bot-drop-trash[data-trash-over] { background: #8f2828; color: white; transform: scale(1.02); }
 .bot-sheet:has(.bot-workspace-fields) { height: auto; max-height: min(82dvh, 100%); overflow-y: auto; padding-bottom: 18px; }

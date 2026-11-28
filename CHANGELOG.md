@@ -175,6 +175,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Trash frees terminal resources after fifteen minutes.** Deleted chats and workspaces remain recoverable for fifteen minutes, then their terminals and attachments are removed automatically, even with the browser closed. Refused deletions now show their reason and leave an audit entry.
 
+- **Workspace positions match the list, including externally created workspaces.** New chat activity keeps its workspace in place, and each workspace has a visible menu for moving, renaming and sending it to the trash.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
