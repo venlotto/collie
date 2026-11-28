@@ -170,6 +170,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The search bar floats above transparent bottom spacing.** Chats scroll behind the glass controls all the way to the screen edge, without a solid strip underneath.
 
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
+- **Every open bot window offers an editable reply field.** Click or tab into “Preguntar a…” to write directly, keeping unsent text when switching between chats.
 
 ## [1.31.0] - 2026-11-24
 

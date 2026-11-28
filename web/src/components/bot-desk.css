@@ -49,7 +49,7 @@
 .bot-desk-ctrl:hover { background: #4a4a50; }
 .bot-desk-ctrl:active { background: #343436; transition-duration: 0s; }
 .bot-desk-close:hover { background: #ff453a; color: #fff; }
-.bot-desk-ctrl:focus-visible, .bot-desk-reply:focus-visible, .bot-desk-chip:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+.bot-desk-ctrl:focus-visible, .bot-desk-reply:focus-within, .bot-desk-chip:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
 
 /* The chat menu opens under its own button, not at the screen's corner. */
 @supports (anchor-name: --a) {
@@ -80,7 +80,25 @@
 .bot-desk-reply:hover { background: #303033; }
 .bot-desk-reply[data-draft] { height: auto; padding-block: 10px; white-space: normal; }
 .bot-desk-draft-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #b8b8bf; }
-.bot-desk-draft-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bot-desk-reply-input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  max-height: 120px;
+  padding-block: 10px;
+  border: 0;
+  outline: none;
+  resize: none;
+  field-sizing: content;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 24px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bot-desk-reply-input::placeholder { color: #b8b8bf; }
+.bot-desk-reply[data-draft] .bot-desk-reply-input { padding-block: 0; }
 .bot-desk-reply-row:has(.bot-desk-waiting) { flex-direction: column; gap: 8px; }
 .bot-desk-waiting {
   min-height: 44px;
