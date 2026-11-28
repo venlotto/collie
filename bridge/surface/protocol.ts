@@ -316,7 +316,7 @@ import type { PaneLockFiles } from "./pane-lock.ts";
 import { commandListAnyText, commandListAt, isRunningRow, noticeOver, ownCommandList, popupAt, readCues, readCuesFor, runningSign, withoutCommandList, withoutPopup, withoutPromptEchoes, type CommandListRead, type Cue } from "../../web/src/lib/surface/cues.ts";
 import { loadProfiles } from "../../web/src/lib/surface/profile.ts";
 import { inputFrameOf, surfaceOfScreen } from "../../web/src/lib/surface/fold.ts";
-import { boxInk, findInputFrame, readIsUnstyled, rowText, spanInk, type Frame, type FrameRow } from "../../web/src/lib/surface/frame.ts";
+import { boxInk, findInputFrame, readIsUnstyled, rowText, spanInk, type Frame, type FrameRow, type IdleProfile } from "../../web/src/lib/surface/frame.ts";
 import { CODE_REJECTED_PLAIN, fieldShows, rejectionDetail, signInRejections } from "../../web/src/lib/surface/secret-field.ts";
 import { liftAsk, liftDialog, readerBlocks } from "../../web/src/lib/surface/lift.ts";
 import type { AboveNotice } from "../../web/src/lib/surface/notice.ts";
@@ -2199,6 +2199,8 @@ const STEER_NOT_TAKEN = "The steer key went out, but the text is still in the bo
 const STEER_NO_EVIDENCE = "The steer key went out, but the screen did not show whether the agent took it.";
 /** The `unconfirmed` detail of a screen Collie cannot read: the same words as the phone's catalog line, which hides it. */
 const MANUAL_DETAIL = "Collie cannot read this screen. Check the pane, then tap Type here.";
+/** The refusal of a new text while an earlier send's own text stands in a box no layout reads ({@link bareOwnDraft}). */
+const BARE_LEFT_DRAFT = "Your earlier message is still in the box. Send or discard it from that message first.";
 const SHORT_PANE: SendCause = "short_pane";
 
 /**
@@ -3136,6 +3138,39 @@ export function locateText(plain: readonly string[], text: string, partial = fal
   return null;
 }
 
+/**
+ * The text Collie itself typed, standing alone at the end of a screen where no layout found the box
+ * (2026-11-28, Codex 0.172.0 in a 23-row pane drew a long draft with no footer under it, and every read
+ * was no-match): a read whose Surface is `no-match` with no cue of any strength, framed or bare, and no
+ * ask, whose content from a prompt row of the profile (`idle.frame.prompt`, the row's own glyph in front
+ * of the text) down to its last row with text is exactly `text`, whitespace and wrapping ignored. A
+ * dialog, a footer, a hint or any other row under or inside the text fails it, and so does a text that
+ * is only partly there. Null otherwise. The caller must know the text is its own (it typed it in this
+ * run, or {@link SendProtocol.leftTyped} recorded it on this pane): a person's draft is never read so.
+ */
+function bareOwnDraft(snap: Snap, idle: IdleProfile | undefined, text: string): Located | null {
+  if (idle === undefined || snap.frame !== null) return null;
+  const { surface } = snap;
+  if (surface.reason !== "no-match" || surface.modal !== "unknown" || snap.cueStrength !== "none" || snap.bareCues !== "none") return null;
+  const located = locateText(snap.plain, text);
+  if (located === null || located.partial || located.head.trim().length === 0) return null;
+  const line = snap.plain[located.row] ?? "";
+  if (!new RegExp(idle.frame.prompt.pattern, "u").test(line.trimEnd())) return null;
+  const rest = [line.slice(located.head.length), ...snap.plain.slice(located.row + 1, contentEnd(snap.plain))];
+  return flat(rest) === flat([text]) ? located : null;
+}
+
+/**
+ * Whether the profile's plain submit key is safe on a box whose turn Collie cannot read: it sends on an
+ * idle box and queues behind a running turn, never steering or interrupting it. Codex's Tab is its queue key.
+ */
+function submitQueuesInTurn(match: PaneProfileMatch | null): boolean {
+  const keys = match?.profile.keys;
+  if (keys === undefined) return false;
+  if (keys.enterWhileRunning === "queues") return true;
+  return keys.queueKey !== undefined && keys.submit.length === 1 && keys.submit[0] === keys.queueKey;
+}
+
 // ── The run ──────────────────────────────────────────────────────────────────────────────────────
 
 interface RunState {
@@ -3196,6 +3231,8 @@ interface RunState {
   heldOther: boolean;
   /** A send found the text an earlier send left typed in the box and pressed only the submit key ({@link SendProtocol.finishesOwnText}). */
   finishedOwn?: boolean;
+  /** S1 found no box, but its read shows exactly the text this run typed at the screen's end ({@link bareOwnDraft}): the commit goes to that text and S2 waits for it to leave. */
+  bareTyped?: Located;
   /**
    * The text write was not confirmed and did not show inside its wait ({@link SendProtocol.unconfirmedWrite}):
    * the send ends `unknown`, and the text may land later. It is remembered like a text left typed, so a
@@ -5292,6 +5329,21 @@ export class SendProtocol {
   }
 
   /**
+   * The text an earlier send of this pane left typed ({@link leftTyped}, or the request files after a
+   * restart), when S0 found no box and shows exactly that text alone at the screen's end
+   * ({@link bareOwnDraft}): `same` when this request sends that text again. Only a plain send of the
+   * person's own (`ownTextKind`), on a profile whose submit key queues in a turn; null otherwise.
+   */
+  private bareLeftTyped(state: RunState, s0: Snap, lines: readonly string[]): { located: Located; same: boolean } | null {
+    if (state.request.mode !== "send" || state.command || !ownTextKind(state) || !submitQueuesInTurn(state.match)) return null;
+    if (s0.frame !== null || s0.notice !== null || s0.popup !== null) return null;
+    const left = this.leftTyped.get(state.lockKey) ?? this.leftInStore(state);
+    if (left === null || left.generation !== state.generation || this.now() - left.at > LEFT_TYPED_MS) return null;
+    const located = bareOwnDraft(s0, state.match?.profile.idle, left.text.split("\n").join(""));
+    return located === null ? null : { located, same: left.text === lines.join("\n") };
+  }
+
+  /**
    * The text an earlier send left typed, read back from the request files after a bridge restart or crash
    * (2026-11-13): the newest settled request on this pane that did not end refused or held, inside
    * {@link LEFT_TYPED_MS}. It counts only when it is a send, a command or a Replace that ended
@@ -5500,6 +5552,21 @@ export class SendProtocol {
       if (state.released === true || match?.profile.probe.readyRows !== undefined) state.startWait = true;
       throw new Ended("refused", "probe_failed", { surface: s0.surface, framed: s0.frame !== null, detail: pendingDetail(match, probeCharOf(match)) });
     }
+    // An earlier send's own text, alone at the end of a screen where no layout finds the box (2026-11-28):
+    // the same text again presses only the submit key; any other text is refused as a draft rather than
+    // as a screen Collie cannot read, and typed after nothing. The earlier send's Submit and Discard stay.
+    const bareLeft = this.bareLeftTyped(state, s0, lines);
+    if (bareLeft !== null) {
+      if (!bareLeft.same) throw new Ended("refused", "draft_present", { surface: s0.surface, framed: false, rowsHash: s0.rowsHash, offers: ["keys"], detail: BARE_LEFT_DRAFT });
+      state.finishedOwn = true;
+      this.lap(state, "s0");
+      state.marks.s1 = s0;
+      await this.commit(state, s0);
+      this.lap(state, "commit");
+      await this.awaitBareEmpty(state, bareLeft.located);
+      this.lap(state, "s2");
+      return;
+    }
     // The same text again onto the box an earlier send typed it into and left (2026-11-13): S0 read the box
     // holding exactly it, so this send presses only the submit key, as a Submit does. Nothing is typed.
     if (this.finishesOwnText(state, s0, lines)) {
@@ -5707,6 +5774,15 @@ export class SendProtocol {
     state.marks.s1 = s1;
     this.lapS1(state);
     this.checkGeneration(state, "typed_not_submitted");
+    // S1 read no box, only this run's own text alone at the screen's end (bareTypedAgain): the profile's
+    // submit key, which queues in a turn, then S2 as a Submit on a pane with no frame reads it.
+    if (state.bareTyped !== undefined) {
+      await this.commit(state, s1);
+      this.lap(state, "commit");
+      await this.awaitBareEmpty(state, state.bareTyped);
+      this.lap(state, "s2");
+      return;
+    }
 
     // A steer whose turn ended while the text went in goes as the plain send S0's read put it on: a
     // steer is never held, and the keys of the queued path are what a plain send presses there.
@@ -7439,7 +7515,41 @@ export class SendProtocol {
     if (unsettled) note.detail = LIST_MOVING;
     const last = result.snap;
     if (note.detail === undefined && why === "modal_cue" && last !== null && last.frame !== null && cuesInsideFrame(last, last.frame) && boxHolds(last.frame, prefix, lines, collapse, state.whole) !== null) note.detail = BOX_UNREADABLE_DRAFT;
+    // The box left every layout's reach while the text went in, and nothing else moved into view: a
+    // read again that shows this run's own text alone at the screen's end is still that box, so it is
+    // submitted rather than left there for every later send to trip on (2026-11-28, Codex 0.172.0).
+    if (boxOnly && why === "changed" && !unsettled && screen === null && !pointedElsewhere && !popupAtEnter && last !== null) {
+      const bare = await this.bareTypedAgain(state, last, prefix, lines);
+      if (bare !== null) {
+        state.bareTyped = bare.located;
+        return bare.snap;
+      }
+    }
     throw new Ended("typed_not_submitted", why, sawNote(result.snap, note));
+  }
+
+  /**
+   * S1 ended `changed` on a read with no box: whether two reads, the last one and a fresh one with the
+   * same rows, show this run's own text alone at the screen's end ({@link bareOwnDraft}). Only a plain
+   * send into a box S0 found, with nothing before the text, on a profile whose submit key queues in a
+   * turn ({@link submitQueuesInTurn}): the turn cannot be read there, so no key may steer it.
+   */
+  private async bareTypedAgain(state: RunState, last: Snap, prefix: string, lines: readonly string[]): Promise<{ located: Located; snap: Snap } | null> {
+    const { request, match } = state;
+    if (request.mode !== "send" || state.command || state.manual || state.steer || prefix !== "" || !submitQueuesInTurn(match)) return null;
+    const idle = match?.profile.idle;
+    const text = lines.join("");
+    if (bareOwnDraft(last, idle, text) === null) return null;
+    let again: Snap | null;
+    try {
+      again = await this.read(state, "s1");
+    } catch (err) {
+      if (err instanceof StepLate) return null;
+      throw err;
+    }
+    if (again === null || again.rowsHash !== last.rowsHash) return null;
+    const located = bareOwnDraft(again, idle, text);
+    return located === null ? null : { located, snap: again };
   }
 
   /**

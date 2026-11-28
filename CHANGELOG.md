@@ -190,6 +190,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Long multi-paragraph Codex messages are sent when the footer disappears.** In a short terminal Codex can fill the input box to the bottom edge and hide its footer and status rows; Collie now still recognises the box, presses Enter and confirms the message left, so the bot no longer stops accepting messages afterwards. Question cards and other dialogs drawn the same way are still treated as dialogs.
 
+- **A Codex message left in a box Collie cannot read no longer blocks the bot.** When the screen shows nothing but Collie's own unsent text at its end, Collie submits it, and a retry of the same message only presses the submit key. A different message is refused as a draft rather than as an unreadable screen, and dialogs or text you typed yourself still get no keys.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
