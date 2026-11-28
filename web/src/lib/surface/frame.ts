@@ -103,7 +103,9 @@ export interface Frame {
    * on every layout that does not scroll.
    */
   readonly scrolled?: true;
-  /** The marked editor reaches the viewport edge; its footer is below the captured screen. */
+  /** The editor reaches the viewport edge; its footer is below the captured screen. With `scrolled`
+   *  the prompt row carried the profile's `scroll.promptMarker`; without it the box shows its whole
+   *  draft (`scroll.wholeClips`), and {@link wholeDraft} reads it as usual. */
   readonly bottomClipped?: true;
   /**
    * The box's own key hint inside it, the trailer row and its padding, when the layout's trailer says
@@ -754,7 +756,7 @@ function walkBelow(
  * Every row crossed, blank or not, counts against `maxDraftRows`, so a stray edge-shaped row far up
  * the transcript cannot close a frame.
  */
-export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdleProfile): Frame | null {
+export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdleProfile, whole = false): Frame | null {
   const c = compile(idle);
   const texts = rows.map(rowText);
   if (idle.frame.walk === "interior") return interiorFrameAt(rows, bottom, idle);
@@ -790,7 +792,10 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   if (promptMatch === null) return scrolledFrameAt(rows, texts, i, bottom, span, idle);
   const prompt = i;
   const marker = promptScrollMarker(texts[prompt]!, idle);
-  if (clipped && marker === null) return null;
+  // Without the marker the box shows its whole draft. Its footer is gone only where the profile says
+  // the editor can fill the pane (`scroll.wholeClips`) and the box takes at least half its rows: a
+  // short box cut at the screen's end is a torn read, not an editor at its full height.
+  if (clipped && marker === null && !(whole && wholeClipFits(texts, prompt, idle))) return null;
   i--;
   let top: number;
   let topMatch: RegExpExecArray | null;
@@ -858,7 +863,7 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
     volatile: { above, status, footer, named },
     anchorsHit,
   };
-  if (clipped) return { ...frame, scrolled: true, bottomClipped: true };
+  if (clipped) return marker === null ? { ...frame, bottomClipped: true } : { ...frame, scrolled: true, bottomClipped: true };
   return marker === null ? frame : { ...frame, scrolled: true };
 }
 
@@ -1156,7 +1161,7 @@ export function findInputFrame(rows: readonly FrameRow[], idle: IdleProfile): Fr
     const hit = findLayout(rows, alternate);
     if (hit !== null) return answerBox(atScroll(rows, hit, alternate), alternate);
   }
-  return null;
+  return wholeClipFrame(rows, idle);
 }
 
 /** A {@link Frame} while {@link answerBox} adds its layout's answer fields. */
@@ -1175,6 +1180,33 @@ function answerBox(frame: Frame, idle: IdleProfile): Frame {
     boxed.secret = drawn;
   }
   return boxed;
+}
+
+/**
+ * Whether the rows from an unmarked prompt row `prompt` to the screen's end can be an editor that fills
+ * the pane and pushed its footer out (`idle.frame.scroll.wholeClips`): the box takes at least half the
+ * pane's rows, and none of its rows is a footer row the profile names (`idle.volatile.below.hints`), so a
+ * footer that no layout read is never taken for draft text.
+ */
+function wholeClipFits(texts: readonly string[], prompt: number, idle: IdleProfile): boolean {
+  if (idle.frame.scroll?.wholeClips !== true || 2 * (texts.length - prompt) < texts.length) return false;
+  const hints = (idle.volatile.below.hints ?? []).map((source) => new RegExp(source, "u"));
+  for (let j = prompt + 1; j < texts.length; j++) {
+    const row = texts[j]!.trimEnd();
+    if (hints.some((hint) => hint.test(row))) return false;
+  }
+  return true;
+}
+
+/**
+ * The box of an editor that shows its whole draft down to the pane's last row, with no footer under it
+ * (`idle.frame.scroll.wholeClips`). Tried only once every layout's own search found nothing, so a screen
+ * that a layout reads with its footer is never read this way.
+ */
+function wholeClipFrame(rows: readonly FrameRow[], idle: IdleProfile): Frame | null {
+  if (idle.frame.scroll?.wholeClips !== true) return null;
+  const frame = frameAt(rows, rows.length, idle, true);
+  return frame === null ? null : answerBox(frame, idle);
 }
 
 /** Where the profile's prompt-row scroll indicator starts, or null on an unscrolled row. */

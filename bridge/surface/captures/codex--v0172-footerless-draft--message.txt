@@ -1,0 +1,10 @@
+Hola, necesito que revises esto con calma.
+
+Primero: el envío desde Collie a veces no llega, sobre todo con textos largos como este, con acentos (áéíóú), comillas "así" y signos ¿? ¡!.
+
+- punto uno
+- punto dos
+
+Segundo: no hagas nada en el repo, solo responde exactamente con el token final.
+
+Token final: OK-CAP

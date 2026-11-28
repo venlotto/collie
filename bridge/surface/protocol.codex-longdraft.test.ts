@@ -52,9 +52,15 @@ describe("Codex's scrolled editor in a 23-row pane", () => {
 
   test("a cut screen without the marker, an approval, and a changed tail cannot borrow this frame", () => {
     const idle = idleFor("codex")!;
-    for (const text of [capture.replace("↑", " "), capture.replace("›", "› 1. Yes, proceed"), capture + "Not an editor row"]) {
+    for (const text of [capture.replace("›", "› 1. Yes, proceed"), capture + "Not an editor row"]) {
       expect(inputFrameOf(rowsOf(text), idle)).toBeNull();
     }
+    // Without the marker the same rows are an editor that shows its whole draft (`scroll.wholeClips`,
+    // protocol.codex-footerless.test.ts): never scrolled, so its rows prove neither the whole message
+    // nor its tail, and a send of the message never presses Enter on it.
+    const unmarked = inputFrameOf(rowsOf(capture.replace("↑", " ")), idle);
+    expect(unmarked?.scrolled).toBeUndefined();
+    expect(boxHolds(unmarked!, "", message.split("\n"), null, null)).toBeNull();
     const frame = inputFrameOf(rowsOf(capture.replace("Párrafo 5", "Párrafo X")), idle);
     expect(frame).not.toBeNull();
     expect(boxHolds(frame!, "", message.split("\n"), null, null)).toBeNull();

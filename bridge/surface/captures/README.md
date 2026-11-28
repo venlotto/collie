@@ -78,3 +78,16 @@ contain the complete bracketed pastes. The editor keeps only their tail, puts
 The 56-column read also shows a working turn and two queued messages above it.
 No user-owned pane received input. Raw trials and receipts are in
 `/home/ubuntu/briefs/collie-redesign/verify/codexp-1000/longdraft/` on coder1.
+
+## Codex 0.172.0: a whole draft with no footer (2026-11-28)
+
+`protocol.codex-footerless.test.ts` reads these:
+
+- `codex--v0172-footerless-draft--herdr.txt`: a fresh Codex bot on coder1, a Herdr pane 23 rows
+  tall, captured read-only after Collie pasted a multi-paragraph message (blank paragraphs, a `- `
+  list, accents). The editor fills the pane to its last row and Codex draws no footer under it: no
+  status row, no `?` hint, no warning row, and no `↑` on the prompt row, so the whole draft is in view.
+  The desktop and iPhone widths gave the same screen. The same capture sits in
+  `web/src/fixtures/panes/` with its plain read (`codex--v0172-footerless-draft-plain--herdr.txt`).
+  A test message only; no credentials or private text.
+- `codex--v0172-footerless-draft--message.txt`: the message as sent, reconstructed from the screen.

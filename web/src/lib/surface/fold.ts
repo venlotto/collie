@@ -282,8 +282,18 @@ function composerOf(frame: Frame | null, blocked: boolean): SurfaceComposer {
  */
 export function inputFrameOf(rows: readonly FrameRow[], idle: IdleProfile): Frame | null {
   const found = findInputFrame(rows, idle);
-  if (found === null || !pastPrompt(found)) return found;
+  if (found === null || !(pastPrompt(found) || wholeClipped(found))) return found;
   return readCuesFor(withoutPromptEchoes(rows, found, idle), null, idle).strength === "none" ? found : null;
+}
+
+/**
+ * A box that shows its whole draft down to the pane's last row, with no footer under it
+ * (`idle.frame.scroll.wholeClips`). It has no bottom edge, so a transcript echo of a sent prompt over a
+ * question card or another dialog drawn to the screen's end walks the same way; like a box past its
+ * prompt row it stands only where the screen read without it shows no dialog cue ({@link inputFrameOf}).
+ */
+function wholeClipped(frame: Frame): boolean {
+  return frame.bottomClipped === true && frame.scrolled !== true;
 }
 
 /** The Surface of one screen read, before time is applied. */

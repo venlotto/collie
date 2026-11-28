@@ -36,7 +36,7 @@
       "maxTailRows": 4,
       "bottomWraps": 2,
       "maxBlankRows": 100,
-      "scroll": { "keeps": "tail", "rows": 100, "promptMarker": " {2,}↑$" }
+      "scroll": { "keeps": "tail", "rows": 100, "promptMarker": " {2,}↑$", "wholeClips": true }
     },
     "frameAlternates": [
       {

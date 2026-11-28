@@ -595,6 +595,14 @@ export interface FrameScroll {
   /** A scroll indicator at the end of the prompt row. The editor keeps its tail and may push
    * its footer below the viewport. The matched suffix is chrome, never draft text. */
   readonly promptMarker?: string;
+  /**
+   * An editor that shows its WHOLE draft (its prompt row in view, no `promptMarker` on it) may also
+   * fill the pane down to its last row and push its footer below the viewport (Codex 0.172.0 at 23
+   * rows, a multi-paragraph draft at the editor's full height, 2026-11-28). Such a box is read only
+   * when it spans at least half the pane's rows and the screen read without it shows no dialog cue
+   * (fold.ts `inputFrameOf`); it is marked `bottomClipped`, never `scrolled`: its head is in view.
+   */
+  readonly wholeClips?: true;
 }
 
 /** The ghost text after the cursor ({@link Profile.idle.inlineHint}). */
@@ -1652,6 +1660,11 @@ function parseScroll(value: JsonValue, maxDraftRows: number): FrameScroll {
   let scroll: FrameScroll = { keeps, rows };
   if (node.marker !== undefined) scroll = { ...scroll, marker: pattern(node.marker, "idle.frame.scroll.marker").source };
   if (node.promptMarker !== undefined) scroll = { ...scroll, promptMarker: pattern(node.promptMarker, "idle.frame.scroll.promptMarker").source };
+  if (node.wholeClips !== undefined && node.wholeClips !== true) fail("idle.frame.scroll.wholeClips", "must be true when named");
+  if (node.wholeClips === true) {
+    if (scroll.promptMarker === undefined) fail("idle.frame.scroll.wholeClips", "needs promptMarker: only a marked editor tells a scrolled box from a whole one");
+    scroll = { ...scroll, wholeClips: true };
+  }
   return scroll;
 }
 

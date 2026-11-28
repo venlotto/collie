@@ -188,6 +188,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Chat menus switch between messages and terminal in one row.** Clicking the view action changes the body and closes the menu, keeping it as compact as the other actions.
 
+- **Long multi-paragraph Codex messages are sent when the footer disappears.** In a short terminal Codex can fill the input box to the bottom edge and hide its footer and status rows; Collie now still recognises the box, presses Enter and confirms the message left, so the bot no longer stops accepting messages afterwards. Question cards and other dialogs drawn the same way are still treated as dialogs.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

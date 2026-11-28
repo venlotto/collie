@@ -7285,6 +7285,16 @@
    "version": "0.172.0",
    "state": "idle"
   },
+  "codex--v0172-footerless-draft--herdr.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-footerless-draft-plain--herdr.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
   "codex--v0172-surface-long-draft-warn3--w52.txt": {
    "harness": "codex",
    "version": "0.172.0",
