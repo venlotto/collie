@@ -177,6 +177,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Trash frees terminal resources after fifteen minutes.** Deleted chats and workspaces remain recoverable for fifteen minutes, then their terminals and attachments are removed automatically, even with the browser closed. Refused deletions now show their reason and leave an audit entry.
 
 - **Bot activity keeps undelivered messages visible after a restart.** Chats and the list show the latest delivery result, queued questions still ask for attention when the terminal reports idle, and retrying a lost reply keeps its original request identifier. Busy editors get time to confirm the probe and its removal before a follow-up is queued.
+- **Codex stays readable when long titles wrap its status bar.** Narrow terminals now recognise up to three status rows, including a separator at a line break and monochrome warning footers, while real pickers still block typing.
 
 ## [1.31.0] - 2026-11-24
 

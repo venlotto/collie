@@ -1,0 +1,23 @@
+› duck duck race checa por qué a veces no dice no va…
+
+  • «No va más» permanece hasta la salida validada.
+
+  • Las respuestas atrasadas no reabren apuestas.
+
+  • Si la resolución supera 30 segundos desde el
+    cierre, pasa a VOID y devuelve las apuestas sin
+    duplicarlas.
+
+  Probé reconexiones, errores y reinicios; también
+  validé tres carreras reales. El harness completo no
+  quedó verde; documenté los fallos y sus repeticiones
+  en el informe de verificación.
+
+  Worked for 31m 44s • 15:33
+
+
+› Ask Codex to do anything
+
+  GPT-6-Astra high · ~/repos · Corrige inicio de Duck
+  Duck Race
+  ← for agents              ⚠ 3 warnings · f2 to view

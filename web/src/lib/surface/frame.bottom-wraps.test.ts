@@ -34,6 +34,11 @@ const WRAPPED = {
   styled: "codex--v0167-working-status-wrap--w39.txt",
 } as const;
 const CONSTRUCTED: ReadonlySet<string> = new Set(Object.values(WRAPPED));
+const CAPTURED = [
+  "codex--v0172-agent-hint-idle.txt", "codex--v0172-agent-hint-probe.txt",
+  ...["separated-idle", "running", "finished"].flatMap((state) =>
+    [52, 56, 80].map((width) => `codex--v0172-surface-${state}-warn7--w${width}.txt`)),
+];
 
 const lines = (name: string): string[] => readFileSync(join(PANES_DIR, name), "utf8").split("\n");
 const read = (raw: readonly string[], idle: IdleProfile = CODEX) => readScreen(rowsOf(raw.join("\n")), "codex", idle);
@@ -47,9 +52,9 @@ const rowAt = (raw: readonly string[], start: string): number => {
 };
 
 describe("a status row that wrapped under the Codex box (#838)", () => {
-  it("is set in the Codex profile only, to one row", () => {
+  it("is set in the Codex profile only, to two continuation rows", () => {
     const setting = [...loadProfiles().values()].filter((profile) => profile.idle.frame.bottomWraps !== undefined).map((profile) => [profile.id, profile.idle.frame.bottomWraps]);
-    expect(setting).toEqual([["codex", 1]]);
+    expect(setting).toEqual([["codex", 2]]);
   });
 
   it("without the field no box is found on any of the four screens: the cause of #838", () => {
@@ -100,7 +105,7 @@ describe("a status row that wrapped under the Codex box (#838)", () => {
 });
 
 describe("the wrap rule opens no hole (#838)", () => {
-  it("changes the frame on no fixture of the corpus but the four constructed ones, with the Codex profile and its own", () => {
+  it("changes the frame only on the constructed and captured wrapped status rows", () => {
     const changed: string[] = [];
     let walked = 0;
     for (const dir of [PANES_DIR, SURFACE_FIXTURES_DIR]) {
@@ -111,15 +116,15 @@ describe("the wrap rule opens no hole (#838)", () => {
       }
     }
     expect(walked).toBeGreaterThan(400);
-    expect(changed.toSorted()).toEqual([...CONSTRUCTED].toSorted());
+    expect(changed.toSorted()).toEqual([...CONSTRUCTED, ...CAPTURED].toSorted());
   }, 20_000);
 
-  it("a third row of the edge's shape is past the bound: no box", () => {
+  it("a fourth row of the edge's shape is past the bound: no box", () => {
     const raw = lines(WRAPPED.idle);
     const at = rowAt(raw, "  GPT-6.1-Sol low");
-    const three = [...raw.slice(0, at), "  GPT-6.1-Sol low · /var/home/alice/.cache/collie-", "  lab/codex-lab/project · Run sleep and list files", "  and one more · status row", ...raw.slice(at + 2)];
-    expect(frameOf(three)).toBeNull();
-    expect(isFree(read(three).surface)).toBe(false);
+    const four = [...raw.slice(0, at), "  GPT-6.1-Sol low · /var/home/alice/.cache/collie-", "  lab/codex-lab/project · Run sleep and list files", "  and one more · status row", "  fourth · status row", ...raw.slice(at + 2)];
+    expect(frameOf(four)).toBeNull();
+    expect(isFree(read(four).surface)).toBe(false);
   });
 
   it("a status row with room left for the next row's first word is no wrap: an unrelated row of the edge's shape under it finds no box", () => {

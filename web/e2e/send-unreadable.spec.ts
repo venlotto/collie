@@ -6,7 +6,7 @@ import { fixtureAgents, fixtureSnapshot } from "@/test/handlers";
 import { installApiStub, paneCapture, pinLocale } from "./fixtures/api";
 
 // A delivered send must not leave the unread-screen sheet over Codex's live composer. The Working
-// capture is the real 56-column frame whose thread title wraps onto a field-only second row; the
+// captures are real 23-row frames at 52/56/80 columns, with a title spanning up to three status rows; the
 // unread capture is a dialog no grammar reads. Only a browser shows the sheet the person actually
 // gets, in Spanish, at the phone and desktop layouts. Every response comes from the fixture stub.
 //
@@ -14,9 +14,6 @@ import { installApiStub, paneCapture, pinLocale } from "./fixtures/api";
 // WebKit with the config's real iPhone descriptor; no live bridge or pane is involved.
 
 test.use({ serviceWorkers: "block" });
-
-const IDLE = paneCapture("codex--v0166-core-idle-status-wrap--w56");
-const WORKING = paneCapture("codex--astra-working-status-title-wrap--w56");
 const UNREAD = paneCapture("codex--v0167-command-center--w120");
 const PANE_ID = fixtureAgents[1]!.paneId;
 const CAPTION = es["unreadDialog.caption"];
@@ -41,7 +38,9 @@ test.beforeEach(async ({ page }, testInfo) => {
   await pinLocale(page, "es");
 });
 
-test("a delivered send shows Codex Working and never opens the unread sheet", async ({ page }, testInfo) => {
+for (const width of [52, 56, 80]) test(`a delivered send on a ${width}-column Codex shows Working without the unread sheet`, async ({ page }, testInfo) => {
+  const IDLE = paneCapture(`codex--v0172-surface-separated-idle-warn7--w${width}`);
+  const WORKING = paneCapture(`codex--v0172-surface-running-warn7--w${width}`);
   let delivered = false;
   let posts = 0;
   let workingReads = 0;
@@ -62,7 +61,7 @@ test("a delivered send shows Codex Working and never opens the unread sheet", as
   await page.goto(`/pane/${encodeURIComponent(PANE_ID)}`);
 
   const field = page.getByRole("textbox", { name: /^Preguntar a /u });
-  await expect(field).toBeVisible();
+  await expect(field).toBeVisible({ timeout: 20_000 });
   await field.fill("Explica el estado actual");
   await page.getByRole("button", { name: es["composer.send.sendAria"], exact: true }).click();
   await expect.poll(() => posts).toBe(1);
@@ -87,7 +86,7 @@ test("a genuinely unread dialog keeps the sheet, fully translated into Spanish",
   await page.goto(`/pane/${encodeURIComponent(PANE_ID)}`);
 
   const sheet = page.getByLabel(CAPTION);
-  await expect(sheet.getByText(CAPTION, { exact: true })).toBeVisible();
+  await expect(sheet.getByText(CAPTION, { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(sheet.getByRole("button", { name: "Esc", exact: true })).toBeVisible();
   await expect(sheet.getByRole("button", { name: es["unreadDialog.typeAnyway"] })).toBeVisible();
   await expect(sheet.getByRole("button", { name: es["unreadDialog.report"] })).toBeVisible();

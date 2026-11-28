@@ -1,0 +1,23 @@
+
+  >_ [1mOpenAI Codex[0;2m (v0.172.0)[0m
+     [2m/tmp/cx-unreadable-lab/project[0m
+[2m  permissions: [0;1mYOLO mode[0m
+
+
+[1;2m› [0mReply only OK.
+
+
+[2m• [0mOK
+
+[2m  Worked for 3s • 15:45
+[0m
+
+
+
+
+
+[1m›[0m Draft for the screen reader
+
+  GPT-6-Astra low · /tmp/cx-unreadable-lab/project ·
+  OK
+                          ⚠ 3 warnings · [1mf2[0m to view

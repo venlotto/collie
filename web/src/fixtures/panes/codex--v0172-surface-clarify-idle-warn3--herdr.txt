@@ -1,0 +1,23 @@
+
+  >_ OpenAI Codex (v0.172.0)
+     ~/repos
+  permissions: YOLO mode
+
+
+› ⌁
+
+
+• ¿Qué necesitas que haga?
+
+  Worked for 6s • 15:21
+
+
+
+
+
+
+
+› Ask Codex to do anything
+
+  GPT-6-Astra high · ~/repos · Clarify the task
+  ← for agents              ⚠ 3 warnings · f2 to view

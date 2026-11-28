@@ -42,7 +42,7 @@ const submitKeys = (pane: FakePane): string[] => pane.keysSeen.filter((key) => k
 describe("a send to a Codex pane whose status row wrapped (#838), on the rig's pane", () => {
   test("the profile sets the wrap", async () => {
     const { loadProfiles } = await import("../../web/src/lib/surface/profile.ts");
-    expect(loadProfiles().get("codex")?.idle.frame.bottomWraps).toBe(1);
+    expect(loadProfiles().get("codex")?.idle.frame.bottomWraps).toBe(2);
   });
 
   test("a message is sent: the probe reads the box, the wrapped row stays the same row, and Tab submits", async () => {
@@ -161,4 +161,15 @@ describe("a send on the constructed wrapped-status screens (#838)", () => {
     expect(answer.receipt).toMatchObject({ outcome: "refused", reason: "draft_present" });
     expect(pane.box).toBe("x");
   });
+
+  test("real 0.172.0 three-row status screens pass the send protocol at every captured width", async () => {
+    for (const state of ["separated-idle", "running"]) for (const width of [52, 56, 80]) {
+      const name = `codex--v0172-surface-${state}-warn7--w${width}.txt`;
+      const pane = capturedPane(capture(name), "                          ⚠ 7 warnings · f2 to view");
+      const answer = await rig({ pane, harness: "codex", version: "0.172.0" }).send("reply with one word: ready");
+      expect(answer.receipt, name).toMatchObject({ outcome: "sent" });
+      expect(submitKeys(pane), name).toHaveLength(1);
+    }
+  });
+
 });

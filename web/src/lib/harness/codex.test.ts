@@ -1773,3 +1773,11 @@ describe("Codex 0.172.0 startup update", () => {
     ]);
   });
 });
+describe("Codex 0.172.0 real 23-row screens with wrapped status and warnings", () => {
+  it.each(allCodexFixtures.filter((name) => name.startsWith("codex--v0172-surface-") && !name.includes("-dialog-")))("%s: the live box stays readable", (name) => {
+    const lines = fixtureLines(name);
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBe(name.includes("-draft-") ? "Draft for the screen reader" : null);
+    expect(buildBlocks(lines, { agent: "codex" }).some((block) => block.kind === "unread-dialog")).toBe(false);
+it.each(allCodexFixtures.filter((name) => name.startsWith("codex--v0172-surface-model-dialog-")))("%s: a real numbered picker still owns the keyboard", (name) => {
+  expect(codexAdapter.composerReady!(fixtureLines(name))).toBe(false);
