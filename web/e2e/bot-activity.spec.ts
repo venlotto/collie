@@ -66,7 +66,7 @@ async function capture(page: Page, state: string) {
 }
 
 // The pseudo-element has no accessible role. Inspect the browser's animation actually applied to it.
-function ringStyle(owner: Locator, property: "animationPlayState" | "animationName" | "content") {
+function ringStyle(owner: Locator, property: "animationName" | "content") {
   return owner.locator("[data-activity][aria-hidden=true]").evaluate((el, key) => getComputedStyle(el, "::after")[key], property);
 }
 
@@ -121,7 +121,8 @@ test("changing activity preserves every row position and the chat header", async
     await refresh(page);
     await expect(pill.locator("[data-activity]")).toHaveAttribute("data-activity", expected);
     if (status === "working") {
-      await expect.poll(() => ringStyle(pill, "animationName")).not.toBe("none");
+      await expect.poll(() => ringStyle(pill, "content")).toBe("none");
+      await expect.poll(() => ringStyle(pill, "animationName")).toBe("none");
       await capture(page, "header");
       await page.emulateMedia({ reducedMotion: "reduce" });
       await expect.poll(() => ringStyle(pill, "animationName")).toBe("none");
@@ -142,7 +143,8 @@ test("a headless run keeps its duration, stop control and live portrait", async 
   await expect(header).toBeInViewport({ ratio: 1, timeout: 30_000 });
   const pill = header.getByText("Exportación", { exact: true }).locator("..");
   await expect(pill.getByRole("status")).toHaveText("Trabajando…");
-  await expect.poll(() => ringStyle(pill, "animationName")).not.toBe("none");
+  await expect.poll(() => ringStyle(pill, "content")).toBe("none");
+      await expect.poll(() => ringStyle(pill, "animationName")).toBe("none");
   const stop = page.getByRole("button", { name: "Detener", exact: true });
   await expect(stop).toBeEnabled();
   await expect(stop.locator("..")).toContainText(/Corriendo · \d+ min/);
@@ -178,11 +180,12 @@ test("a headless run keeps its duration, stop control and live portrait", async 
   await expect(row.locator("[data-activity][aria-hidden=true]")).toHaveAttribute("data-activity", "idle");
 });
 
-test("working motion respects reduced motion, visibility and the silent idle deadline", async ({ page }) => {
+test("working avatars stay still across motion preferences, visibility and idle", async ({ page }) => {
   await page.clock.install();
   const { first } = await openActivityFixture(page);
   await expect(first).toContainText("Trabajando…");
-  await expect.poll(() => ringStyle(first, "animationName")).not.toBe("none");
+  await expect.poll(() => ringStyle(first, "content")).toBe("none");
+  await expect.poll(() => ringStyle(first, "animationName")).toBe("none");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect.poll(() => ringStyle(first, "animationName")).toBe("none");
   await expect(first).toContainText("Trabajando…");
@@ -194,17 +197,20 @@ test("working motion respects reduced motion, visibility and the silent idle dea
       Object.defineProperty(document, "visibilityState", { configurable: true, value: value ? "hidden" : "visible" });
       document.dispatchEvent(new Event("visibilitychange"));
     }, hidden);
-    await expect.poll(() => ringStyle(first, "animationPlayState")).toBe(hidden ? "paused" : "running");
+    await expect.poll(() => ringStyle(first, "animationName")).toBe("none");
+    await expect.poll(() => ringStyle(first, "content")).toBe("none");
   }
   await page.clock.fastForward(31 * 60_000);
-  await expect.poll(() => ringStyle(first, "animationPlayState")).toBe("paused");
+  await expect.poll(() => ringStyle(first, "animationName")).toBe("none");
   await page.getByRole("searchbox", { name: "Buscar" }).click();
-  await expect.poll(() => ringStyle(first, "animationPlayState")).toBe("running");
+  await expect.poll(() => ringStyle(first, "animationName")).toBe("none");
 });
 
 
-test("ready avatars have no circular outline while working avatars keep their indicator", async ({ page }) => {
+test("ready and working avatars have no circular outline", async ({ page }) => {
   const { rows, first } = await openActivityFixture(page);
   await expect.poll(() => ringStyle(rows.filter({ hasText: "Bitácora" }), "content")).toBe("none");
-  await expect.poll(() => ringStyle(first, "content")).toBe('""');
+  await expect.poll(() => ringStyle(first, "content")).toBe("none");
+  await expect(first).toContainText("Trabajando…");
+  await capture(page, "sin-circulo");
 });
