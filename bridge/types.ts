@@ -782,6 +782,8 @@ export function withNoPromptYet(wire: PaneWire, known: boolean): PaneWire {
 /** A Herdr workspace ("space") — a project-scoped container of tabs. From `workspace.list`. */
 export interface WorkspaceView {
   workspaceId: string;
+  /** Stable creation sort key within this session, when reported by the multiplexer. */
+  creationOrder?: number;
   number: number;
   label: string;
   /** Whether this is the focused workspace in the desktop TUI (read-only; we never set focus). */

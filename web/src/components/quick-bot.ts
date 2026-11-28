@@ -7,12 +7,23 @@ import { randomBotAppearance, saveBot } from "@/lib/bot-identity";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { mintRequestId } from "@/lib/worktree-name";
 import type { Scope } from "@/lib/scope";
-import type { BotCreatePrefs } from "@/lib/types";
+import { unassignedTarget } from "./create-bot";
+import type { WorkspaceView, BotCreatePrefs } from "@/lib/types";
+
+/** Call with active workspaces from the target host/session, never the activity-sorted list. */
+export function quickBotTarget(spaces: readonly WorkspaceView[]): SpaceTarget {
+  let newest: WorkspaceView | undefined;
+  for (const space of spaces) {
+    if (space.creationOrder !== undefined &&
+        (newest === undefined || space.creationOrder > newest.creationOrder!)) newest = space;
+  }
+  return newest ? { id: newest.workspaceId } : unassignedTarget(spaces);
+}
 
 const unconfirmed = "No se pudo confirmar la creación. Vuelve a intentar.";
 
 /**
- * A bot in one gesture: no sheet, the default workspace (`space`, Sin asignar), a random name that
+ * A bot in one gesture: no sheet, the most recently created active workspace, a random name that
  * gives way to the agent's own title for the work, and the agent and reasoning of the last bot created on that machine. `quick` resolves to the error to
  * show, or `undefined` when the bot opened (the phone moves to it) or another create was in flight.
  */

@@ -350,6 +350,8 @@ export interface MuxPane extends MuxIdentity {
 /** One space — a project-scoped container of tabs. Collie's word; the port never uses another. */
 export interface MuxSpace {
   readonly spaceId: string;
+  /** Stable creation sort key within this session, independent of display position. */
+  readonly creationOrder?: number;
   readonly number: number;
   readonly label: string;
   readonly focused: boolean;

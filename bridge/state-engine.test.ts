@@ -407,6 +407,17 @@ describe("StateEngine — in-flight guard", () => {
 });
 
 describe("StateEngine — snapshot shaping", () => {
+  test("exposes stable workspace creation order independently of display order", async () => {
+    const { herdr, engine, poll } = makeEngine();
+    herdr.workspaces = [
+      { ...herdr.workspaces[0]!, workspace_id: "w10", number: 1 },
+      { ...herdr.workspaces[0]!, workspace_id: "wZ", number: 2 },
+    ];
+    await poll();
+    expect(engine.current().workspaces.map(w => [w.workspaceId, w.creationOrder]))
+      .toEqual([["w10", 36], ["wZ", 35]]);
+  });
+
   test("preserves the tab order reported by Herdr", async () => {
     const { herdr, engine, poll } = makeEngine();
     herdr.tabs = [
