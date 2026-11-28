@@ -1,0 +1,22 @@
+• [2mWorking[0m [2m(2s • [0;1mesc[0;2m to interrupt)[0m
+
+[2m• [0mQueued follow-up inputs
+[2m  ↳ [3mResponde solo OK. No uses herramientas. Prueba[0m
+    [2;3mafter-56-short-18: «sí», café 🎉.[0m
+[2m  ↳ [3mResponde solo OK. No uses herramientas. Prueba[0m
+    [2;3mafter-56-short-19: «sí», café 🎉.[0m
+    [1mshift+←[0;2m edit last queued message[0m
+
+[1m›[0m emojis 🎉.                                           [2m↑
+[0m
+  Párrafo 3: Comienza, he visto que otra ve z la cuenta
+  regresiva se retrasa; revisa «no va más», acentos y
+  emojis 🎉.
+
+  Párrafo 4: Comienza, he visto que otra ve z la cuenta
+  regresiva se retrasa; revisa «no va más», acentos y
+  emojis 🎉.
+
+  Párrafo 5: Comienza, he visto que otra ve z la cuenta
+  regresiva se retrasa; revisa «no va más», acentos y
+  emojis 🎉.

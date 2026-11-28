@@ -35,7 +35,8 @@
       "maxDraftRows": 100,
       "maxTailRows": 4,
       "bottomWraps": 1,
-      "maxBlankRows": 100
+      "maxBlankRows": 100,
+      "scroll": { "keeps": "tail", "rows": 100, "promptMarker": " {2,}↑$" }
     },
     "frameAlternates": [
       {

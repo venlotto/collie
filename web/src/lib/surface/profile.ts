@@ -592,6 +592,9 @@ export interface FrameScroll {
    * view, whatever the rows in view hold. Absent: a box with no prompt row is no box.
    */
   readonly marker?: string;
+  /** A scroll indicator at the end of the prompt row. The editor keeps its tail and may push
+   * its footer below the viewport. The matched suffix is chrome, never draft text. */
+  readonly promptMarker?: string;
 }
 
 /** The ghost text after the cursor ({@link Profile.idle.inlineHint}). */
@@ -1644,8 +1647,10 @@ function parseScroll(value: JsonValue, maxDraftRows: number): FrameScroll {
   const keeps = oneOf(field(node, "keeps", "idle.frame.scroll"), "idle.frame.scroll.keeps", SCROLL_KEEPS);
   const rows = whole(field(node, "rows", "idle.frame.scroll"), "idle.frame.scroll.rows", 1);
   if (rows > maxDraftRows) fail("idle.frame.scroll.rows", "must not pass maxDraftRows: the walk would never read a box that tall");
-  if (node.marker === undefined) return { keeps, rows };
-  return { keeps, rows, marker: pattern(node.marker, "idle.frame.scroll.marker").source };
+  let scroll: FrameScroll = { keeps, rows };
+  if (node.marker !== undefined) scroll = { ...scroll, marker: pattern(node.marker, "idle.frame.scroll.marker").source };
+  if (node.promptMarker !== undefined) scroll = { ...scroll, promptMarker: pattern(node.promptMarker, "idle.frame.scroll.promptMarker").source };
+  return scroll;
 }
 
 /** The most rows `idle.frame.bottomWraps` may name: each one is a row of the bottom edge's shape the walk passes. */
