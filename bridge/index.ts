@@ -2246,7 +2246,7 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
         // ends, unless a send's probe already went unseen in that box (it is drawn but reads no keys).
         for (const agent of s.agents) {
           if (launchWindow.expecting(name, agent.paneId) === null) continue;
-          if ((surface.boxOf(agent.paneId)?.box ?? null) !== null) launchWindow.drawn(name, agent.paneId, agent.agent);
+          if (surface.startupReady(agent.paneId)) launchWindow.drawn(name, agent.paneId, agent.agent);
         }
         // A queued send whose text a read shows back in the box (ADR 0122): its card says so.
         send?.tickQueued(name, (paneId) => surface.boxOf(paneId));

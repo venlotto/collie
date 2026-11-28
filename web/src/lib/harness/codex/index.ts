@@ -14,8 +14,8 @@
 // `canonicalAgent`, never here. The 0.156.1 screens (captured 2026-09-26) follow the same bar: the
 // patch approval sends the shortcuts it prints (`y`, Escape), the rewritten trust prompt sends a
 // pointer walk and the Enter its footer names, and each of those was pressed live the same day
-// (APPROVAL_NOTES.md, TRUST_NOTES.md). The update prompt and the `/model` and `/permissions`
-// pickers are deliberately left to the unread-dialog card.
+// (APPROVAL_NOTES.md, TRUST_NOTES.md). The 0.172.0 update prompt uses the same pointer walk. The `/model` and
+// `/permissions` pickers are deliberately left to the unread-dialog card.
 
 import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { DialogDetector, HarnessAdapter } from "../types";
@@ -30,6 +30,7 @@ import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectAsyncPanel, detectQueuedQuestion } from "./async-question";
 import { detectTrustRegion } from "./trust";
+import { detectUpdateRegion } from "./update";
 import { detectHooksRegion } from "./hooks";
 import { decorateCodexDisplay } from "./display";
 import { regionSignature, rstrip } from "./markers";
@@ -49,6 +50,7 @@ function sessionPickerRegion(lines: StyledLine[]) {
 /** The detectors `codexBuildBlocks` runs, in its order, for the unread-dialog card's report (ADR 0123). */
 const CODEX_DIALOG_DETECTORS: readonly DialogDetector[] = [
   { name: "trust", detect: detectTrustRegion },
+  { name: "update", detect: detectUpdateRegion },
   { name: "hooks", detect: detectHooksRegion },
   { name: "approval", detect: detectApprovalRegion },
   { name: "ask", detect: detectAskRegion },
@@ -64,6 +66,15 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
     const blocks: Block[] = [];
     if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: trust.model, lines: lines.slice(trust.startLine) });
+    return blocks;
+  }
+
+  const update = detectUpdateRegion(lines);
+  if (update) {
+    const before = trimTrailingBlank(lines.slice(0, update.startLine));
+    const blocks: Block[] = [];
+    if (before.length > 0) blocks.push(raw(before));
+    blocks.push({ kind: "prompt-select", prompt: update.model, lines: lines.slice(update.startLine) });
     return blocks;
   }
 

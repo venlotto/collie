@@ -93,12 +93,12 @@ export interface PaneSurface {
  * before any read folds in as `composer: unreachable` with its reason: the pane's machine the lead
  * cannot reach (`hostBlock`, CREW_PROTOCOL.md §10.3, which names the machine), and a bridge that does
  * not mark the pane for the Send Protocol (sending text is off there, or a crew member older than the
- * protocol). A marked pane with no read yet is {@link UNREAD_SURFACE}: the two-tap Send stays open,
+ * protocol). An absent capability read is pending, not a refusal. A marked pane with no read yet is {@link UNREAD_SURFACE}: the two-tap Send stays open,
  * and the bridge reads the screen at the tap either way.
  */
-export function paneSurface(read: Surface | undefined, marked: boolean, hostBlock: string | undefined): PaneSurface {
+export function paneSurface(read: Surface | undefined, marked: boolean | undefined, hostBlock: string | undefined): PaneSurface {
   const surface = read ?? UNREAD_SURFACE;
   if (hostBlock !== undefined) return { surface: unreachable(surface), unreachableNote: hostBlock };
-  if (!marked) return { surface: unreachable(surface), unreachableNote: t("composer.placeholder.sendOff") };
+  if (marked === false) return { surface: unreachable(surface), unreachableNote: t("composer.placeholder.sendOff") };
   return { surface, unreachableNote: undefined };
 }

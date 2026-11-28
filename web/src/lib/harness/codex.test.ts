@@ -63,6 +63,8 @@ const DIALOG = [
   // 0.172.0, a disposable Herdr pane at 52 columns (2026-11-27): the trust prompt, an async question's
   // reminder over the live box (a notice card) and the question it opens (async-question.ts).
   "codex--v0172-trust--w52.txt",
+  "codex--v0172-startup-trust--w52.txt",
+  "codex--v0172-startup-update--w52.txt",
   "codex--v0172-async-question--w52.txt",
   "codex--v0172-async-panel--w52.txt",
   // 0.172.0, a scratch tmux server at 52 and 60 columns (2026-11-27): two async questions at once, and the
@@ -1755,5 +1757,19 @@ describe("Codex 0.167.0: the dialogs behind the trouble tally", () => {
   it("leaves the agent command center to the card, its way out being Escape", () => {
     const blocks = buildBlocks(fixtureLines("codex--v0167-command-center--w120.txt"), { agent: "codex" });
     expect(blocks.map((b) => b.kind)).toEqual(["unread-dialog"]);
+  });
+});
+
+
+describe("Codex 0.172.0 startup update", () => {
+  it("lifts the captured wrapped update prompt with pointer navigation", () => {
+    const blocks = codexAdapter.buildBlocks(fixtureLines("codex--v0172-startup-update--w52.txt"));
+    const block = blocks.find((candidate) => candidate.kind === "prompt-select");
+    if (block?.kind !== "prompt-select") throw new Error("missing update card");
+    expect(block.prompt.options.map((option) => [option.label, option.keys])).toEqual([
+      ["Update now (runs `npm install -g @openai/codex`)", ["Enter"]],
+      ["Skip", ["Down", "Enter"]],
+      ["Skip until next version", ["Down", "Down", "Enter"]],
+    ]);
   });
 });

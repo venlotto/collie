@@ -1,0 +1,23 @@
+
+  >_ [1mOpenAI Codex[0;2m (v0.172.0)
+[0m     [2m/tmp/cx-startup-trial-6siFax/repo[0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  [1m?[0m for shortcuts

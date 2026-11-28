@@ -221,6 +221,14 @@ export class SurfaceShadow {
     return rows != null && queuedQuestion(rows.map(rowText)) !== null;
   }
 
+  /** A drawn startup box is ready only after the profile's editor-ready rows appear. */
+  startupReady(paneId: string): boolean {
+    if ((this.boxOf(paneId)?.box ?? null) === null) return false;
+    const state = this.panes.get(paneId);
+    const ready = state === undefined ? undefined : loadProfiles().get(state.profileId)?.probe.readyRows;
+    return ready === undefined || ready.some((source) => state?.fold.screen?.rows?.some((row) => new RegExp(source, "u").test(rowText(row))) === true);
+  }
+
   /**
    * The input box of the pane's newest screen read, when it was read and the turn the Surface claimed
    * (ADR 0122): the box's text, "" when

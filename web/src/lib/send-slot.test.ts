@@ -42,6 +42,9 @@ describe("sendSlot", () => {
 });
 
 describe("paneSurface", () => {
+  it("does not report disabled sending before the pane capability arrives", () => {
+    expect(paneSurface(undefined, undefined, undefined)).toEqual({ surface: UNREAD_SURFACE, unreachableNote: undefined });
+  });
   it("passes the bridge's read through on a marked pane, and reads a pane not read yet as no-match", () => {
     expect(paneSurface(ask("menu"), true, undefined)).toEqual({ surface: ask("menu"), unreachableNote: undefined });
     expect(paneSurface(undefined, true, undefined)).toEqual({ surface: UNREAD_SURFACE, unreachableNote: undefined });

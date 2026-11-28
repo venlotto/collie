@@ -56,3 +56,16 @@ Codex in the isolated `cx-status` tmux server, 52 × 23. A real `sleep 600` is s
 running and native follow-ups are queued. The waiting row clips `esc to interrupt`
 to `esc to …`; the status must remain running. No live Collie or operator pane was
 written. Full receipts and captures: `briefs/collie-redesign/verify/codexp-1000/status/`.
+## Codex 0.172.0 startup (2026-11-28)
+`codex--v0172-startup-header--w56.txt` and `codex--v0172-startup-trust--w52.txt`
+are ANSI reads from private tmux servers, 23 rows, new folders below `/tmp`. The header
+shows a placeholder before the model status and editor are ready. The trust capture
+comes from a new git repository with normal `codex`; `codexp` uses YOLO and skips it.
+The ordinary model status is the startup readiness witness; a warning-only footer is not.
+`protocol.codex-startup.test.ts` covers no-key waiting, durable holds, probe cleanup and release.
+The reproducible real-pane lab and per-trial receipts are in
+`/home/ubuntu/briefs/collie-redesign/verify/codexp-1000/startup/`.
+`codex--v0172-startup-update--w52.txt`: real 0.172.0 update widget, triggered
+by seeding **only an isolated home's** version cache with 0.173.0; no release
+availability is implied and no update was installed. Down selected Skip,
+Enter dismissed it. See `web/src/lib/harness/codex/STARTUP_NOTES.md`.
