@@ -1,8 +1,7 @@
 # Send Protocol captures
 
 Screens the Send Protocol tests read directly. They stay out of `web/src/fixtures/panes/` on
-purpose: that corpus is read by every grammar and fold test, and these three exist only to pin
-what a send writes into Codex's box.
+purpose: that corpus is read by every grammar and fold test, and these captures pin what a send reads or writes in Codex's box.
 
 # Codex 0.172.0 at 56 columns: a typed `?` lead and a folded paste (2026-11-27)
 
@@ -38,3 +37,14 @@ is in them.
 | `codex--v0172-mention-probe-popup--w56.txt` | The old send's draft probe after it: the box holds `mira @READ⌁` and the reopened popup echoes `READ⌁` over `no matches`, so the screen shows the character twice |
 | `codex--v0172-shell-mode-empty--w56.txt` | `!` typed on an empty box: the prompt glyph is a bold red `!`, and `Shell mode` stands under the status row |
 | `codex--v0172-shell-mode-typed--w56.txt` | `!echo hola-bang` typed on an empty box: the box shows `! echo hola-bang`, the line without its `!` |
+
+# Codex 0.172.0: consecutive blank paragraphs (2026-11-28)
+
+`protocol.codex-paragraphs.test.ts` reads these ANSI captures:
+
+- `codex--v0172-first-draft-paragraphs.txt`: a reported stranded draft from coder1,
+  captured read-only from Herdr. The native editor has consecutive empty paragraphs and only a
+  right-aligned warning footer, without the model status row. No credentials are included.
+- `codex--v0172-native-paragraphs--w56.txt`: a separate 56 by 35 tmux terminal in
+  `/tmp/collie-stranded-send-lab`, with a harmless multiline send regression prompt.
+  Codex shows the model status and warning footer below the draft.

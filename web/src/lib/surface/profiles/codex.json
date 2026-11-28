@@ -34,7 +34,8 @@
       "continuationIndent": 2,
       "maxDraftRows": 100,
       "maxTailRows": 4,
-      "bottomWraps": 1
+      "bottomWraps": 1,
+      "maxBlankRows": 100
     },
     "frameAlternates": [
       {
@@ -55,7 +56,29 @@
         "maxDraftRows": 100,
         "maxTailRows": 4,
         "bottomWraps": 1,
-        "note": "Shell mode (Codex 0.172.0, lab 2026-11-27, captures codex--v0172-shell-mode-*--w56.txt): a `!` typed on an empty box turns the prompt glyph into a bold red `!` and puts `Shell mode` under the status row; the box holds the line without its `!`. Read with idle.shellMode."
+        "note": "Shell mode (Codex 0.172.0, lab 2026-11-27, captures codex--v0172-shell-mode-*--w56.txt): a `!` typed on an empty box turns the prompt glyph into a bold red `!` and puts `Shell mode` under the status row; the box holds the line without its `!`. Read with idle.shellMode.",
+        "maxBlankRows": 100
+      },
+      {
+        "top": {
+          "pattern": "^$",
+          "column": 0,
+          "blank": true
+        },
+        "prompt": {
+          "pattern": "^[›»](?: (?!\\d{1,2}\\. )(?<draft>.*))?$",
+          "column": 0
+        },
+        "bottom": {
+          "pattern": "^\\s*⚠ \\d+(?: warnings?)? · f2(?: to view)?$",
+          "column": 2,
+          "maxColumn": 500
+        },
+        "continuationIndent": 2,
+        "maxDraftRows": 100,
+        "maxTailRows": 4,
+        "maxBlankRows": 100,
+        "note": "Codex 0.172.0 first-turn draft, captured on coder1 on 2026-11-28: before the model status row appears, only the right-aligned warning footer remains below the native multiline editor."
       }
     ],
     "placeholders": {
