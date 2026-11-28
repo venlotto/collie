@@ -4362,5 +4362,7 @@ one real `seq 1 20; sleep 30` turn; `/model` captures are genuine numbered picke
 Four read-only Herdr captures supplied with the incident supplement the lab: `mobile-idle-warn7`
 (w2D:p6), `duck-idle-warn3` (w2H:pB), `clarify-idle-warn3` (w2J:p6), and `tip-running-warn3`
 (w2H:p9). They retain their original 23 rows, including the Working tip and collapsed tool output.
+Their `--herdr` suffix deliberately makes no column-width claim: the supplied metadata did not
+record the width. Earlier test logs called these four files `--w56`; only their names changed.
 The two incident captures whose editor hides the entire footer are tracked by the separate
 long-draft work; they are not silently labelled as recognised by these tests.
