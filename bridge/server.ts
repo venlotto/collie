@@ -3561,7 +3561,8 @@ export function startServer(opts: {
             audit.record({ action: "bot." + action, session: rt.name, device: whois(req).device, detail: { workspaceId } });
             return json({ ok: true }, null);
           } catch (error) {
-            return json({ ok: false, message: errorText(error) }, null, 409);
+            audit.record({ action: "bot." + action + ".refused", session: rt.name, device: whois(req).device, detail: { workspaceId, message: errorText(error) } });
+            return json({ ok: false, error: errorText(error) }, null, 409);
           }
         }
         const terminalId = asJsonString(input?.terminalId);
@@ -3580,7 +3581,8 @@ export function startServer(opts: {
           audit.record({ action: "bot." + action, session: rt.name, device: whois(req).device, detail: { terminalId, runId } });
           return json({ ok: true }, null);
         } catch (error) {
-          return json({ ok: false, message: errorText(error) }, null, 409);
+          audit.record({ action: "bot." + action + ".refused", session: rt.name, device: whois(req).device, detail: { terminalId, runId, message: errorText(error) } });
+          return json({ ok: false, error: errorText(error) }, null, 409);
         }
       }
 

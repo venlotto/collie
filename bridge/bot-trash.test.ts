@@ -30,7 +30,7 @@ describe("server trash, fixture mux and simulated clock", () => {
       const owned = join(uploads, botUploadPrefix("one", id) + "image.png");
       const other = join(uploads, botUploadPrefix("two", id) + "image.png");
       writeFileSync(owned, "one"); writeFileSync(other, "two");
-      w.advance(TRASH_RETENTION - 1);
+      w.advance(15 * 60 * 1000 - 1);
       await restart.sweep();
       expect(existsSync(owned)).toBe(true);
       expect((await w.mux.snapshot()).panes.some(p => p.terminalId === id)).toBe(true);
@@ -103,6 +103,53 @@ describe("server trash, fixture mux and simulated clock", () => {
       await expect(reopened.act("one", "purge", id, undefined, group.trashedAt)).rejects.toThrow();
       await reopened.workspace("one", "restoreWorkspace", space, group.trashedAt);
       expect(reopened.lookup("one", id)).toEqual(old);
+    } finally { w.close(); }
+  });
+
+  test("workspace expiry closes all original terminals and leaves a new chat alone", async () => {
+    const w = await world();
+    try {
+      const space = w.a.spaceId;
+      const original = (await w.mux.snapshot()).panes.filter(p => p.spaceId === space);
+      await w.trash.workspace("one", "trashWorkspace", space);
+      const added = await w.mux.createTab({ spaceId: space });
+      expect(added.ok).toBe(true);
+      w.advance(15 * 60 * 1000);
+      await w.trash.sweep();
+      const remaining = (await w.mux.snapshot()).panes;
+      for (const pane of original) expect(remaining.some(p => p.terminalId === pane.terminalId)).toBe(false);
+      expect(remaining.some(p => p.spaceId === space)).toBe(true);
+      expect(existsSync(join(w.dir, "bot-trash.json"))).toBe(false);
+    } finally { w.close(); }
+  });
+
+  test("expired chats cannot be restored while cleanup waits for the next tick", async () => {
+    const w = await world();
+    try {
+      const id = w.a.terminalId!;
+      await w.trash.act("one", "trash", id);
+      const at = w.trash.lookup("one", id)!.trashedAt;
+      w.advance(15 * 60 * 1000);
+      await expect(w.trash.act("one", "restore", id, undefined, at)).rejects.toThrow("vencido");
+      await w.trash.sweep();
+      expect((await w.mux.snapshot()).panes.some(p => p.terminalId === id)).toBe(false);
+    } finally { w.close(); }
+  });
+
+  test("overlapping sweeps share one cleanup and a run's replacement is untouched", async () => {
+    const w = await world();
+    try {
+      const id = w.a.terminalId!;
+      await w.trash.act("one", "trash", id);
+      w.advance(15 * 60 * 1000);
+      const first = w.trash.sweep();
+      expect(w.trash.sweep()).toBe(first);
+      await first;
+      const before = (await w.mux.snapshot()).panes;
+      await w.trash.purgeRunTerminal("one", id);
+      expect((await w.mux.snapshot()).panes).toEqual(before);
+      await w.trash.purgeRunTerminal("one", w.b.terminalId!);
+      expect((await w.mux.snapshot()).panes.some(p => p.terminalId === w.b.terminalId)).toBe(false);
     } finally { w.close(); }
   });
 });

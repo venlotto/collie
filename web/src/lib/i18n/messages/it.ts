@@ -5,13 +5,15 @@ import type { Dictionary } from "./en";
 
 export const it: Dictionary = {
   "bot.selection.trashTitle": "Eliminare la selezione?",
-  "bot.selection.trashBody": "Gli spazi selezionati, tutte le loro chat e le chat selezionate resteranno nel cestino per 7 giorni.",
+  "bot.trash.remaining": "Eliminazione tra {minutes} min",
+  "bot.trash.pending": "Eliminazione in attesa",
+  "bot.selection.trashBody": "Gli spazi selezionati, tutte le loro chat e le chat selezionate resteranno nel cestino per 15 minuti.",
   "bot.selection.trashConfirm": "Sposta nel cestino",
   "bot.selection.cancel": "Annulla",
   "bot.edit.title": "Modifica bot",
   "bot.chatActions.delete": "Elimina chat",
   "bot.chatActions.move": "Cambia spazio di lavoro",
-  "bot.chatActions.confirm": "«{name}» verrà conservato nel cestino per 7 giorni.",
+  "bot.chatActions.confirm": "«{name}» verrà conservato nel cestino per 15 minuti.",
   "bot.chatActions.empty": "Nessun altro spazio di lavoro disponibile.",
   "bot.chatActions.cancel": "Annulla",
   "bot.chatActions.failed": "Impossibile completare l’azione. Riprova.",

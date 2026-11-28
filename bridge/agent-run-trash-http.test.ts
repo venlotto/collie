@@ -38,8 +38,9 @@ test("the paired HTTP route deletes an external bot, rejects unpaired writes and
   const id = "20261128T030000-external-abcd";
   await writeFile(join(stateDir, id + ".status"), JSON.stringify({ id, name: "External bot", agent: "claudep", cwd: "/external",
     status: "done", created_at: new Date().toISOString(), ended_at: new Date().toISOString() }));
+  const audit: string[] = [];
   const server = startServer({ cfg, registry, pairing, activity, push: new Push(cfg), snooze: new Snooze(cfg),
-    notifyPrefs: new NotifyPrefsStore(cfg), version: "1.31.0", audit: new AuditLog(() => undefined),
+    notifyPrefs: new NotifyPrefsStore(cfg), version: "1.31.0", audit: new AuditLog(line => { audit.push(line); }),
     updateMonitor: part<UpdateMonitor>({ status: () => ({ current: "1.31.0", latest: "1.31.0", latestUrl: null,
       releaseAvailable: false, majorAvailable: null, majorUrl: null, installKind: "binary", dismissedVersion: null,
       dismissedCrewVersion: null, bridgeStale: false, restartNeeded: false, checkedAt: null }) }),
@@ -58,6 +59,16 @@ test("the paired HTTP route deletes an external bot, rejects unpaired writes and
   try {
     expect((await post({ action: "trash", runId: id }, false)).status).toBe(403);
     expect((await post({ action: "trash", runId: id })).status).toBe(200);
+    const conflict = await post({ action: "trash", runId: id });
+    expect(conflict.status).toBe(409);
+    expect(await conflict.json()).toEqual({ ok: false, error: "La selección de Papelera ha cambiado." });
+    expect(audit.some(line => line.includes("bot.trash.refused"))).toBe(true);
+    const workspaceConflict = await fetch(base + "/api/bot-action", { method: "POST",
+      headers: { origin: base, authorization: "Bearer " + token, "content-type": "application/json" },
+      body: JSON.stringify({ action: "trashWorkspace", workspaceId: "gone" }) });
+    expect(workspaceConflict.status).toBe(409);
+    expect(await workspaceConflict.json()).toEqual({ ok: false, error: "Esta sesión no admite la Papelera de workspaces." });
+    expect(audit.some(line => line.includes("bot.trashWorkspace.refused"))).toBe(true);
     const body = await snapshot();
     expect(body.shellPanes).toHaveLength(1);
     expect(body.shellPanes[0]?.trash).toBeDefined();

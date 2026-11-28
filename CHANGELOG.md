@@ -173,6 +173,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
 - **Every open bot window offers an editable reply field.** Click or tab into “Preguntar a…” to write directly, keeping unsent text when switching between chats.
 
+- **Trash frees terminal resources after fifteen minutes.** Deleted chats and workspaces remain recoverable for fifteen minutes, then their terminals and attachments are removed automatically, even with the browser closed. Refused deletions now show their reason and leave an audit entry.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

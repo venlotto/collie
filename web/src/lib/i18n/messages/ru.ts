@@ -5,13 +5,15 @@ import type { Dictionary } from "./en";
 
 export const ru: Dictionary = {
   "bot.selection.trashTitle": "Удалить выбранное?",
-  "bot.selection.trashBody": "Выбранные рабочие пространства со всеми чатами и выбранные чаты останутся в корзине на 7 дней.",
+  "bot.trash.remaining": "Удаление через {minutes} мин",
+  "bot.trash.pending": "Ожидает удаления",
+  "bot.selection.trashBody": "Выбранные рабочие пространства со всеми чатами и выбранные чаты останутся в корзине на 15 минут.",
   "bot.selection.trashConfirm": "В корзину",
   "bot.selection.cancel": "Отмена",
   "bot.edit.title": "Изменить бота",
   "bot.chatActions.delete": "Удалить чат",
   "bot.chatActions.move": "Сменить рабочее пространство",
-  "bot.chatActions.confirm": "«{name}» будет храниться в корзине 7 дней.",
+  "bot.chatActions.confirm": "«{name}» будет храниться в корзине 15 минут.",
   "bot.chatActions.empty": "Нет других доступных рабочих пространств.",
   "bot.chatActions.cancel": "Отмена",
   "bot.chatActions.failed": "Не удалось выполнить действие. Попробуйте ещё раз.",
