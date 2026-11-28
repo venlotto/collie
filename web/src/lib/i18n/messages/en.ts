@@ -14,6 +14,10 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
+  "bot.selection.trashTitle": "Delete selection?",
+  "bot.selection.trashBody": "The selected workspaces, all their chats, and the selected chats will stay in Trash for 7 days.",
+  "bot.selection.trashConfirm": "Move to Trash",
+  "bot.selection.cancel": "Cancel",
   "bot.edit.title": "Edit bot",
   "settings.language.title": "Language",
   "settings.language.description": "The terminal mirror is never translated.",

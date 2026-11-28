@@ -3,6 +3,10 @@ import type { Dictionary } from "./en";
 // Spanish. See de.ts for the typing contract.
 
 export const es: Dictionary = {
+  "bot.selection.trashTitle": "¿Eliminar selección?",
+  "bot.selection.trashBody": "Los workspaces seleccionados, todos sus chats y los chats seleccionados se guardarán en la Papelera durante 7 días.",
+  "bot.selection.trashConfirm": "Enviar a Papelera",
+  "bot.selection.cancel": "Cancelar",
   "bot.edit.title": "Editar bot",
   "settings.language.title": "Idioma",
   "settings.language.description": "La salida del terminal nunca se traduce.",

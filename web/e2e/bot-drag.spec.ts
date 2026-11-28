@@ -252,3 +252,44 @@ test("la entrada táctil de Chromium permite desplazar la lista y arrastrar tras
   await expect(rows.first()).toContainText("Notas");
   expect(writes).toEqual(["order"]);
 });
+
+test("workspace holds suppress text selection, tolerate thumb jitter and recover from a native cancel", async ({ page }) => {
+  await world(page);
+  const header = page.getByRole("button", { name: "Ideas", exact: true });
+  const p = await point(header);
+  const touch = { pointerId: 12, isPrimary: true, button: 0, pointerType: "touch", clientX: p.x, clientY: p.y };
+  const css = await header.evaluate(el => ({ select: getComputedStyle(el).getPropertyValue("-webkit-user-select") || getComputedStyle(el).userSelect,
+    callout: getComputedStyle(el).getPropertyValue("-webkit-touch-callout"), supportsCallout: CSS.supports("-webkit-touch-callout", "none") }));
+  expect(css.select).toBe("none");
+  if (css.supportsCallout) expect(css.callout).toBe("none");
+  await header.dispatchEvent("pointerdown", { ...touch, buttons: 1 });
+  await header.dispatchEvent("pointermove", { ...touch, clientX: p.x + 12, buttons: 1 });
+  await expect(page.getByRole("dialog", { name: "Ideas", exact: true })).toBeVisible();
+  await header.dispatchEvent("pointerup", touch);
+  await header.dispatchEvent("click", { detail: 1 });
+  await expect(header).toHaveAttribute("aria-expanded", "true");
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe("");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await header.dispatchEvent("pointerdown", { ...touch, buttons: 1 });
+  await header.dispatchEvent("pointercancel", touch);
+  await header.dispatchEvent("contextmenu", { button: 0 });
+  await expect(page.getByRole("dialog", { name: "Ideas", exact: true })).toBeVisible();
+});
+
+test("a mixed selection deletes one workspace and one independent chat", async ({ page }) => {
+  const { writes } = await world(page);
+  const first = page.getByRole("button", { name: /^Bocetos/ });
+  await first.click({ button: "right" });
+  await page.getByRole("checkbox", { name: "Ideas", exact: true }).click();
+  await page.getByRole("checkbox", { name: /^Libros/ }).click();
+  await expect(page.getByText("2 seleccionados", { exact: true })).toBeVisible();
+  await page.getByRole("toolbar").getByRole("button", { name: "Eliminar", exact: true }).click();
+  const confirm = page.getByRole("dialog", { name: "¿Eliminar selección?" });
+  await expect(confirm).toBeVisible();
+  expect(writes).toEqual([]);
+  await confirm.getByRole("button", { name: "Enviar a Papelera", exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  expect(writes).toEqual(["trashWorkspace", "trash"]);
+  await expect(page.getByText("Rutas", { exact: true })).toBeVisible();
+});

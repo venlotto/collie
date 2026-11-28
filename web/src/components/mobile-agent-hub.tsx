@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useLongPress } from "@/hooks/use-long-press";
@@ -8,9 +9,9 @@ import { WorkspaceMenu } from "./bot-workspace-menu";
 import { dragScope, sectionKey, useBotOrganization } from "./bot-organization";
 import { saveBot, forgetBot } from "@/lib/bot-identity";
 import { BotRow, BotActionSheet } from "./bot-selection";
-import { FolderInput, Trash2, Undo2, ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
+import { Check, FolderInput, Trash2, Undo2, ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
 import { graphemeSegmenter } from "@/lib/env";
-import { actOnBot, restoreWorkspace, fetchChat, type BotAction } from "@/lib/api";
+import { actOnBot, restoreWorkspace, trashWorkspace, fetchChat, type BotAction } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
 import { paneRowKey } from "@/lib/hosts";
 import { activityAt } from "@/lib/pane-order";
@@ -92,7 +93,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   const { clearFeatured } = useBotFeatured();
   const [mode, setMode] = useState<"chats" | "trash" | null>(null);
   const [selection, setSelection] = useState<Set<string>>(new Set());
-  const [sheet, setSheet] = useState<"move" | "restore" | "purge" | null>(null);
+  const [workspaceSelection, setWorkspaceSelection] = useState<Set<string>>(new Set());
+  const [sheet, setSheet] = useState<"move" | "restore" | "purge" | "trash" | null>(null);
   const [sheetOptions, setSheetOptions] = useState<{ id: string; title: string }[]>([]);
   const [leaving, setLeaving] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -199,11 +201,24 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   const selectable = (p: AgentView) => writable && !!p.terminalId && !scopeOf(p).host;
   const choices = (mode === "trash" ? trashRows : groupRows).filter(selectable);
   const rowId = (p: AgentView) => JSON.stringify([scopeOf(p).session, p.terminalId, p.trash?.trashedAt]);
-  const chosen = choices.filter(p => selection.has(rowId(p)));
+  const workspaceChoices = mode === "chats" ? [...groups.values()].filter(g =>
+    writable && !g.scope.host && g.id !== "agent-runs" && (!needle || g.rows.length > 0)) : [];
+  const chosenWorkspaces = workspaceChoices.filter(g => workspaceSelection.has(sectionKey(g.scope, g.id)));
+  const covered = (p: AgentView) => mode === "chats" && chosenWorkspaces.some(g => sectionKey(g.scope, g.id) === sectionKey(scopeOf(p), p.workspaceId));
+  const chosen = choices.filter(p => selection.has(rowId(p)) && !covered(p));
+  const chosenCount = chosen.length + chosenWorkspaces.length;
+  function selectWorkspace(key: string) {
+    if (busy) return;
+    setWorkspaceSelection(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
   const destinations = [...groups.values()].filter(g => g.id !== "agent-runs" && chosen.length > 0 && chosen.every(p =>
     scopeOf(p).session === g.scope.session && !g.scope.host));
   function select(p: AgentView, add: boolean) {
-    if (!selectable(p) || busy) return;
+    if (!selectable(p) || covered(p) || busy) return;
     const target = p.trash ? "trash" : "chats";
     const id = rowId(p);
     setError("");
@@ -212,9 +227,10 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       if (next.has(id) && !add) next.delete(id); else next.add(id);
       return next;
     });
+    if (mode !== target) setWorkspaceSelection(new Set());
     setMode(target);
   }
-  function done() { setMode(null); setSelection(new Set()); setError(""); }
+  function done() { setMode(null); setSelection(new Set()); setWorkspaceSelection(new Set()); setError(""); }
   function openSheet(next: typeof sheet) {
     setSheetOptions(destinations.map(({ id, title }) => ({ id, title })));
     setSheet(next);
@@ -222,15 +238,25 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     setError("");
   }
   async function apply(action: BotAction, workspaceId?: string) {
-    if (!writable || lock.current || leaving || !chosen.length) return;
+    if (!writable || lock.current || leaving || !chosenCount || (chosenWorkspaces.length > 0 && action !== "trash")) return;
     lock.current = true;
     setBusy(true);
     setError("");
     try {
+      for (const space of chosenWorkspaces) {
+        const result = await trashWorkspace(space.scope, space.id);
+        if (!result.ok) throw new Error(result.error);
+        const key = sectionKey(space.scope, space.id);
+        const members = panes.filter(p => sectionKey(scopeOf(p), p.workspaceId) === key);
+        for (const p of members) clearFeatured(p);
+        setWorkspaceSelection(prev => { const next = new Set(prev); next.delete(key); return next; });
+        setSelection(prev => { const next = new Set(prev); for (const p of members) next.delete(rowId(p)); return next; });
+      }
       for (const p of chosen) {
         const scope = scopeOf(p);
         const portrait = identityOf(p, scope);
-        await actOnBot(action, p, scope, workspaceId);
+        const result = await actOnBot(action, p, scope, workspaceId);
+        if (!result.ok) throw new Error("Chat action failed");
         if (action === "move" || action === "trash" || action === "purge") clearFeatured(p);
         if (p.terminalId) {
           if (action === "purge") forgetBot(scope, p.terminalId);
@@ -257,8 +283,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     const matching = mode === (p.trash ? "trash" : "chats");
     const days = p.trash && Math.max(0, Math.ceil(7 - (Date.now() - p.trash.trashedAt) / 86_400_000));
     return <li key={paneRowKey(p)} data-drag-pane={!p.trash && selectable(p) ? chatOrderId(p) : undefined}><BotRow current={current}
-      checked={mode ? matching && selection.has(rowId(p)) : undefined}
-      disabled={busy || (!!mode && (!selectable(p) || !matching))}
+      checked={mode ? matching && (covered(p) || selection.has(rowId(p))) : undefined}
+      disabled={busy || (!!mode && (!selectable(p) || !matching || covered(p)))}
       onHold={selectable(p) ? () => select(p, true) : undefined}
       onPress={() => { if (!mode && !p.trash) onPress(p); }}
       onOpen={() => { if (mode || p.trash) select(p, false); else onOpen(p); }}>
@@ -276,8 +302,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     <div className="bot-list-surface">
       {mode ? <header className="bot-bar bot-select-bar">
         <button disabled={busy} onClick={done}>Listo</button>
-        <strong aria-live="polite">{chosen.length} {chosen.length === 1 ? "seleccionado" : "seleccionados"}</strong>
-        <button disabled={busy} onClick={() => setSelection(new Set(choices.map(rowId)))}>Seleccionar todo</button>
+        <strong aria-live="polite">{chosenCount} {chosenCount === 1 ? "seleccionado" : "seleccionados"}</strong>
+        <button disabled={busy} onClick={() => { setSelection(new Set(choices.map(rowId))); setWorkspaceSelection(new Set(workspaceChoices.map(g => sectionKey(g.scope, g.id)))); }}>Seleccionar todo</button>
       </header> : <header className="bot-bar">
         <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
         <PlusButton onNew={onNew} onQuickNew={onQuickNew && (() => void onQuickNew().then(message => setError(message ?? "")))} busy={quickBusy} />
@@ -286,12 +312,22 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
         {accessNotice}
         {organize.error && <p role="alert" className="bot-access">{organize.error}</p>}
         {error && !sheet && <p className="bot-access" role="alert">{error}</p>}
-        {featured && featuredBot && !needle && <button disabled={!!mode} className="bot-featured" onClick={() => onOpen(featured)}>
+        {featured && featuredBot && !needle && <button disabled={busy || (!!mode && (mode !== "chats" || !selectable(featured) || covered(featured)))} className="bot-featured"
+          role={mode ? "checkbox" : undefined} aria-checked={mode ? covered(featured) || selection.has(rowId(featured)) : undefined}
+          onClick={() => { if (mode) select(featured, false); else onOpen(featured); }}>
+          {mode && <span aria-hidden className="bot-check">{(covered(featured) || selection.has(rowId(featured))) && <Check size={14} strokeWidth={3} />}</span>}
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
         {recentGroups.map(([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
-          <button className="bot-group" aria-expanded={!folded.has(key) || !!needle} disabled={!!needle} onClick={() => toggle(key)}>{group.title}<ChevronDown size={14} /></button>
+          <button className="bot-group" role={mode === "chats" ? "checkbox" : undefined}
+            aria-checked={mode === "chats" ? workspaceSelection.has(key) : undefined}
+            aria-expanded={mode ? undefined : !folded.has(key) || !!needle}
+            disabled={busy || (mode ? mode !== "chats" || !workspaceChoices.includes(group) : !!needle)}
+            onClick={() => { if (mode === "chats") selectWorkspace(key); else toggle(key); }}>
+            {mode === "chats" && <span aria-hidden className="bot-check">{workspaceSelection.has(key) && <Check size={14} strokeWidth={3} />}</span>}
+            {group.title}{!mode && <ChevronDown size={14} />}
+          </button>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}
         {(trashRows.length > 0 || trashedSpaces.length > 0) && <section data-workspace="trash">
@@ -313,8 +349,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       {below > 0 && <div className="bot-jump-slot"><button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.row.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button></div>}
       {mode ? <div className="bot-search bot-actions" role="toolbar" aria-label="Acciones de selección">
         {mode === "chats" ? <>
-          <button disabled={!chosen.length || !destinations.length || busy} onClick={() => openSheet("move")}><FolderInput size={18} />Mover</button>
-          <button disabled={!chosen.length || busy} onClick={() => void apply("trash")}><Trash2 size={18} />Eliminar</button>
+          <button disabled={!chosen.length || !!chosenWorkspaces.length || !destinations.length || busy} onClick={() => openSheet("move")}><FolderInput size={18} />Mover</button>
+          <button disabled={!chosenCount || busy} onClick={() => { if (chosenWorkspaces.length) openSheet("trash"); else void apply("trash"); }}><Trash2 size={18} />Eliminar</button>
         </> : <>
           <button disabled={!chosen.length || busy} onClick={() => {
             if (chosen.every(p => p.workspaceId === p.trash?.originalWorkspaceId ||
@@ -332,8 +368,12 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           }}>{section.title}</button>)}</div></>}
       <label className="bot-search"><Search size={18} /><input type="search" aria-label="Buscar" placeholder="Buscar" value={query} onChange={e => setQuery(e.target.value)} /></label></>}</div>
     {sheet && <BotActionSheet busy={busy} leaving={leaving} dismiss={() => setLeaving(true)} close={() => { setSheet(null); setLeaving(false); }}
-      title={sheet === "purge" ? "Eliminar definitivamente" : sheet === "restore" ? "Restaurar en" : "Mover a"}>
-      {sheet === "purge" ? <>
+      title={sheet === "trash" ? t("bot.selection.trashTitle") : sheet === "purge" ? "Eliminar definitivamente" : sheet === "restore" ? "Restaurar en" : "Mover a"}>
+      {sheet === "trash" ? <>
+        <p>{t("bot.selection.trashBody")}</p>
+        <button className="bot-choice bot-danger" disabled={busy || leaving || !chosenCount} onClick={() => void apply("trash")}>{t("bot.selection.trashConfirm")}</button>
+        <button className="bot-choice" disabled={busy || leaving} onClick={() => setLeaving(true)}>{t("bot.selection.cancel")}</button>
+      </> : sheet === "purge" ? <>
         <p>Se cerrarán los chats seleccionados. Esta acción es permanente.</p>
         <button className="bot-choice bot-danger" disabled={busy || leaving || !chosen.length} onClick={() => void apply("purge")}>Eliminar definitivamente</button>
         <button className="bot-choice" disabled={busy || leaving} onClick={() => setLeaving(true)}>Cancelar</button>

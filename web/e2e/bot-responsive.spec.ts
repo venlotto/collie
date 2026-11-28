@@ -72,6 +72,9 @@ test("list, chat, composer and menus fit the viewport", async ({ page }) => {
   const field = page.getByRole("textbox");
   await expect(field).toBeVisible();
   await capture(page, "chat");
+  // The composer paints the bottom safe area; no separate black shell strip remains below it.
+  const composerBottom = await field.evaluate(el => el.closest('[data-slot="pane-bottom"]')!.getBoundingClientRect().bottom);
+  expect(Math.abs(composerBottom - page.viewportSize()!.height)).toBeLessThanOrEqual(1);
   await fits(field);
   await field.fill("Borrador de auditoría\nSegunda línea con texto largo para comprobar el ajuste a la pantalla\nTercera línea");
   await fits(page.getByRole("button", { name: "Enviar", exact: true }));
@@ -183,7 +186,7 @@ test("the unread chip keeps its own place above the search bar", async ({ page }
     workspaceLabel: spaces[i % 3]!.label, paneId: spaces[i % 3]!.workspaceId + ":p" + i, terminalId: "unread-" + i,
     paneLabel: (i === 20 ? "Plan sync pendiente " : "Duck Race Rooms ") + i,
     // Only the last row of the last section is unread, so it starts below the fold.
-    lastActiveAt: now - (21 - i) * 60_000, lastSeenAt: i === 20 ? now - 3_600_000 : now,
+    lastActiveAt: now - (i + 1) * 60_000, lastSeenAt: i === 20 ? now - 3_600_000 : now,
   }));
   await installPaneWorld(page, { paneId: agents[0]!.paneId,
     snapshot: { ...fixtureSnapshot, agents, shellPanes: [], workspaces: spaces, ts: now,

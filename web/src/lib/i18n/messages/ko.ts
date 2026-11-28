@@ -6,6 +6,10 @@ import type { Dictionary } from "./en";
 // Instructions name the translated controls (입력, 화면, 전송), not their English labels.
 
 export const ko: Dictionary = {
+  "bot.selection.trashTitle": "선택한 항목을 삭제할까요?",
+  "bot.selection.trashBody": "선택한 워크스페이스와 그 안의 모든 채팅, 선택한 채팅은 휴지통에 7일간 보관됩니다.",
+  "bot.selection.trashConfirm": "휴지통으로 이동",
+  "bot.selection.cancel": "취소",
   "bot.edit.title": "봇 편집",
   "settings.language.title": "언어",
   "settings.language.description": "터미널 출력 내용은 번역되지 않습니다.",

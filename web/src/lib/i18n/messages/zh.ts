@@ -4,6 +4,10 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
+  "bot.selection.trashTitle": "删除所选项目？",
+  "bot.selection.trashBody": "所选工作区、其中的所有聊天及所选聊天将在回收站中保留7天。",
+  "bot.selection.trashConfirm": "移至回收站",
+  "bot.selection.cancel": "取消",
   "bot.edit.title": "编辑机器人",
   "settings.language.title": "语言",
   "settings.language.description": "终端镜像输出不会被翻译。",

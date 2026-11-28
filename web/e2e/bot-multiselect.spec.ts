@@ -98,7 +98,7 @@ test("mantener pulsado, alternar, seleccionar todo y mover dos chats", async ({ 
   await second.click();
   await expect(second).not.toBeChecked();
   await page.getByRole("button", { name: "Seleccionar todo" }).click();
-  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(4);
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(6);
   await page.getByRole("button", { name: "Listo" }).click();
   await expect(search).toBeVisible();
   if (test.info().project.name.includes("desktop")) await first.click({ button: "right" });

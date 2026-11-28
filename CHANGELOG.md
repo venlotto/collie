@@ -132,6 +132,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Recent bots lead their workspaces and creation offers varied appearances.** Workspaces and their chats sort newest first, ready bots have no avatar ring, and each creation sheet starts with a random editable icon and color, like quick creation.
 
+- **Workspace holds open reliably without selecting the chat list.** Multi-selection includes workspaces and the pinned bot, with one deletion per workspace and its chats. The chat composer background reaches the bottom safe area instead of leaving a black strip.
 
 ## [1.31.0] - 2026-11-24
 

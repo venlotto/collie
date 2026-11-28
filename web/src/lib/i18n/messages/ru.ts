@@ -4,6 +4,10 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const ru: Dictionary = {
+  "bot.selection.trashTitle": "Удалить выбранное?",
+  "bot.selection.trashBody": "Выбранные рабочие пространства со всеми чатами и выбранные чаты останутся в корзине на 7 дней.",
+  "bot.selection.trashConfirm": "В корзину",
+  "bot.selection.cancel": "Отмена",
   "bot.edit.title": "Изменить бота",
   "settings.language.title": "Язык",
   "settings.language.description": "Зеркало терминала не переводится.",

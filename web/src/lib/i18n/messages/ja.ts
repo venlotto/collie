@@ -3,6 +3,10 @@ import type { Dictionary } from "./en";
 // Japanese. See de.ts for the typing contract. One plural category, so both suffixes match.
 
 export const ja: Dictionary = {
+  "bot.selection.trashTitle": "選択した項目を削除しますか？",
+  "bot.selection.trashBody": "選択したワークスペース、そのすべてのチャット、および選択したチャットは7日間ゴミ箱に保存されます。",
+  "bot.selection.trashConfirm": "ゴミ箱に移動",
+  "bot.selection.cancel": "キャンセル",
   "bot.edit.title": "ボットを編集",
   "settings.language.title": "言語",
   "settings.language.description": "ターミナル出力は翻訳されません。",

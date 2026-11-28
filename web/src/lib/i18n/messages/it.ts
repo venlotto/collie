@@ -4,6 +4,10 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const it: Dictionary = {
+  "bot.selection.trashTitle": "Eliminare la selezione?",
+  "bot.selection.trashBody": "Gli spazi selezionati, tutte le loro chat e le chat selezionate resteranno nel cestino per 7 giorni.",
+  "bot.selection.trashConfirm": "Sposta nel cestino",
+  "bot.selection.cancel": "Annulla",
   "bot.edit.title": "Modifica bot",
   "settings.language.title": "Lingua",
   "settings.language.description": "Il mirror del terminale non viene mai tradotto.",
