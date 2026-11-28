@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { useState, type ComponentProps } from "react";
@@ -147,8 +148,8 @@ describe("AgentChat — touch-phone shell", () => {
     expect(container.querySelector('[data-slot="composer-actions"]')).toBeNull();
     expect(container.querySelector('[data-slot="model-tag"]')).toBeNull();
     expect(container.querySelector('[data-slot="pane-meta"]')).toBeNull();
-    expect(screen.getByRole("button", { name: "Volver a los chats" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Opciones del chat" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("bot.chat.back") })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("bot.chat.options") })).toBeInTheDocument();
   });
 });
 

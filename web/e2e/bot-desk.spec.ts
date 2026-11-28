@@ -131,6 +131,47 @@ test.describe("en una pantalla ancha", () => {
     await expect(page.getByRole("button", { name: "Minimizar" })).toHaveCount(0);
   });
 
+  test("cada menú queda junto a su bot y eliminar se lee en rojo", async ({ page }) => {
+    const agents = await setup(page);
+    await page.goto("/");
+    for (const [index, name] of NAMES.entries()) {
+      await row(page, name).click();
+      await expect(page).toHaveURL(new RegExp(encodeURIComponent(agents[index]!.paneId)));
+      await expect(page.locator(".bot-chat-bar .bot-pill").filter({ hasText: name })).toBeVisible();
+    }
+    const placed = async (name: string) => {
+      const owner = win(page, name);
+      const menu = owner.locator(".bot-popup:popover-open");
+      await expect(menu).toBeVisible();
+      await expect(page.locator(".bot-popup:popover-open")).toHaveCount(1);
+      await expect.poll(async () => {
+        const [windowBox, trigger, popup] = await Promise.all([
+          owner.boundingBox(), owner.getByRole("button", { name: "Opciones del chat" }).boundingBox(), menu.boundingBox(),
+        ]);
+        if (!windowBox || !trigger || !popup) return false;
+        return popup.x >= windowBox.x && popup.x + popup.width <= windowBox.x + windowBox.width &&
+          popup.y >= trigger.y + trigger.height && popup.y + popup.height <= windowBox.y + windowBox.height &&
+          Math.abs(popup.x + popup.width - trigger.x - trigger.width) < 2;
+      }).toBe(true);
+      await expect(menu.locator(".bot-danger")).toHaveCSS("color", "rgb(255, 98, 90)");
+    };
+    for (const name of NAMES) {
+      await win(page, name).getByRole("button", { name: "Opciones del chat" }).click();
+      await placed(name);
+      await page.keyboard.press("Escape");
+    }
+    await win(page, "Alfa").getByRole("button", { name: "Opciones del chat" }).focus();
+    await page.keyboard.press("Enter");
+    await placed("Alfa");
+    await page.setViewportSize({ width: 1350, height: 950 });
+    await placed("Alfa");
+    await shot(page, "menu-en-su-ventana");
+    await page.keyboard.press("Escape");
+    await win(page, "Beta").getByRole("button", { name: "Maximizar" }).click();
+    await win(page, "Beta").getByRole("button", { name: "Opciones del chat" }).click();
+    await placed("Beta");
+  });
+
   test("una pantalla sin sitio para dos chats sigue con un solo chat", async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 800 });
     await setup(page);

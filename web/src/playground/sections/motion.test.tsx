@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -68,7 +69,7 @@ describe("Motion section", () => {
       await waitFor(() => expect(routeLine()).toContain("route: /pane/"), SLOW);
       // The pane's own header, portalled into the one shell header by the real DetailRoute.
       expect(
-        await within(card).findByRole("button", { name: "Opciones del chat" }, SLOW),
+        await within(card).findByRole("button", { name: t("bot.chat.options") }, SLOW),
       ).toBeInTheDocument();
 
       fireEvent.click(within(card).getByRole("button", { name: "Dashboard" }));

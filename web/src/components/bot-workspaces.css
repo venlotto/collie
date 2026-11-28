@@ -372,7 +372,7 @@
 .bot-drop-trash { --glass-rgb: 54 24 31; color: #ffebe8; }
 .bot-drop-trash[data-trash-over] { --glass-rgb: 114 25 30; background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity)); }
 .bot-select-bar button { color: #dfedff; }
-.bot-actions button:last-child, .bot-danger, .bot-workspace-fields .danger { color: #ffe8e3; }
+.bot-actions button:last-child, .bot-danger, .bot-workspace-fields .danger { color: #ff625a; }
 .bot-search input::placeholder, .bot-detail [data-slot="composer-box"] textarea::placeholder { color: #f2f2f5; }
 .bot-sheet input::placeholder { color: #adadb4; }
 .bot-action-sheet p, .bot-workspace-fields p { color: #f2f2f5; }

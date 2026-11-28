@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -19,7 +20,7 @@ describe("the single slot in the Grok list", () => {
   it("renders no slot without a pin, shows A, replaces it with B, and removes it on unpin", async () => {
     const page = render(<MobileAgentHub {...list} panes={fixtureAgents} />);
     expect(page.container.querySelector(".bot-featured")).toBeNull();
-    expect(screen.getByRole("button", { name: "Crear nuevo" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("bot.list.new") })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "webapp" })).toBeInTheDocument();
 
     page.rerender(<MobileAgentHub {...list} panes={fixtureAgents} featured={A} />);
@@ -41,9 +42,9 @@ describe("the single slot in the Grok list", () => {
   it("keeps the slot out of search results", async () => {
     const page = render(<MobileAgentHub {...list} panes={fixtureAgents} featured={A} />);
     expect(page.container.querySelector(".bot-featured")).not.toBeNull();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar" }), { target: { value: "claude" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: t("chat.card.search") }), { target: { value: "claude" } });
     expect(page.container.querySelector(".bot-featured")).toBeNull();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar" }), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: t("chat.card.search") }), { target: { value: "" } });
     expect(page.container.querySelector(".bot-featured")).not.toBeNull();
   });
 });
@@ -53,12 +54,12 @@ describe("the Grok chat pin action", () => {
   it("offers Pin when absent and Unpin for the current owner", async () => {
     const pin = vi.fn();
     const page = render(<BotChatBar bot={bot} pane={A} unread={0} pinned={false} back={vi.fn()} pin={pin} terminal={false} />);
-    await userEvent.click(screen.getByRole("button", { name: "Opciones del chat" }));
-    await userEvent.click(screen.getByText("Fijar chat"));
+    await userEvent.click(screen.getByRole("button", { name: t("bot.chat.options") }));
+    await userEvent.click(screen.getByText(t("bot.chat.pin")));
     expect(pin).toHaveBeenCalledTimes(1);
 
     page.rerender(<BotChatBar bot={bot} pane={A} unread={0} pinned back={vi.fn()} pin={pin} terminal={false} />);
-    await userEvent.click(screen.getByRole("button", { name: "Opciones del chat" }));
-    expect(screen.getByText("Desfijar chat")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: t("bot.chat.options") }));
+    expect(screen.getByText(t("bot.chat.unpin"))).toBeInTheDocument();
   });
 });
