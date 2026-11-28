@@ -17,6 +17,7 @@ import { useBotFeatured, featuredBotPane, useLegacyPinMigration } from "@/lib/bo
 import { usePairing } from "@/lib/pairing";
 import { useRootData } from "@/lib/route-data";
 import type { Scope } from "@/lib/scope";
+import { activeBotWorkspaces } from "@/lib/bot-workspaces";
 import { isReadOnly, type AgentView } from "@/lib/types";
 
 export function HomeRoute() {
@@ -35,11 +36,7 @@ export function HomeRoute() {
   const featured = featuredBotPane(visible, pinnedTop);
   const rename = useMuxCapability("renamePane", data.scope);
   const quickBot = useQuickBot({ canRename: rename.capable });
-  // The workspaces a new bot can go into: this machine's, minus one sent whole to the Papelera
-  // (a chat created there later brings it back, as in the list).
-  const trashedSpaces = new Set(panes.flatMap(p => p.trash?.workspaceLabel !== undefined ? [p.trash.originalWorkspaceId] : []));
-  for (const p of visible) trashedSpaces.delete(p.workspaceId);
-  const createSpaces = data.workspaces.filter(w => !w.host && !trashedSpaces.has(w.workspaceId));
+  const createSpaces = activeBotWorkspaces(data.workspaces, panes, data.scope, data.servers, data.sessions);
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (
     <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>

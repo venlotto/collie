@@ -56,7 +56,7 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close, 
   const [spaceId, setSpaceId] = useState(edit?.workspaceId ?? "");
   const [spaceName, setSpaceName] = useState("");
   const pickedSpace = spaces.find(w => w.workspaceId === spaceId) ?? spaces[0];
-  const target: SpaceTarget | undefined = spaceMode === "existing" ? (spaceId ? { id: spaceId } : pickedSpace && { id: pickedSpace.workspaceId })
+  const target: SpaceTarget | undefined = spaceMode === "existing" ? (pickedSpace && { id: pickedSpace.workspaceId })
     : spaceMode === "new" ? (spaceName.trim() ? { label: spaceName.trim() } : undefined)
     : unassignedTarget(spaces);
   const { host, session } = scope;

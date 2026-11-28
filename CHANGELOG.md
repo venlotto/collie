@@ -144,6 +144,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Moving a bot keeps its conversation open.** Changing its workspace follows the same running terminal instead of returning to the chat list.
 
+- **Bot workspace choices exclude the Trash.** Editing and creating a bot offer only active workspaces as destinations.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

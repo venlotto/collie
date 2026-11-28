@@ -168,6 +168,7 @@ import { useTabLook } from "@/lib/tab-look";
 import { pickTabPane } from "@/lib/tab-pane-memory";
 import { zoomPillShown } from "@/lib/zoom-pill";
 import { CrossfadeText } from "@/components/ui/crossfade-text";
+import { activeBotWorkspaces } from "@/lib/bot-workspaces";
 import { paneRowKey, paneScope, paneSpaceKey } from "@/lib/hosts";
 import { isLead, paneScopeKey } from "@/lib/scope";
 import { useAccounts } from "@/lib/accounts";
@@ -4458,7 +4459,7 @@ export function AgentChat({
         {/* This pane's own settings — one switch today, the prompt-cache warning (ADR 0042). Scoped to
             the PANE's machine, because `?host=` there names where the pane lives; the preference itself
             lands on the collie this phone is talking to, which is the only one that can push. */}
-        {editingBot && agent && <CreateBot scope={scope ?? {}} edit={agent} spaces={rootSpaces?.filter(w => w.host === scope?.host)} writable={paneWrites && !gone}
+        {editingBot && agent && <CreateBot scope={scope ?? {}} edit={agent} spaces={activeBotWorkspaces(rootSpaces ?? [], herd, scope ?? {}, servers, rootData?.sessions)} writable={paneWrites && !gone}
           close={() => { setEditingBot(false); void revalidator.revalidate(); }} />}
         <PaneSettingsSheet
           open={drawer === "paneSettings"}

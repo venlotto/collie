@@ -292,7 +292,10 @@ test("moving the open bot follows its new workspace without leaving the chat", a
   const original = { ...fixtureAgents[0]!, terminalId: "move-chat-terminal", agent: "kiro", hasSession: true,
     status: "idle" as const, paneLabel: TITLE, workspaceId: "w1", workspaceLabel: source.label };
   const moved = { ...original, paneId: "w2:p4", tabId: "w2:t1", workspaceId: "w2", workspaceLabel: destination.label };
-  const snapshot = { ...fixtureSnapshot, agents: [original], shellPanes: [], workspaces: [source, destination], ts: Date.now(),
+  const deletedSpace = { ...source, workspaceId: "w-trash", label: "Workspace eliminado" };
+  const deletedBot = { ...original, paneId: "w-trash:p1", terminalId: "deleted-terminal", workspaceId: deletedSpace.workspaceId,
+    trash: { originalWorkspaceId: deletedSpace.workspaceId, workspaceLabel: deletedSpace.label, trashedAt: Date.now() } };
+  const snapshot = { ...fixtureSnapshot, agents: [original, deletedBot], shellPanes: [], workspaces: [source, destination, deletedSpace], ts: Date.now(),
     device: { enforced: true, authorized: true, device: "Move test" } };
   let current = snapshot;
   for (const agent of [original, moved]) {
@@ -303,7 +306,7 @@ test("moving the open bot follows its new workspace without leaving the chat", a
   await page.route("**/api/snapshot*", route => route.fulfill({ json: current }));
   await page.route("**/api/bot-action*", route => {
     expect(route.request().postDataJSON()).toMatchObject({ action: "move", terminalId: original.terminalId, workspaceId: "w2" });
-    current = { ...snapshot, agents: [moved], ts: Date.now() };
+    current = { ...snapshot, agents: [moved, deletedBot], ts: Date.now() };
     return route.fulfill({ json: { ok: true } });
   });
   await page.goto("/");
@@ -311,7 +314,10 @@ test("moving the open bot follows its new workspace without leaving the chat", a
   await page.getByRole("textbox").fill("Mi mensaje pendiente");
   await page.locator(".bot-chat-bar").getByRole("button", { name: TITLE }).click();
   const dialog = page.getByRole("dialog", { name: "Editar bot", exact: true });
-  await dialog.getByRole("combobox", { name: "Workspace existente" }).selectOption("w2");
+  const workspaces = dialog.getByRole("combobox", { name: "Workspace existente" });
+  await expect(workspaces.getByRole("option")).toHaveText(["Origen", "Destino"]);
+  await expect(workspaces.getByRole("option", { name: deletedSpace.label })).toHaveCount(0);
+  await workspaces.selectOption("w2");
   const returnedToList: string[] = [];
   page.on("framenavigated", frame => { if (frame === page.mainFrame() && new URL(frame.url()).pathname === "/") returnedToList.push(frame.url()); });
   await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
