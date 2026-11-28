@@ -61,4 +61,14 @@ describe("findUnknownSendMatch (#511)", () => {
   it("an unparseable time never matches: no evidence, no retirement", () => {
     expect(findUnknownSendMatch(pending(), [entry({ ts: "not a time" })])).toBeUndefined();
   });
+  it("settles a new turn containing only complete retry copies", () => {
+    for (const text of ["hello there".repeat(4), "hello there\n\nhello there"]) {
+      expect(findUnknownSendMatch(pending(), [entry({ parts: [{ kind: "text", text }] })])).not.toBeUndefined();
+    }
+    for (const text of ["hello therehello ther", "hello there then other words", "prefix hello therehello there"]) {
+      expect(findUnknownSendMatch(pending(), [entry({ parts: [{ kind: "text", text }] })])).toBeUndefined();
+    }
+    const repeated = entry({ uuid: "seen-1", parts: [{ kind: "text", text: "hello there".repeat(4) }] });
+    expect(findUnknownSendMatch(pending(), [repeated])).toBeUndefined();
+  });
 });

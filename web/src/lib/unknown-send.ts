@@ -8,10 +8,10 @@ import { normalizePrompt } from "@/lib/surface/edges";
 // — but nothing used to connect the two, so the notice and the kept draft stood over a conversation
 // that had plainly happened, one Send tap away from sending the text twice. The journal's own user
 // turn is the evidence: a NEW user turn (never one already on screen when Send was tapped), carrying
-// exactly the text the send typed, timestamped no earlier than the tap. Manual recovery has no
+// the text the send typed (or only complete retry copies), timestamped no earlier than the tap. Manual recovery has no
 // clock — minutes may pass at the desk — so there is deliberately NO upper bound like
 // `durable-pending`'s 30 seconds; the uuid's novelty is what makes a late match honest. One record
-// is consumed by one turn, and anything short of this exact match retires nothing: the draft is
+// is consumed by one turn, and anything short of this complete match retires nothing: the draft is
 // kept, which is the safe side to be wrong on. A turn carrying another send's `requestId` (durable
 // panes only) is that send's line and never text-matches, the house rule `durable-pending` keeps.
 
@@ -51,6 +51,17 @@ export function findUnknownSendMatch(
     if (pending.seenUserUuids.has(entry.uuid)) return false;
     const landed = Date.parse(entry.ts);
     if (Number.isNaN(landed) || landed < pending.at) return false;
-    return normalizePrompt(wordsOf(entry)) === wanted;
+    const landedText = normalizePrompt(wordsOf(entry));
+    if (landedText === wanted) return true;
+    // A retry on an unread editor can have appended the same message before the person
+    // submits it. A new user turn made ONLY of complete copies still proves delivery.
+    // Never accept a substring, a partial copy, or extra instructions.
+    let remaining = landedText;
+    let copies = 0;
+    while (remaining.startsWith(wanted)) {
+      remaining = remaining.slice(wanted.length).trimStart();
+      copies++;
+    }
+    return copies > 1 && remaining === "";
   });
 }

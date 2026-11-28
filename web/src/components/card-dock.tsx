@@ -68,6 +68,8 @@ export interface CardDockProps {
   ref?: Ref<HTMLDivElement>;
   /** The pane's blocks, as AgentChat built them for the mirror. Only the non-raw one is drawn here. */
   blocks: readonly Block[];
+  /** The main body already shows the full screen: recovery cards only need their controls. */
+  mirrorVisible?: boolean;
   /** Injected handler for a prompt-select tap (the race guard lives in AgentChat). Absent (or with a
    *  disabled card) means the buttons render but don't act; the dock never touches the network. */
   onPromptAction?: (
@@ -299,6 +301,7 @@ function liftedCard({
   onUnreadTypeAnyway,
   unreadSecret,
   cannotTell,
+  mirrorVisible = false,
   signInHosts,
   signInPending,
   answerExit,
@@ -312,6 +315,7 @@ function liftedCard({
       <UnreadDialogBlock
         cancel={null}
         lines={answerExit.lines}
+        showScreen={!mirrorVisible}
         caption={answerExit.caption}
         onClose={answerExit.onClose}
         disabled={promptDisabled}
@@ -416,6 +420,7 @@ function liftedCard({
       <UnreadDialogBlock
         cancel={null}
         lines={unreadFallback}
+        showScreen={!mirrorVisible}
         disabled={promptDisabled}
         wrap={wrap}
         onAction={() => undefined}
@@ -430,7 +435,7 @@ function liftedCard({
   // keys and wins, as the unread card above does; the completion popup and the box text yield to it, since
   // the person must answer it before the box means anything.
   if (cannotTell !== null && cannotTell !== undefined && !hasDialogCard(blocks)) {
-    return <CannotTellCard key={cannotTell.facts.requestId} {...cannotTell} />;
+    return <CannotTellCard key={cannotTell.facts.requestId} {...cannotTell} showScreen={!mirrorVisible} />;
   }
   // No handler and no `disabled`: the completion popup emits no keystroke, so there is nothing for a
   // read-only device to be refused. Last only because it is the least specific tail shape; every

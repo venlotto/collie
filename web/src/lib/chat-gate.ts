@@ -30,6 +30,7 @@ import type { ChatStatus } from "./chat-window";
 //      No card can lift that dialog into Chat, so Chat over it is a question the operator cannot see,
 //      however readable the session is. Not a latch: the pane returns to Chat when it stops asking.
 //   2. The pane has a session and its log is not known to be missing → chat.
+//   2b. An explicit bot Messages choice waits in Chat for discovery; recovery cards carry unread screens.
 //   3. Nothing to read, and this view did not see the pane start fresh → terminal at once.
 //   4. Nothing to read, and the pane asked for input (blocked) → terminal at once. A dialog on an
 //      empty Chat is a question the operator cannot see.
@@ -105,6 +106,8 @@ export interface ChatGateInput {
   activity: PaneActivity;
   /** This bot explicitly chose Messages, but no journal adapter or server can provide them. */
   chatUnavailable?: boolean;
+  /** An explicit bot Messages choice stays in Chat while its session/log is discovered. */
+  keepChat?: boolean;
   /** A journal read started after the turn-end snapshot has answered. Read only at `ended`. */
   settled: boolean;
   /**
@@ -127,6 +130,7 @@ export function paneBody(input: ChatGateInput): PaneBody {
   if (!input.chat || input.journal === "off") return "terminal";
   if (input.unreadQuestion === true) return "terminal";
   if (input.session && input.journal !== "missing") return "chat";
+  if (input.keepChat === true) return "start";
   if (input.history === "unknown") return "terminal";
   if (input.activity === "blocked" || input.activity === "stalled") return "terminal";
   if (input.activity === "ended") {
