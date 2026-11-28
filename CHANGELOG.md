@@ -165,6 +165,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 
 - **Unfocused desktop chats keep their unsent draft in view.** Opening another bot shows the saved words with an unsent label instead of an empty reply placeholder. Tap the draft to return to its editor.
+- **The search bar floats above transparent bottom spacing.** Chats scroll behind the glass controls all the way to the screen edge, without a solid strip underneath.
 
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
 
