@@ -800,7 +800,9 @@ export function SessionStream({
   const accepted = lines.some((line) => line.state === "sent");
   const activeSteps = working && !questionPending && !personsNewest ? latestActivity : undefined;
   const dotsRow = !activeSteps && durable && ((working && personsNewest) || accepted);
-  const staticRow = !activeSteps && working && !(durable && (personsNewest || growing)) && !questionPending;
+  // Grouped steps can stand above a progress message. Keep the live status at the
+  // tail too, so that message never looks like the end of a still-running turn.
+  const staticRow = working && !(durable && (personsNewest || growing)) && !questionPending;
 
   // A PANE KEEPS ITS PLACE (ADR 0063). Switching modes unmounts this body and switching panes
   // remounts it, so neither the DOM nor the scroller remembers where the reader was — the same gap
@@ -1283,7 +1285,7 @@ export function SessionStream({
           only where the window is actually being read: a pane whose journal cannot be read is busy
           in the chrome, and saying so HERE would promise a turn this body will never show. */}
       {liveShown ? (
-        <div ref={slotRef} data-slot="stream-live" className={LIVE_ROW}>
+        <div ref={slotRef} data-slot="stream-live" role="status" aria-label={t("chat.stream.working")} className={LIVE_ROW}>
           {/* The same mark a running step wears inside a card (`chat-cards.tsx` § StepStatus), so
               "still going" looks the same wherever the stream says it. UNNAMED: it leads the word,
               and a name here is the state announced twice (status-badge.tsx § label). */}
