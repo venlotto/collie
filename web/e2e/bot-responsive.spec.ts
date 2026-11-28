@@ -162,6 +162,7 @@ test("attachments, editing and a short viewport stay usable", async ({ page }) =
   await page.getByRole("button", { name: "Adjuntar archivo", exact: true }).click();
   const attachments = page.getByRole("dialog", { name: "Adjuntar", exact: true });
   await fits(attachments);
+  await expect(attachments).toHaveCSS("background-color", "rgba(27, 27, 31, 0.6)");
   await expect(attachments.getByRole("button", { name: "Videos", exact: true })).toBeVisible();
   await capture(page, "adjuntos");
   await page.keyboard.press("Escape");

@@ -159,6 +159,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Messages starting with a new attachment send without command popups.** Terminal-owned upload names are recognised alongside older attachments, so Codex receives the image path and message as one paste instead of interpreting the leading slash as a command.
 - **Live activity has one status and closes from below.** The activity heading shows its step count while the working indicator stays at the end of the chat. Collapse is also available below the expanded detail, without scrolling back to its heading.
 - **Chat controls float on glass without a surrounding panel.** The message field has breathing room below it, the title and header buttons float over the conversation, and attachment previews share their translucent rounded finish.
+- **The attachment picker uses the same glass as its input.** Its choices remain readable on a translucent dark surface, and the invisible dismiss target no longer draws another control behind the menu.
 
 
 ## [1.31.0] - 2026-11-24
