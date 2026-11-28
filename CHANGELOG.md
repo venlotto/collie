@@ -169,6 +169,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Unfocused desktop chats keep their unsent draft in view.** Opening another bot shows the saved words with an unsent label instead of an empty reply placeholder. Tap the draft to return to its editor.
 
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
+- **Every open bot window offers an editable reply field.** Click or tab into “Preguntar a…” to write directly, keeping unsent text when switching between chats.
 
 ## [1.31.0] - 2026-11-24
 
