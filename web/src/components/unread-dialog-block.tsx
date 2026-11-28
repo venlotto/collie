@@ -61,6 +61,8 @@ export interface UnreadDialogBlockProps {
    * 10) names what happened to the answer. Absent, the card says it cannot read the screen.
    */
   caption?: string;
+  /** False when the main body already shows these exact screen rows. */
+  showScreen?: boolean;
   /** Closes the card (the exit's cross). Absent, no cross: the screen moving on closes it. */
   onClose?: () => void;
 }
@@ -101,7 +103,7 @@ const CORE_FACE: ReadonlyMap<string, IconKey> = new Map<string, IconKey>([
 // the screen's own rows print `esc dismiss`; otherwise it names the key, never a verb.
 const NAMES_A_DISMISS = /\besc\s+dismiss\b/i;
 
-export function UnreadDialogBlock({ cancel, lines, onAction, disabled, wrap, onReport, onShown, paneId, onPadKeys, onTypeAnyway, secret = false, caption: said, onClose }: UnreadDialogBlockProps) {
+export function UnreadDialogBlock({ cancel, lines, onAction, disabled, wrap, onReport, onShown, paneId, onPadKeys, onTypeAnyway, secret = false, caption: said, onClose, showScreen = true }: UnreadDialogBlockProps) {
   useLocale();
   const [sending, setSending] = useState(false);
   const locked = disabled || sending;
@@ -185,7 +187,7 @@ export function UnreadDialogBlock({ cancel, lines, onAction, disabled, wrap, onR
   return (
     // rawMode (ADR 0056 counsel fix): this card always shows the mirror by default (below), so
     // its control only puts the button away — never a swap from nothing.
-    <PromptPanel ariaLabel={caption} raw={lines} rawMode="declutter" wrap={wrap}>
+    <PromptPanel ariaLabel={caption} raw={showScreen ? lines : undefined} rawMode="declutter" wrap={wrap}>
       {onClose === undefined ? (
         <OptionGroupCaption>{caption}</OptionGroupCaption>
       ) : (
@@ -279,12 +281,14 @@ export function UnreadDialogBlock({ cancel, lines, onAction, disabled, wrap, onR
       {/* The mirror is its own scroller, capped, and opens at its bottom: the dialog is the LAST rows of
           the pane, and the old rows above it are what a top-anchored box showed (#667). Capped here so
           the key button above it stays on the screen instead of scrolling away with the dock. */}
-      <RawMirror
-        lines={lines}
-        wrap={wrap}
-        anchor="bottom"
-        className="max-h-[30dvh] overflow-y-auto overscroll-contain"
-      />
+      {showScreen && (
+        <RawMirror
+          lines={lines}
+          wrap={wrap}
+          anchor="bottom"
+          className="max-h-[30dvh] overflow-y-auto overscroll-contain"
+        />
+      )}
     </PromptPanel>
   );
 }
