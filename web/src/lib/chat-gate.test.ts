@@ -17,6 +17,10 @@ const base: ChatGateInput = {
 const row = (over: Partial<ChatGateInput>): ChatGateInput => ({ ...base, ...over });
 
 const rows: [string, ChatGateInput, PaneBody][] = [
+  ["an explicit Messages choice keeps Chat while an existing pane finds its session", row({ keepChat: true, history: "unknown" }), "start"],
+  ["an explicit Messages choice keeps Chat while its log is missing", row({ keepChat: true, session: true, journal: "missing", activity: "ended", settled: true }), "start"],
+  ["Messages shows the journal when it arrives", row({ keepChat: true, session: true, journal: "readable" }), "chat"],
+  ["choosing Terminal still works after Messages discovery", row({ keepChat: true, chat: false }), "terminal"],
   // 1. Terminal device, or a harness with no Chat: nothing below matters.
   ["a terminal device keeps the terminal, even over a readable session",
     row({ chat: false, session: true, journal: "readable" }), "terminal"],

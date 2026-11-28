@@ -73,6 +73,35 @@ function ids(seen: { id: string }[]): string[] {
 }
 
 describe("the request id of a send with no answer survives a remount", () => {
+  it("persists the id before an in-flight request loses the page", async () => {
+    const user = userEvent.setup();
+    const seen: string[] = [];
+    let release: (() => void) | undefined;
+    const waiting = new Promise<void>((resolve) => { release = resolve; });
+    server.use(http.post(/\/api\/send$/, async ({ request }) => {
+      // SAFETY: this handler receives the composer's SendRequestBody.
+      const body = await request.json() as { id: string };
+      seen.push(body.id);
+      if (seen.length === 1) { await waiting; return new HttpResponse("down", { status: 502 }); }
+      return HttpResponse.json({ receipt: { outcome: "sent", keys: [] }, offers: [] });
+    }));
+    const first = renderComposer();
+    await user.type(field(), "survive a bridge restart");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(seen).toHaveLength(1));
+    expect(loadIntent(undefined, "w1:p1")?.requestId).toBe(seen[0]);
+    first.unmount();
+    __forgetSendIntentMemory();
+    expect(loadIntent(undefined, "w1:p1")?.requestId).toBe(seen[0]);
+    release?.();
+    // The same persisted draft is retryable after reconnect with one tap.
+    renderComposer();
+    expect(field().value).toBe("survive a bridge restart");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(seen).toHaveLength(2));
+    expect(seen[1]).toBe(seen[0]);
+  });
+
   it("keeps the id for the same text after the composer mounts again", async () => {
     const user = userEvent.setup();
     const { seen, state } = bridge();

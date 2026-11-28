@@ -41,6 +41,8 @@ export interface ReplyArgs {
   readonly held: IntentId | null;
   /** Test seam for the request id. */
   readonly mint?: () => string;
+  /** Persist before the request leaves, so a reload during an outage keeps its id. */
+  readonly onIntent?: (intent: IntentId) => void;
   /**
    * A send from an agent view, as the bridge takes it (lib/surface/send.ts `SendRequestBody.view`): the
    * view's key for typed text, plus the screen's rev and the control for a tap. The bridge builds the line.
@@ -106,6 +108,7 @@ export async function sendText(args: ReplyArgs): Promise<ReplyOutcome> {
   const textKey = args.secret === true ? "\u0001secret" : args.text;
   const intent = requestIdFor(args.held, `${mode}\u0000${rowsHash ?? ""}\u0000${capAck ? "cap" : ""}\u0000${override ? "override" : ""}\u0000${resendOf ?? ""}\u0000${args.when ?? ""}\u0000${viewKey}\u0000${textKey}`, args.mint ?? mintRequestId);
   const body: SendRequestBody = args.view === undefined ? { id: intent.requestId, pane: args.paneId, text: args.text, mode } : { id: intent.requestId, pane: args.paneId, text: args.text, mode, view: args.view };
+  args.onIntent?.(intent);
   try {
     const reply = await postSend({ ...body, rowsHash: rowsHash ?? undefined, capAck: capAck ? true : undefined, resendOf, when: args.when, secret: args.secret === true ? true : undefined, override: override ? true : undefined }, args.scope);
     return { status: "answered", reply, reading: readSend(reply, mode), requestId: intent.requestId };

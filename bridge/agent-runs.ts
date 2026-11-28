@@ -98,13 +98,15 @@ function rootOf(run: Run, rows: ReadonlyMap<string, Run>): string {
 export class AgentRuns {
   private readonly trash: AgentRunTrash;
   private trashLane = Promise.resolve();
+  private sweeping?: Promise<void>;
   private listing?: { expires: number; rows: Promise<Run[]> };
   private panes: PaneWire[] = [];
   private readonly requests = new Map<string, { fingerprint: string; answer: Promise<AgentRunActionResult> }>();
   private readonly launching = new Map<string, Promise<AgentRunActionResult>>();
 
   constructor(private dir: string, private stopRun: (id: string, dir: string) => Promise<boolean>,
-    private activity: ActivityLedger, private process?: AgentRunProcess, stateDir = dir) {
+    private activity: ActivityLedger, private process?: AgentRunProcess, stateDir = dir,
+    private purgeTerminal?: (terminalId: string) => Promise<void>) {
     this.trash = new AgentRunTrash(stateDir);
   }
 
@@ -239,6 +241,7 @@ export class AgentRuns {
         for (const member of rows.filter(row => row.rootId === root && row.status === "running")) {
           if (!await this.stopRun(member.id, this.dir)) throw new Error("No se pudo detener el bot.");
         }
+        if (placement.terminalId) await this.purgeTerminal?.(placement.terminalId);
       }
       this.trash.act(root, action, current, workspaceId, trashedAt, pane?.terminalId);
       this.listing = undefined;
@@ -246,6 +249,27 @@ export class AgentRuns {
     });
     this.trashLane = work.catch(() => undefined);
     return work;
+  }
+
+  /** Expiry also runs while every browser is closed. Failed stops remain pending for retry. */
+  sweepTrash(): Promise<void> {
+    return this.sweeping ??= this.sweepExpiredTrash().finally(() => { this.sweeping = undefined; });
+  }
+
+  private async sweepExpiredTrash() {
+    const expired = [...this.trash.read()].filter(([, row]) => !row.purged && this.trash.expired(row));
+    if (!expired.length) return;
+    const rows = await this.scan();
+    const body: SnapshotResponse = { bridge: "connected", agents: [], shellPanes: [], workspaces: [], tabs: [], sessions: [], ts: 0 };
+    for (const [id, placement] of expired) {
+      const run = rows.find(row => row.rootId === id);
+      if (!run) continue;
+      try {
+        await this.botAction(run.id, "purge", body, "", undefined, placement.trashedAt ?? undefined);
+      } catch (error) {
+        console.warn("[agent-run-trash] pending purge will retry", id, error instanceof Error ? error.message : "unknown error");
+      }
+    }
   }
 
   async stop(id: string) {

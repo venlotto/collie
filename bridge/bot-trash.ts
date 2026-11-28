@@ -1,3 +1,4 @@
+import { TRASH_RETENTION } from "../web/src/lib/trash-retention.ts";
 import { ChatOrderStore } from "./chat-order.ts";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -5,8 +6,8 @@ import { join } from "node:path";
 import { asJsonObject, asJsonString, asJsonNumber, parseJson } from "../web/src/lib/json.ts";
 import type { MuxAdapter, MuxPane, MuxSnapshot } from "./mux/types.ts";
 
-export const TRASH_INTERVAL = 60 * 60 * 1000;
-export const TRASH_RETENTION = 7 * 24 * TRASH_INTERVAL;
+export const TRASH_INTERVAL = 15 * 1000;
+export { TRASH_RETENTION } from "../web/src/lib/trash-retention.ts";
 export type BotAction = "move" | "trash" | "restore" | "purge";
 
 interface Entry {
@@ -29,6 +30,7 @@ export function botUploadPrefix(session: string, terminalId: string): string {
 export class BotTrash {
   private rows = new Map<string, Entry>();
   private lane = Promise.resolve();
+  private sweeping?: Promise<void>;
   constructor(private readonly stateDir: string, private runtime: (session: string) => Target | undefined, private now = Date.now) {
     const file = join(stateDir, "bot-trash.json");
     if (!existsSync(file)) return;
@@ -151,6 +153,7 @@ export class BotTrash {
       if (row?.workspaceLabel !== undefined && !expiry) throw new Error("Restaura el workspace desde la Papelera.");
       const inTrash = action === "restore" || action === "purge";
       if (inTrash && (!row || row.trashedAt !== trashedAt)) throw new Error("La selección de Papelera ha cambiado.");
+      if (action === "restore" && row && this.now() - row.trashedAt >= TRASH_RETENTION) throw new Error("El plazo para restaurar el chat ha vencido.");
       if ((!inTrash && row) || (row?.deleting && action !== "purge")) throw new Error("El chat ya está en Papelera.");
       const snapshot = await mux.snapshot();
       const pane = snapshot.panes.find(p => p.terminalId === terminalId);
@@ -216,14 +219,32 @@ export class BotTrash {
     }
   }
 
-  async sweep() {
+  /** Background runs keep their own durable deletion record; close only their saved terminal. */
+  purgeRunTerminal(session: string, terminalId: string) {
+    return this.serialize(async () => {
+      const rt = this.runtime(session);
+      if (!rt) throw new Error("La sesión no está disponible para limpiar el chat.");
+      const snapshot = await rt.herdr.snapshot();
+      const pane = snapshot.panes.find(p => p.terminalId === terminalId);
+      if (pane) await this.closeTrashedPane(rt.herdr, terminalId, pane, snapshot, false);
+      this.cleanUploads(session, terminalId);
+      new ChatOrderStore(this.stateDir).forget(session, terminalId);
+      rt.engine.pokeNow();
+    });
+  }
+
+  sweep(): Promise<void> {
+    return this.sweeping ??= this.sweepExpired().finally(() => { this.sweeping = undefined; });
+  }
+
+  private async sweepExpired() {
     for (const row of this.rows.values()) {
       if (!row.deleting && this.now() - row.trashedAt < TRASH_RETENTION) continue;
       try {
         await this.act(row.session, "purge", row.terminalId, undefined, row.trashedAt, true);
-      } catch {
-        // A restore racing this sweep wins. An unavailable mux or failed unlink is retried next hour.
-        if (this.lookup(row.session, row.terminalId)) console.warn("[bot-trash] pending purge will retry");
+      } catch (error) {
+        // A restore racing this sweep wins. Failed cleanup is retried on the next tick.
+        if (this.lookup(row.session, row.terminalId)) console.warn("[bot-trash] pending purge will retry", row.session, row.terminalId, error instanceof Error ? error.message : "unknown error");
       }
     }
   }

@@ -2614,7 +2614,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       const secret = fromSecret && resend === undefined && view === undefined;
       const where = paneScopeKey(scope, paneId);
       const secretHeld = secret && secretIntentRef.current?.where === where ? secretIntentRef.current.intent : null;
-      const base: Parameters<typeof sendText>[0] = { paneId, text: t, scope, mode, rowsHash, capAck, resendOf: resend?.oldId, when, held: secret ? secretHeld : loadIntent(scope, paneId), secret, override };
+      const base: Parameters<typeof sendText>[0] = { paneId, text: t, scope, mode, rowsHash, capAck, resendOf: resend?.oldId, when, held: secret ? secretHeld : loadIntent(scope, paneId), secret, override,
+        onIntent: (intent) => {
+          if (secret) secretIntentRef.current = { where, intent };
+          else saveIntent(scope, paneId, intent, draftLine, "sending");
+        },
+      };
       // The box lets go here, after the stored intent of this text was read for the request (M104).
       if (isDraft && !secret && resend === undefined && view === undefined && t.trim() !== "" && composeLine(draftAtSend, sentFrom.chips, isShell).trim() === t.trim() && !secretDraftRef.current && noEchoRef.current === null) {
         calm = startCalm(sentFrom, t, mode, seenUserUuids, sentAt);
@@ -2636,6 +2641,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         else clearIntent(scope, paneId);
       }
       if (res.status === "refused") {
+        if (!secret && res.reason !== "view") {
+          const pending = loadIntent(scope, paneId);
+          if (pending !== null) saveIntent(scope, paneId, pending, draftLine);
+        }
         if (res.reason === "view") {
           // A refusal of a send from a view, before the protocol: Collie's words for its code, never the code.
           viewAnswerRef.current = { line: null, code: res.code };

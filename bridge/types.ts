@@ -1,7 +1,7 @@
 // Domain model for the bridge. These are OUR types, decoupled from Herdr's wire shapes
 // (which live only in mux/herdr/client.ts). The rest of the app talks in these terms.
 
-import type { HeldRow } from "../web/src/lib/surface/send.ts";
+import type { HeldRow, LastSend } from "../web/src/lib/surface/send.ts";
 import type { Surface } from "../web/src/lib/surface/surface.ts";
 import type { HoldNote } from "../web/src/lib/surface/hold.ts";
 import type { Confidence } from "./cache/claims.ts";
@@ -433,6 +433,8 @@ export type PaneWire = Omit<AgentView, "agentSession" | "sessionAgent"> & {
    * send by it yet (spec 06 turns it into the composer's input).
    */
   surface?: Surface;
+  /** Latest send receipt for this pane generation, including delivery failures. */
+  lastSend?: LastSend;
   /**
    * Whether the pane's hook source is live (M56 spec 11): `live` while the harness's own hooks send
    * edges from the pane's process, `holds` when those hooks also hold permissions (M56 spec 12),

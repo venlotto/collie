@@ -114,6 +114,8 @@
       "exit": ["Backspace"]
     },
     "runningRows": [
+      "^  ↳ \\S",
+      "^\\s*[•◦] (?:Working|Waiting for background terminal) \\(\\d",
       "\\s·\\s[⠀-⣿]$",
       "^\\s*[Tt]ab to queue message\\b",
       "^\\s*(?:shift\\+←|alt \\+ ↑) edit last queued message$",

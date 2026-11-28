@@ -2235,7 +2235,7 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   // `send` is declared below; the poll's first update comes after `engine.start()`.
   // The screen wins for an ask (M78 spec 07): a pane whose last read shows an ask is `blocked` on the
   // phone and in the push, also where the multiplexer says `working` (herdr-core with pi's question).
-  if (surface !== undefined) engine.liftScreenAsks((paneId) => surface.askOnScreen(paneId));
+  if (surface !== undefined) engine.liftScreenAsks((paneId) => surface.askOnScreen(paneId) || surface.questionQueued(paneId));
   // And against it: a `blocked` whose screen shows nobody asked (no ask, a free box, no queued
   // question) is what its turn says (blocked-settle.ts, Koperca catalogue C).
   if (surface !== undefined) engine.settleBlockedByScreen((paneId) => settleBlocked(surface.surfaceOf(paneId), surface.questionQueued(paneId)));
@@ -4498,8 +4498,25 @@ const repoTricks =
 void officialTricks?.sweep();
 void repoTricks?.sweep();
 
-void botTrash.sweep();
-const trashTimer = setInterval(() => void botTrash.sweep(), TRASH_INTERVAL);
+const agentRuns = new AgentRuns(process.env.AGENT_RUNS_DIR || join(process.env.XDG_STATE_HOME || join(homedir(), ".local/state"), "agent-runs"),
+    async (id, dir) => {
+      const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });
+      return await child.exited === 0;
+    }, activity,
+    async (argv, extraEnv = {}) => {
+      // The service PATH has no ~/.local/bin, where herdr lives; the launcher shells out to it.
+      const path = [join(homedir(), ".local/bin"), process.env.PATH ?? ""].filter(Boolean).join(":");
+      const child = Bun.spawn([...argv], { stdin: "ignore", stdout: "pipe", stderr: "pipe", env: { ...process.env, PATH: path, ...extraEnv } });
+      const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
+      return { code, stdout, stderr };
+    }, cfg.stateDir, terminalId => botTrash.purgeRunTerminal(registry.primary, terminalId));
+
+function sweepTrash() {
+  void botTrash.sweep();
+  void agentRuns.sweepTrash().catch(error => console.warn("[agent-run-trash] sweep failed", error));
+}
+sweepTrash();
+const trashTimer = setInterval(sweepTrash, TRASH_INTERVAL);
 trashTimer.unref();
 
 const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer({
@@ -4542,18 +4559,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
   projectPictures,
   botTrash,
   botAutoName,
-  agentRuns: new AgentRuns(process.env.AGENT_RUNS_DIR || join(process.env.XDG_STATE_HOME || join(homedir(), ".local/state"), "agent-runs"),
-    async (id, dir) => {
-      const child = Bun.spawn(["/usr/local/bin/agent-stop", id, "--runs-dir", dir], { stdout: "ignore", stderr: "ignore" });
-      return await child.exited === 0;
-    }, activity,
-    async (argv, extraEnv = {}) => {
-      // The service PATH has no ~/.local/bin, where herdr lives; the launcher shells out to it.
-      const path = [join(homedir(), ".local/bin"), process.env.PATH ?? ""].filter(Boolean).join(":");
-      const child = Bun.spawn([...argv], { stdin: "ignore", stdout: "pipe", stderr: "pipe", env: { ...process.env, PATH: path, ...extraEnv } });
-      const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
-      return { code, stdout, stderr };
-    }, cfg.stateDir),
+  agentRuns,
   uiSections,
   botFeatured,
   botDisplays,

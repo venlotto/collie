@@ -4,7 +4,7 @@
 import type { ApiErrorCode, ApiErrorDetail } from "@/lib/api-error-codes";
 import type { JsonValue } from "@/lib/json";
 import { t } from "@/lib/i18n";
-import type { HeldRow } from "@/lib/surface/send";
+import type { HeldRow, LastSend } from "@/lib/surface/send";
 import type { Surface } from "@/lib/surface/surface";
 import type { HoldNote } from "@/lib/surface/hold";
 
@@ -300,6 +300,8 @@ export interface AgentView {
    * composer reads as `unknown(no-match)`.
    */
   surface?: Surface;
+  /** Latest send receipt for this pane generation, including delivery failures. */
+  lastSend?: LastSend;
   /**
    * Mirrors `PaneWire.hooks` (M56 spec 11): the pane's hook source is `live` or `none`, or `holds`
    * when its hooks also hold permissions for the phone (M56 spec 12). Absent on an older bridge.

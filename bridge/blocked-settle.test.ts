@@ -123,7 +123,7 @@ describe("the engine, wired as bridge/index.ts wires it", () => {
     const mux = new FakeMux();
     const shadow = shadowOver(mux);
     const engine = new StateEngine(herdOf(mux), 1500);
-    engine.liftScreenAsks((paneId) => shadow.askOnScreen(paneId));
+    engine.liftScreenAsks((paneId) => shadow.askOnScreen(paneId) || shadow.questionQueued(paneId));
     engine.settleBlockedByScreen((paneId) => settleBlocked(shadow.surfaceOf(paneId), shadow.questionQueued(paneId)));
     const transitions: { from: AgentStatus; to: AgentStatus }[] = [];
     engine.onTransition((_a, from, to) => transitions.push({ from, to }));
@@ -134,6 +134,14 @@ describe("the engine, wired as bridge/index.ts wires it", () => {
     };
     return { mux, engine, transitions, poll };
   }
+
+  test.each(["idle", "done", "working", "blocked"] as const)("a queued question lifts even mux %s to Needs you", async (status) => {
+    const { mux, engine, poll } = await rig();
+    mux.status.set("w1:p1", status);
+    mux.screens.set("w1:p1", screen(QUEUED));
+    await poll(); await poll();
+    expect(engine.current().agents[0]!.status).toBe("blocked");
+  });
 
   test("Action Required with nothing asked reads working, and no blocked transition reaches the push", async () => {
     const { mux, engine, transitions, poll } = await rig();

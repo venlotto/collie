@@ -51,3 +51,19 @@ describe("activityStatusOf", () => {
     expect(activityStatusOf({ ...completed, lastSeenAt: 170 })).toBe("idle");
   });
 });
+
+
+describe("delivery and the current screen", () => {
+  it.each(["idle", "done", "working", "blocked"] as const)("does not hide a failed delivery behind %s", status => {
+    expect(activityStatusOf({ ...pane, status, lastSend: { requestId: "failed", at: 150, outcome: "refused" } })).toBe("sendFailed");
+    expect(activityStatusOf({ ...pane, status, lastSend: { requestId: "lost", at: 150, outcome: "unknown" } })).toBe("sendUnknown");
+  });
+  it("distinguishes pending from confirmed and reports live work despite stale idle", () => {
+    expect(activityStatusOf({ ...pane, lastSend: { requestId: "pending", at: 150, outcome: "pending" } })).toBe("sending");
+    expect(activityStatusOf({ ...pane, status: "done", lastSend: { requestId: "ok", at: 150, outcome: "sent" } })).toBe("done");
+    const surface = { revision: 3, turn: "running", modal: "none", composer: "empty" } as const;
+    expect(activityStatusOf({ ...pane, surface })).toBe("working");
+    expect(activityStatusOf({ ...pane, status: "blocked", surface })).toBe("blocked");
+    expect(activityStatusOf({ ...pane, surface: { ...surface, staleFrame: true } })).toBe("idle");
+  });
+});

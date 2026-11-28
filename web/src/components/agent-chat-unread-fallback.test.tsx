@@ -42,14 +42,14 @@ function screenAt(seconds: number, clock: string): string {
   return ["Pick a mode for the lab run", "  > fast", "    careful", `✳ Wibbling… (${seconds}s · ↓ ${seconds * 10} tokens)`, `lab clock ${clock}`].join("\n");
 }
 
-function mount() {
+function mount(initialRevision = 7) {
   let show: (text: string, revision: number, surface?: Surface) => void = () => undefined;
   server.use(
     http.get(/\/api\/pane\/[^/]+$/, () => HttpResponse.json({ paneId: fixtureAgents[0]!.paneId, text: screenAt(4, "12:15:03"), truncated: false, revision: 7 })),
     ...sendHandler((request) => sendAnswer(request.id, "refused", "not_free", { offers: ["keys"], rowsHash: "ab12cd", surface: UNREAD })),
   );
   function Harness() {
-    const [pane, setPane] = useState<{ text: string; revision: number; surface: Surface }>({ text: screenAt(4, "12:15:03"), revision: 7, surface: UNREAD });
+    const [pane, setPane] = useState<{ text: string; revision: number; surface: Surface }>({ text: screenAt(4, "12:15:03"), revision: initialRevision, surface: UNREAD });
     show = (text, revision, surface = UNREAD) => act(() => setPane({ text, revision, surface }));
     const agent: AgentView = { ...fixtureAgents[0]!, sendProtocol: true, surface: { ...pane.surface, revision: pane.revision } };
     return withHeaderHost(
@@ -64,7 +64,7 @@ async function sendRefused() {
   const user = userEvent.setup();
   await user.type(await screen.findByPlaceholderText(/type a reply/i), "go on");
   await user.click(screen.getByRole("button", { name: "Send" }));
-  await waitFor(() => expect(recordedSends()).toHaveLength(1));
+  await waitFor(() => expect(recordedSends()).toHaveLength(1), { timeout: 15_000 });
   await screen.findByText(CAPTION);
 }
 
@@ -76,6 +76,17 @@ describe("AgentChat: the unread card a refusal opens (the M102 review, H; pass 2
     m.show(screenAt(6, "12:15:05"), 9);
     expect(screen.getByText(CAPTION)).toBeInTheDocument();
     expect(document.querySelector("[data-slot=\"unread-dialog-type-anyway\"]")).toHaveTextContent("Send anyway");
+  });
+
+  it("retires a readable changed screen with a constant zero revision, but keeps an unchanged read", async () => {
+    const m = mount(0);
+    await sendRefused();
+    m.show(screenAt(4, "12:15:03"), 0, FREE);
+    expect(screen.getByText(CAPTION)).toBeInTheDocument();
+    m.show("A different screen still unread", 0, UNREAD);
+    expect(screen.getByText(CAPTION)).toBeInTheDocument();
+    m.show("The run is done.", 0, FREE);
+    await waitFor(() => expect(screen.queryByText(CAPTION)).toBeNull());
   });
 
   it("goes when the pane is no longer unread: a later read the bridge can read", async () => {

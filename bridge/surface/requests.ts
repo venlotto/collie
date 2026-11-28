@@ -364,6 +364,10 @@ function parseAskRecord(raw: JsonValue | undefined): AskRecord | null {
 
 export class RequestStore {
   private readonly salt: string;
+  private changes = 0;
+
+  /** Invalidates projections after a write or pruning, without rereading files on each snapshot. */
+  get revision(): number { return this.changes; }
 
   constructor(
     private readonly dir: string,
@@ -397,6 +401,7 @@ export class RequestStore {
     writeFileSync(temp, `${JSON.stringify(record)}\n`, { mode: 0o600 });
     chmodSync(temp, 0o600);
     renameSync(temp, target);
+    this.changes++;
   }
 
   /** The stored record, or null. */
@@ -602,6 +607,7 @@ export class RequestStore {
     let dropped = 0;
     const drop = (record: SendRecord): void => {
       rmSync(this.path(record.id), { force: true });
+      this.changes++;
       dropped++;
     };
     const kept: SendRecord[] = [];

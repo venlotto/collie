@@ -16,9 +16,11 @@ export function BotActivityAvatar({ bot, status }: { bot: BotIdentity; status: A
 export function BotActivityPill({ bot, status, onClick }: { bot: BotIdentity; status: ActivityStatus; onClick?: () => void }) {
   useLocale();
   const label = activityLabel(status);
+  const delivery = status === "sendFailed" || status === "sendUnknown" || status === "sending";
   const Tag = onClick ? "button" : "div";
   return <Tag className="bot-pill" title={label || undefined} type={onClick ? "button" : undefined} onClick={onClick} aria-haspopup={onClick ? "dialog" : undefined}>
-    <BotActivityAvatar bot={bot} status={status} /><strong>{bot.name}</strong>
-    <span className="sr-only" role="status">{label}</span>
+    <BotActivityAvatar bot={bot} status={status} />
+    {delivery ? <span className="bot-pill-copy"><strong>{bot.name}</strong><span role="status" data-activity={status}>{label}</span></span>
+      : <><strong>{bot.name}</strong><span className="sr-only" role="status">{label}</span></>}
   </Tag>;
 }
