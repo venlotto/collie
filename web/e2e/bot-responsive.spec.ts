@@ -63,7 +63,12 @@ async function fits(locator: Locator) {
   }).toEqual({ left: true, top: true, right: true, bottom: true });
 }
 
-test("list, chat, composer and menus fit the viewport", async ({ page }) => {
+test("list, chat, composer and menus fit the viewport", async ({ page, browserName }) => {
+  // A phone's bottom inset must not leave a second band beneath the reply field.
+  if (browserName === "chromium") {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { bottom: 34 } });
+  }
   await fits(page.getByRole("searchbox"));
   await capture(page, "lista");
   const group = page.getByRole("button", { name: /^Workspace_con/ });
@@ -75,6 +80,8 @@ test("list, chat, composer and menus fit the viewport", async ({ page }) => {
   // The composer paints the bottom safe area; no separate black shell strip remains below it.
   const composerBottom = await field.evaluate(el => el.closest('[data-slot="pane-bottom"]')!.getBoundingClientRect().bottom);
   expect(Math.abs(composerBottom - page.viewportSize()!.height)).toBeLessThanOrEqual(1);
+  const fieldBottom = await field.evaluate(el => el.closest('[data-slot="composer-box"]')!.getBoundingClientRect().bottom);
+  expect(composerBottom - fieldBottom).toBeLessThanOrEqual(5);
   await fits(field);
   await field.fill("Borrador de auditoría\nSegunda línea con texto largo para comprobar el ajuste a la pantalla\nTercera línea");
   await fits(page.getByRole("button", { name: "Enviar", exact: true }));

@@ -420,7 +420,7 @@
 .bot-conversation [data-slot="draft-notice-slot"] { bottom: var(--bot-bottom-overlap, 0px); z-index: 4; }
 .bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-bottom, .bot-conversation > .bot-desk-reply-row {
   position: absolute; inset: auto 0 0; z-index: 3;
-  padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+  padding-bottom: 4px;
   background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
   box-shadow: var(--glass-edge);
   -webkit-backdrop-filter: var(--glass-filter);

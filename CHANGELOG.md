@@ -137,6 +137,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 
 - **Holding a workspace clears the phone’s residual text selection.** The list and its action sheet reject native text selection together, while search, workspace names and conversation text remain editable or selectable.
+- **The chat prompt sits close to the bottom edge.** The phone’s reply dock keeps a small margin instead of adding a separate home-indicator-sized band below the message field.
+
 
 ## [1.31.0] - 2026-11-24
 
