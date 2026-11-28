@@ -3980,12 +3980,12 @@ describe("the host gate — `?host=` selects among enrolled members and nothing 
     // answer to an ask by id, the hook hold card's tap on a member's pane (M56 spec 12)) reach their runtime through the caller's resolver and
     // nothing else. One of them, the launcher rows, hands the resolver the lead's merge (ADR 0127), and
     // two, the launch and the branch create, hand it the lead's row carry (ADR 0127 point 3). The project
-    // picture (ADR 0160), chat order and workspace moves also resolve through the caller.
+    // picture (ADR 0160), chat order, workspace moves and uploaded attachments also resolve through the caller.
     const carry = String.raw`undefined, leadRowCarry\(allowedLaunchers, homedir\(\)\)`;
-    expect([...src.matchAll(new RegExp(String.raw`await caller\.resolve\((?:leadRows|${carry})?\);`, "g"))]).toHaveLength(36);
+    expect([...src.matchAll(new RegExp(String.raw`await caller\.resolve\((?:leadRows|${carry})?\);`, "g"))]).toHaveLength(37);
     expect([...src.matchAll(/await caller\.resolve\(leadRows\);/g)]).toHaveLength(1);
     expect([...src.matchAll(new RegExp(String.raw`await caller\.resolve\(${carry}\);`, "g"))]).toHaveLength(2);
-    // Exactly eight `registry.get(` calls remain, and each is a sanctioned one, named here rather
+    // Exactly twelve `registry.get(` calls remain, and each is a sanctioned one, named here rather
     // than exempted: assembling THIS collie's own snapshot body; `localRuntime`, the single
     // "(session) → runtime, or 404" helper both callers share; `/api/config`, which reports THIS
     // collie's own multiplexer (M10/06) and is not session-scoped at all; `/api/mux/logo.svg`,
@@ -4001,9 +4001,13 @@ describe("the host gate — `?host=` selects among enrolled members and nothing 
     // swept body instead, exactly as `bridge/crew/notify.ts` does, and writes to no terminal at all;
     // and the hot intent after an input FORWARDED to a member, which tightens THIS collie's primary
     // engine because the sweep that brings the member's answer back rides its tick (CREW_PROTOCOL.md
-    // §10.1). It runs after the forward has answered and writes nothing. A NINTH would be a route
-    // reaching past the gate.
-    expect([...src.matchAll(/registry\.get\(/g)]).toHaveLength(8);
+    // §10.1). It runs after the forward has answered and writes nothing. Four more serve local agent
+    // runs: two in their route (the primary-session check and the runtime behind it), and two when
+    // attaching runs to the local primary snapshot (the check and its session name). These reads
+    // explicitly refuse remote scope; a thirteenth would need its own justification.
+    expect([...src.matchAll(/registry\.get\(/g)]).toHaveLength(12);
+    expect(src).toContain('if (host.kind !== "local" || url.searchParams.has("host") || !registry.get(sessionName)?.isPrimary)');
+    expect(src).toContain('if (opts.agentRuns && host.kind === "local" && registry.get(plan.local.session)?.isPrimary && !isLocalRequest(req, pairingGate))');
     // The mux read is a read of a LOCAL session (the primary unless `?session=` names one, M55), never
     // `?host=`, because a peer's capabilities are its own business and reach the lead over the crew
     // API, never out of this registry.
