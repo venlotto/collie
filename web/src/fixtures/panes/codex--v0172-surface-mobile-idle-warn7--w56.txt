@@ -1,0 +1,23 @@
+› /home/ubuntu/.local/state/collie/uploads/term.80e2…
+
+  • Input flotante, con margen inferior y sin la caja
+    de fondo.
+
+  • Cabecera del chat con efecto glass transparente.
+
+  • Adjuntos y su menú con el mismo estilo.
+
+  Verificado en móvil, tablet y escritorio. Queda un
+  timeout ajeno al cambio en una prueba del buscador
+  interno.
+
+  Recarga Collie para verlo.
+
+  Worked for 43m 23s • 15:07
+
+
+› Ask Codex to do anything
+
+  GPT-6-Astra high · ~/repos · Mejorar eliminación
+  móvil
+  ← for agents              ⚠ 7 warnings · f2 to view

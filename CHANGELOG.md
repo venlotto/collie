@@ -170,6 +170,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
 - **Every open bot window offers an editable reply field.** Click or tab into “Preguntar a…” to write directly, keeping unsent text when switching between chats.
+- **Codex stays readable when long titles wrap its status bar.** Narrow terminals now recognise up to three status rows, including a separator at a line break and monochrome warning footers, while real pickers still block typing.
 
 ## [1.31.0] - 2026-11-24
 

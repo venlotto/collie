@@ -34,7 +34,7 @@
       "continuationIndent": 2,
       "maxDraftRows": 100,
       "maxTailRows": 4,
-      "bottomWraps": 1,
+      "bottomWraps": 2,
       "maxBlankRows": 100
     },
     "frameAlternates": [
@@ -55,7 +55,7 @@
         "continuationIndent": 2,
         "maxDraftRows": 100,
         "maxTailRows": 4,
-        "bottomWraps": 1,
+        "bottomWraps": 2,
         "note": "Shell mode (Codex 0.172.0, lab 2026-11-27, captures codex--v0172-shell-mode-*--w56.txt): a `!` typed on an empty box turns the prompt glyph into a bold red `!` and puts `Shell mode` under the status row; the box holds the line without its `!`. Read with idle.shellMode.",
         "maxBlankRows": 100
       },

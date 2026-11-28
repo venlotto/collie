@@ -23,9 +23,9 @@ import { displayWidth } from "../../text-width";
 import { requireProfile } from "../../surface/profile";
 import {
   isBlank,
-  isFieldOnlyStatusContinuation,
   isHintRow,
   isStatusRow,
+  joinStatusRows,
   lastNonBlankIndex,
   lineText,
   isSparkle,
@@ -54,26 +54,31 @@ const CODEX_IDLE = requireProfile("codex").idle;
 
 /**
  * The first row of the status row that ends at `last`, when it wrapped there on a narrow pane (#838), or
- * `last` itself. Codex wraps its status row onto two rows on a narrow pane, and both rows are status rows.
- * The walk below would take the upper one for a second status row and leave the frame. The frame module
- * decides the wrap from the profile's `idle.frame.bottomWraps`, so this reader and the Surface agree on it:
- * the rows it names under the box's edge (`Frame.bottomWrap`) must end at `last`.
+ * `last` itself. A narrow pane can wrap both the path and the thread title, including a separator
+ * at the end of a row. The profile bounds the number of continuations; the frame locates their
+ * first row, and the reconstructed status must still satisfy the status grammar.
  */
 function wrappedStatus(lines: StyledLine[], last: number): number {
   const frame = findInputFrame(lines, CODEX_IDLE);
-  const wrap = frame?.bottomWrap;
-  if (wrap !== undefined && wrap.last === last) return wrap.first - 1;
-  // A thread title can wrap onto a row of its own, with no later field and so no ` · ` for the
-  // profile's bottom anchor to match. The frame still finds the first status row. Accept that next
-  // row only as the same coloured field, soft-wrapped at the screen's edge; a key row or a foreign
-  // row under the box stays outside the composer.
   const first = frame?.bottom ?? -1;
-  if (first < 0 || last !== first + 1) return last;
-  const upper = lines[first]!;
-  const lower = lines[last]!;
+  if (first < 0 || last <= first || last - first > (CODEX_IDLE.frame.bottomWraps ?? 0)) return last;
   const width = Math.max(...lines.map((line) => displayWidth(rstrip(lineText(line)))));
-  if (!wrapsOnto(rstrip(lineText(upper)), rstrip(lineText(lower)), width)) return last;
-  return isFieldOnlyStatusContinuation(upper, lower, readIsUnstyled(lines)) ? first : last;
+  for (let row = first; row < last; row++) {
+    if (!wrapsOnto(rstrip(lineText(lines[row]!)), rstrip(lineText(lines[row + 1]!)), width)) return last;
+  }
+  // Validate the complete row, including separators that land at a wrap boundary. A field may
+  // span several physical rows; joining its runs preserves its paint, so a different-colour row
+  // or a dialog's bold keys still fail the same status grammar.
+  const joined = joinStatusRows(lines.slice(first, last + 1));
+  return joined !== null && isStatusRow(lineText(joined), joined, monochrome(lines)) ? first : last;
+}
+
+/** NO_COLOR keeps bold/dim. Require the profile's own footer as well when that is the only paint. */
+function monochrome(lines: StyledLine[]): boolean {
+  if (readIsUnstyled(lines)) return true;
+  if (!lines.every((line) => line.segments.every((run) => run.fg === undefined && run.bg === undefined))) return false;
+  const tail = lines.findLast((line) => lineText(line).trim().length > 0);
+  return tail !== undefined && (CODEX_IDLE.volatile.below.hints ?? []).some((pattern) => new RegExp(pattern, "u").test(rstrip(lineText(tail))));
 }
 
 // A draft wraps onto indented continuation rows between the prompt row and the status row.
@@ -132,15 +137,12 @@ const POINTED_OPTION = /^\d{1,2}\. /u;
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const clean = lines.map(withoutSparkles);
   const texts = clean.map((l) => rstrip(lineText(l)));
-  // A read with no styling anywhere (herdr-core): the status and hint rows are read by their text.
-  const plain = readIsUnstyled(lines);
+  // A plain read, or NO_COLOR with the profile's footer: status fields are read by their text.
+  const plain = monochrome(lines);
   const statusLast = locateStatusRow(texts, clean, plain);
   if (statusLast < 0) return null;
-  // A status row that wrapped: every row of it is a status row by this reader's own test too. The frame
-  // module is asked only when the row over the last one is a status row as well.
-  const above = statusLast - 1;
-  const statusRow = above >= 0 && isStatusRow(texts[above]!, clean[above], plain) ? wrappedStatus(lines, statusLast) : statusLast;
-  for (let i = statusRow; i < statusLast; i++) if (!isStatusRow(texts[i]!, clean[i], plain)) return null;
+  // The whole status row is the evidence; an individual continuation need not hold a separator.
+  const statusRow = wrappedStatus(lines, statusLast);
 
   for (let i = statusRow - 1; i >= 0 && statusRow - 1 - i <= MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
@@ -165,12 +167,12 @@ function locateStatusRow(texts: string[], clean: StyledLine[], plain: boolean): 
   // A field-only continuation is not a status row by itself. Ask the frame whether it wraps the
   // status row above, both with and without Codex's separate key-hint row below it.
   const wrapped = wrappedStatus(clean, last);
-  if (wrapped < last && isStatusRow(texts[wrapped]!, clean[wrapped], plain)) return last;
+  if (wrapped < last) return last;
   const above = last - 1;
   if (above < 0 || !isHintRow(texts[last]!, clean[last], plain)) return -1;
   if (isStatusRow(texts[above]!, clean[above], plain)) return above;
   const wrappedAbove = wrappedStatus(clean, above);
-  return wrappedAbove < above && isStatusRow(texts[wrappedAbove]!, clean[wrappedAbove], plain) ? above : -1;
+  return wrappedAbove < above ? above : -1;
 }
 
 /** The starfield rows directly above the prompt belong to the composer band, and leave the mirror

@@ -244,3 +244,22 @@ describe("the codex profile over the Codex fixtures (M56 spec 13)", () => {
     expect(incidentScreens().filter((incident) => isFree(readScreen(incident.rows, incident.agent, CODEX).surface)).map((i) => i.name)).toEqual([]);
   });
 });
+
+describe("Codex 0.172.0 real narrow screens (codexp-1000)", () => {
+  it.each(FIXTURES.filter((name) => name.startsWith("codex--v0172-surface-") && !name.includes("-dialog-")))("%s: status wrapping never looks like a modal", (name) => {
+    const result = readScreen(fixtureRows(name), "codex", requireProfile("codex").idle);
+    expect(result.surface).toMatchObject({
+      turn: name.includes("-running-") ? "running" : "idle",
+      modal: "none",
+      composer: name.includes("-draft-") ? "draft" : "empty",
+    });
+    expect(result.surface.reason).toBeUndefined();
+  });
+});
+
+it.each(FIXTURES.filter((name) => name.startsWith("codex--v0172-surface-model-dialog-")))("%s: status support never frees the real model picker", (name) => {
+  const read = readScreen(fixtureRows(name), "codex", requireProfile("codex").idle);
+  expect(isFree(read.surface)).toBe(false);
+  expect(read.surface.modal).not.toBe("none");
+  expect(read.surface.composer).toBe("unknown");
+});

@@ -64,11 +64,11 @@ describe("a Codex status row that wrapped under the box (#838), in the Codex ada
     expect(box?.statusLast).toBeUndefined();
   });
 
-  it("a third status-shaped row past the profile's bound gives no composer", () => {
+  it("a fourth status-shaped row past the profile's bound gives no composer", () => {
     const rows = raw("codex--v0166-core-working-status-wrap--w56.txt");
     const at = rows.findLastIndex((row) => row.startsWith("  lab/codex-lab"));
-    const three = [...rows.slice(0, at + 1), "  and one more · status row", ...rows.slice(at + 1)];
-    expect(composerReady(linesOf(three))).toBe(false);
+    const four = [...rows.slice(0, at + 1), "  and one more · status row", "  fourth · status row", ...rows.slice(at + 1)];
+    expect(composerReady(linesOf(four))).toBe(false);
   });
 
   it("reads the field-only wrap on a plain read too, with or without the separate hint row", () => {
