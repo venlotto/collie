@@ -772,10 +772,10 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   let blankRun = 0;
   while (i >= 0 && edgeAt(texts[i]!) === null && crossed < budget) {
     // A box with blank edges has no edge glyph to stop at: a row with text left of the indent ends
-    // it, and so do two blank rows in a row (a blank edge is one row, so a second one is outside).
+    // it. A blank run also ends it unless the profile records the native editor's empty paragraphs.
     if (strict && !interiorRow(texts[i]!, idle)) return null;
     blankRun = isBlank(texts[i]!) ? blankRun + 1 : 0;
-    if (strict && blankRun > 1) return null;
+    if (strict && blankRun > (idle.frame.maxBlankRows ?? 1)) return null;
     crossed++;
     i--;
   }
@@ -1128,7 +1128,8 @@ export function overlayInRows(rows: readonly FrameRow[], indices: readonly numbe
  * `maxTailRows` rows above the last non-blank row. Only that row is tried: when its frame does not
  * close, there is no frame. A box higher up is an echo in the transcript, not the live one. A box
  * with blank edges (no edge glyphs) is read strictly: every interior row is blank or indented, the
- * blank top edge sits straight over the prompt row, and two blank rows in a row end the box.
+ * blank top edge sits straight over the prompt row, and blank runs obey the profile's bound (one
+ * row unless its native multiline editor explicitly allows more).
  */
 export function findInputFrame(rows: readonly FrameRow[], idle: IdleProfile): Frame | null {
   const alternates = idle.frameAlternates === undefined ? [] : alternatesOf(idle);

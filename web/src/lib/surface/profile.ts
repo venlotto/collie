@@ -408,6 +408,10 @@ export interface FrameLayout {
    */
   readonly placeholderPatterns?: readonly string[];
   readonly maxDraftRows: number;
+  /** Consecutive blank rows allowed inside an edge-walk draft with a blank top. Default: one.
+   * A native multiline editor can retain empty paragraphs; the prompt, indentation and total
+   * maxDraftRows bound still have to hold. */
+  readonly maxBlankRows?: number;
   /** How many rows above the last non-blank row the bottom edge may sit (the frame module's
    *  search bound, M56 spec 03): the tallest thing the harness draws under a live box. */
   readonly maxTailRows: number;
@@ -1651,6 +1655,10 @@ export const MAX_BOTTOM_WRAPS = 2;
 function parseFrame(frameNode: JsonObject): FrameLayout {
   const walk = frameNode.walk === undefined ? "edges" : oneOf(frameNode.walk, "idle.frame.walk", FRAME_WALKS);
   const maxDraftRows = whole(field(frameNode, "maxDraftRows", "idle.frame"), "idle.frame.maxDraftRows", 1);
+  const maxBlankRows = frameNode.maxBlankRows === undefined ? undefined : whole(frameNode.maxBlankRows, "idle.frame.maxBlankRows", 1);
+  if (maxBlankRows !== undefined && (walk !== "edges" || maxBlankRows > maxDraftRows)) {
+    fail("idle.frame.maxBlankRows", "needs the edges walk and must not exceed maxDraftRows");
+  }
   const anchors = {
     top: anchor(field(frameNode, "top", "idle.frame"), "idle.frame.top", null, true),
     prompt: anchor(field(frameNode, "prompt", "idle.frame"), "idle.frame.prompt", "draft", false),
@@ -1659,7 +1667,8 @@ function parseFrame(frameNode: JsonObject): FrameLayout {
     maxTailRows: whole(field(frameNode, "maxTailRows", "idle.frame"), "idle.frame.maxTailRows", 0),
   };
   const maxWidgetRows = frameNode.maxWidgetRows === undefined ? undefined : whole(frameNode.maxWidgetRows, "idle.frame.maxWidgetRows", 1);
-  const withWidgets = maxWidgetRows === undefined ? anchors : { ...anchors, maxWidgetRows };
+  const withBlanks = maxBlankRows === undefined ? anchors : { ...anchors, maxBlankRows };
+  const withWidgets = maxWidgetRows === undefined ? withBlanks : { ...withBlanks, maxWidgetRows };
   const withIndent = frameNode.draftIndent === undefined ? withWidgets : { ...withWidgets, draftIndent: whole(frameNode.draftIndent, "idle.frame.draftIndent", 1) };
   if (frameNode.draftLines !== undefined && frameNode.draftLines !== true && frameNode.draftLines !== false) fail("idle.frame.draftLines", "must be true or false");
   const withLines = frameNode.draftLines === true ? { ...withIndent, draftLines: true } : withIndent;

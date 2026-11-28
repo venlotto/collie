@@ -1,0 +1,35 @@
+
+  >_ [1mOpenAI Codex[0;2m (v0.172.0)
+[0m     [2m/tmp/collie-stranded-send-lab[0m
+[2m  permissions: [0;1mYOLO mode[0m
+
+[2m  To get started, describe a task or try one of these[0m
+[2mcommands:[0m
+
+  /init[2m - create an AGENTS.md file with instructions for
+Codex[0m
+  /status[2m - show current session configuration[0m
+  /permissions[2m - choose what Codex is allowed to do[0m
+  /model[2m - choose what model and reasoning effort to use
+[0m  /review[2m - review any changes and find issues[0m
+
+
+
+
+
+
+
+
+
+
+
+[1m›[0m Reply only OK. Do not use tools. This is a send
+  regression test.
+
+  This paragraph should remain one draft.
+
+
+  The last paragraph should submit with the others.
+
+  GPT-6-Astra high · /tmp/collie-stranded-send-lab
+                              ⚠ 2 warnings · [1mf2[0m to view
