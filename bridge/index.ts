@@ -2235,7 +2235,7 @@ const makeSession: SessionFactory = (name, endpoint, isPrimary) => {
   // `send` is declared below; the poll's first update comes after `engine.start()`.
   // The screen wins for an ask (M78 spec 07): a pane whose last read shows an ask is `blocked` on the
   // phone and in the push, also where the multiplexer says `working` (herdr-core with pi's question).
-  if (surface !== undefined) engine.liftScreenAsks((paneId) => surface.askOnScreen(paneId));
+  if (surface !== undefined) engine.liftScreenAsks((paneId) => surface.askOnScreen(paneId) || surface.questionQueued(paneId));
   // And against it: a `blocked` whose screen shows nobody asked (no ask, a free box, no queued
   // question) is what its turn says (blocked-settle.ts, Koperca catalogue C).
   if (surface !== undefined) engine.settleBlockedByScreen((paneId) => settleBlocked(surface.surfaceOf(paneId), surface.questionQueued(paneId)));

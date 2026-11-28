@@ -2112,7 +2112,9 @@ export function startServer(opts: {
       // M102 spec 14: a terminal pane whose ask book answers a screen card's tap by id says so, so a lead
       // sends this member's card taps by the ask route, with this bridge's checks and record, not raw keys.
       const marked: PaneWire = paneTakesAskRoute(from) ? { ...steered, askRoute: true as const } : steered;
-      return held.length === 0 ? marked : { ...marked, held: shown };
+      const lastSend = from.send?.lastSend(from.name, wire.paneId);
+      const delivered = lastSend === undefined ? marked : { ...marked, lastSend };
+      return held.length === 0 ? delivered : { ...delivered, held: shown };
     };
     // M99 spec 15: a linked pane says so. Only a `true` rides; an unlinked pane and every older body carry no key.
     const withLinked = (wire: PaneWire, from: SessionRuntime): PaneWire => (paneLinked?.(from.name, wire.paneId) === true ? { ...wire, linked: true as const } : wire);

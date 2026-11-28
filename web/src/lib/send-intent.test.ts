@@ -1,4 +1,4 @@
-import { clearIntent, clearIntentIfDraftChanged, loadIntent, saveIntent, __forgetSendIntentMemory } from "./send-intent";
+import { localSendStatus, clearIntent, clearIntentIfDraftChanged, loadIntent, saveIntent, __forgetSendIntentMemory } from "./send-intent";
 
 const INTENT = { key: "send\u0000hello", requestId: "req-1" };
 
@@ -55,4 +55,15 @@ describe("send intent store", () => {
     sessionStorage.setItem("collie:send-intent:default:w1:p1", "{not json");
     expect(loadIntent(undefined, "w1:p1")).toBeNull();
   });
+});
+
+
+it("shows an unanswered local send even if the bridge never accepted it", () => {
+  saveIntent(undefined, "w1:p1", INTENT, "hello", "sending");
+  expect(localSendStatus(undefined, "w1:p1")).toBe("sending");
+  __forgetSendIntentMemory();
+  expect(localSendStatus(undefined, "w1:p1")).toBe("sendUnknown");
+  expect(localSendStatus(undefined, "w1:p1", { requestId: "older", at: Date.now(), outcome: "sent" })).toBe("sendUnknown");
+  expect(localSendStatus(undefined, "w1:p1", { requestId: INTENT.requestId, at: Date.now(), outcome: "sent" })).toBeNull();
+  expect(localSendStatus({ session: "other" }, "w1:p1")).toBeNull();
 });

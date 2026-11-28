@@ -184,6 +184,8 @@
 // goes on from there (Backspace, the text, Enter); one that still shows nowhere ends `probe_failed` as
 // before, and `gapsMs.probe` carries the whole wait. A free, responsive pane never waits for it: the
 // window opens only after the probe's reads saw nothing. A running turn keeps its own rules (queue, hold).
+// A framed editor that pastes its probe and queues in a turn also gets this read-only window
+// (Codex 0.172.0, 2026-11-28), including a late Backspace paint. Its submit still needs S1 and its queue key.
 // One rule for every harness: omp 18.6.1 right after its start under load (the browser leg's model
 // picker, M80 spec 08) refused the same way, its box idle and empty, the probe read twice in 242 ms.
 // A probe that shows in the window but changed more than the box gets one second chance (2026-11-01,
@@ -338,6 +340,7 @@ import {
   type SendReason,
   type SendReceipt,
   type SendReceiptRow,
+  type LastSend,
   type SendStep,
   type SendWhen,
   type SurfaceWords,
@@ -3726,6 +3729,25 @@ export class SendProtocol {
     return this.deps.store.get(id)?.path ?? null;
   }
 
+  private deliveryRevision = -1;
+  private deliveryRecords: SendRecord[] = [];
+
+  /** Delivery state for the current pane only; a reused address must not inherit receipts. */
+  lastSend(session: string, paneId: string): LastSend | undefined {
+    if (this.deliveryRevision !== this.deps.store.revision) {
+      this.deliveryRecords = this.deps.store.list();
+      this.deliveryRevision = this.deps.store.revision;
+    }
+    const generation = this.deps.generation(paneId);
+    const record = this.deliveryRecords.findLast((row) => row.session === session && row.paneId === paneId
+      && row.paneGeneration === generation && row.mode !== "prepare");
+    return record === undefined ? undefined : { requestId: record.id, at: record.acceptedAt,
+      outcome: record.receipt?.outcome ?? "pending",
+      ...(record.receipt?.late && { late: record.receipt.late }),
+      ...(record.receipt?.word && { word: record.receipt.word }),
+    };
+  }
+
   recent(paneId: string, limit = 10): SendReceiptRow[] {
     const rows: SendReceiptRow[] = [];
     for (const record of this.deps.store.list().toReversed()) {
@@ -7024,13 +7046,22 @@ export class SendProtocol {
     }
     const readsLeft = Math.max(1, budget.reads - typed.reads);
     // Never less than one read's time: a half cut to its first gap slept and never read.
-    const back = await this.poll(state, "probe", { reads: readsLeft, ms: Math.max(PROBE_BACK_FLOOR_MS, budget.ms - spent) }, (snap) => {
+    const clean = (snap: Snap): Verdict => {
       if (s0.frame !== null) {
         if (snap.frame === null) return "wait";
         return boxText(snap.frame) === boxText(s0.frame) ? "pass" : "wait";
       }
       return snap.plain.join("\n") === s0.plain.join("\n") ? "pass" : "wait";
-    });
+    };
+    let back = await this.poll(state, "probe", { reads: readsLeft, ms: Math.max(PROBE_BACK_FLOOR_MS, budget.ms - spent) }, clean);
+    // A busy queued editor can paint Backspace as late as the probe itself. Read again,
+    // without another key; S1 still checks the box and dialogs before any submit.
+    if (back.verdict === "wait" && boxOnly && state.match?.profile.probe.paste === true && (state.queued || state.streamed)
+      && (back.snap === null || (back.snap.frame !== null && !modalAtBox(back.snap)
+        && wsFree(boxText(back.snap.frame)) === wsFree(prefix) + probe))) {
+      this.stretch(state, LATE_PROBE.ms);
+      back = await this.poll(state, "probe", LATE_PROBE, clean);
+    }
     if (back.verdict !== "pass") {
       // The decision stands (refused, nothing sent); only the words follow what the reads prove.
       const unproven = state.starting || back.snap === null || (s0.frame !== null && back.snap.frame === null);
@@ -7063,12 +7094,14 @@ export class SendProtocol {
 
   /**
    * Whether the late-probe window opens ({@link LATE_PROBE}, the header): the probe's reads saw the
-   * screen and no character on it, and the pane's turn read idle at S0. A running turn, a queued or
-   * streamed send, and a probe that showed somewhere (it failed, or went elsewhere) keep today's path.
+   * screen and no character on it. A queued message on a framed editor gets the same read-only
+   * wait as an idle send. A probe that showed somewhere else still fails immediately.
    */
   private lateWindowOpens(state: RunState, s0: Snap, typed: { readonly snap: Snap | null; readonly verdict: Verdict }, probe: string): boolean {
     if (typed.verdict !== "wait" || typed.snap === null) return false;
-    if (s0.surface.turn !== "idle" || state.queued || state.streamed) return false;
+    const queued = !state.command && !state.manual && state.match?.profile.probe.paste === true && s0.frame !== null && s0.surface.modal === "none"
+      && (state.queued || state.streamed) && queuesInTurn(state.match);
+    if (!queued && (s0.surface.turn !== "idle" || state.queued || state.streamed)) return false;
     return countIn(typed.snap.texts, probe) === countIn(s0.texts, probe);
   }
 

@@ -1,4 +1,4 @@
-// The request id of a send that got no answer, kept per pane so a lost answer never sends twice.
+// The request id of an in-flight or unanswered send, kept per pane so a lost answer never sends twice.
 //
 // The Send Protocol answers a known request id from the receipt it already wrote (ADR 0101 point 4),
 // so a tap on the same text after a send that got no answer must carry the SAME id. The composer held
@@ -15,6 +15,8 @@
 // Safari private mode throws on setItem), with a memory map beside it for a page whose storage is
 // blocked. A lost id costs only the old behaviour (a new id), never a failed send.
 
+import { useSyncExternalStore } from "react";
+import type { LastSend } from "./surface/send";
 import type { IntentId } from "./durable-control";
 import { asJsonString, parseJsonObject } from "./json";
 import { normalizeScope, type Scope } from "./scope";
@@ -22,6 +24,7 @@ import { normalizeScope, type Scope } from "./scope";
 const PREFIX = "collie:send-intent:";
 
 interface Stored {
+  readonly state: "sending" | "sendUnknown";
   readonly key: string;
   readonly requestId: string;
   /** The text of the draft that went, or null when the send was not the draft (a tap on an offer or a held row). */
@@ -29,6 +32,20 @@ interface Stored {
 }
 
 const memory = new Map<string, Stored>();
+let revision = 0;
+const listeners = new Set<() => void>();
+function emit(): void { revision++; for (const listener of listeners) listener(); }
+function subscribe(listener: () => void): () => void { listeners.add(listener); return () => { listeners.delete(listener); }; }
+/** Rerender activity labels even when a send never reached the bridge's snapshot. */
+export function useSendIntents(): void { useSyncExternalStore(subscribe, () => revision, () => 0); }
+
+/** Local transport uncertainty wins until its matching receipt arrives. */
+export function localSendStatus(scope: Scope | undefined, paneId: string, receipt?: LastSend): "sending" | "sendUnknown" | null {
+  const stored = read(scope, paneId);
+  if (stored === null) return null;
+  if (receipt?.requestId === stored.requestId && receipt.outcome !== "pending") return null;
+  return stored.state;
+}
 
 function keyFor(scope: Scope | undefined, paneId: string): string {
   const { host, session } = normalizeScope(scope);
@@ -49,7 +66,7 @@ function parse(raw: string | null): Stored | null {
   const key = asJsonString(value?.key);
   const requestId = asJsonString(value?.requestId);
   if (key === undefined || requestId === undefined) return null;
-  return { key, requestId, draft: asJsonString(value?.draft) ?? null };
+  return { key, requestId, draft: asJsonString(value?.draft) ?? null, state: "sendUnknown" };
 }
 
 function read(scope: Scope | undefined, paneId: string): Stored | null {
@@ -69,11 +86,12 @@ export function loadIntent(scope: Scope | undefined, paneId: string): IntentId |
   return stored === null ? null : { key: stored.key, requestId: stored.requestId };
 }
 
-/** Remember the intent of a send that got no answer. `draft` is the draft's text when the send carried it. */
-export function saveIntent(scope: Scope | undefined, paneId: string, intent: IntentId, draft: string | null): void {
+/** Remember the intent before sending, or after a lost answer. `draft` is the draft's text when the send carried it. */
+export function saveIntent(scope: Scope | undefined, paneId: string, intent: IntentId, draft: string | null, state: Stored["state"] = "sendUnknown"): void {
   const key = keyFor(scope, paneId);
-  const stored: Stored = { key: intent.key, requestId: intent.requestId, draft };
+  const stored: Stored = { key: intent.key, requestId: intent.requestId, draft, state };
   memory.set(key, stored);
+  emit();
   try {
     storage()?.setItem(key, JSON.stringify(stored));
   } catch {
@@ -90,6 +108,7 @@ export function clearIntent(scope: Scope | undefined, paneId: string): void {
   } catch {
     // Nothing to remove from a store that cannot be reached.
   }
+  emit();
 }
 
 /** The draft changed: forget the intent when it was the draft's and the draft is no longer that text. */
@@ -113,10 +132,13 @@ export function forgetAllSendIntents(): void {
     for (const key of held) store.removeItem(key);
   } catch {
     // Locked-down storage kept nothing.
+  } finally {
+    emit();
   }
 }
 
 /** Test seam: forget the memory copies, as a reload does, and leave sessionStorage as it is. */
 export function __forgetSendIntentMemory(): void {
   memory.clear();
+  emit();
 }

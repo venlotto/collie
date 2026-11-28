@@ -48,3 +48,11 @@ is in them.
 - `codex--v0172-native-paragraphs--w56.txt`: a separate 56 by 35 tmux terminal in
   `/tmp/collie-stranded-send-lab`, with a harmless multiline send regression prompt.
   Codex shows the model status and warning footer below the draft.
+
+### Codex 0.172.0: running queue at 52 columns (2026-11-28)
+
+`codex--v0172-running-queue-clipped--w52.txt` is a styled viewport from a disposable
+Codex in the isolated `cx-status` tmux server, 52 × 23. A real `sleep 600` is still
+running and native follow-ups are queued. The waiting row clips `esc to interrupt`
+to `esc to …`; the status must remain running. No live Collie or operator pane was
+written. Full receipts and captures: `briefs/collie-redesign/verify/codexp-1000/status/`.

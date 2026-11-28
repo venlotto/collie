@@ -22,6 +22,7 @@ import type { Scope } from "@/lib/scope";
 import type { AgentView, TranscriptEntry, WorkspaceView } from "@/lib/types";
 import { BlobAvatar, botTime, identityOf } from "./bot-identity";
 import { useLocale } from "@/hooks/use-locale";
+import { localSendStatus, useSendIntents } from "@/lib/send-intent";
 import { activityStatusOf, type ActivityStatus } from "@/lib/activity-status";
 import { BotActivityAvatar, activityLabel } from "./bot-activity-avatar";
 
@@ -90,6 +91,7 @@ const segmenter = graphemeSegmenter();
 
 export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, onQuickNew, quickBusy = false, deviceName = "", accessNotice }: Props) {
   useLocale();
+  useSendIntents();
   const surface = useRef<HTMLDivElement>(null);
   useBotListSelection(surface);
   const [query, setQuery] = useState("");
@@ -285,7 +287,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   function row(p: AgentView) {
     const scope = scopeOf(p);
     const bot = identityOf(p, scope);
-    const status = p.trash ? "idle" : activityStatusOf(p);
+    const status = p.trash ? "idle" : activityStatusOf(p, localSendStatus(scope, p.paneId, p.lastSend));
     const current = !!active && paneRowKey(active) === paneRowKey(p);
     const matching = mode === (p.trash ? "trash" : "chats");
     const minutes = p.trash && trashMinutesRemaining(p.trash.trashedAt);

@@ -24,6 +24,15 @@ import { modalWord, type Surface, type SurfaceReason } from "./surface";
 export const SEND_OUTCOMES = ["effective", "sent", "discarded", "typed_not_submitted", "refused", "unknown", "held", "expired", "cancelled", "steered"] as const;
 export type SendOutcome = (typeof SEND_OUTCOMES)[number];
 
+/** Latest delivery on a pane, without message text or hashes; survives bridge restarts. */
+export interface LastSend {
+  readonly requestId: string;
+  readonly at: number;
+  readonly outcome: SendOutcome | "pending";
+  readonly late?: SendLate;
+  readonly word?: SendWord;
+}
+
 /**
  * The closed list of reasons. A `refused` outcome always carries one and nothing was typed (or, for
  * `probe_failed`, only the probe character). The other outcomes carry one when there is something to

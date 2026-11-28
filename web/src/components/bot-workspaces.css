@@ -55,6 +55,8 @@
 .bot-user { background: #008594; width: 44px; height: 44px; border: 3px solid #242428; font-size: 16px; }
 .bot-pill { min-width: 0; max-width: min(100%, 230px); gap: 6px; height: 36px; padding: 0 12px 0 7px; font-size: 15px; }
 .bot-pill > span:not(.bot-avatar,.bot-activity-avatar), .bot-pill strong, .bot-copy strong, .bot-line > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bot-pill-copy { display: grid; min-width: 0; text-align: left; line-height: 16px; }
+.bot-pill-copy [role=status] { overflow: hidden; text-overflow: ellipsis; font-size: 12px; line-height: 14px; color: var(--bot-accent); }
 .bot-avatar { width: 40px; height: 40px; display: inline-block; flex: none; }
 .bot-pill .bot-avatar { width: 24px; height: 24px; }
 .bot-activity-avatar { position: relative; display: inline-flex; flex: none; }
@@ -62,6 +64,9 @@
 [data-activity=blocked] { --bot-accent: #e1bd81; }
 [data-activity=error] { --bot-accent: #dda792; }
 [data-activity=done] { --bot-accent: #94c7ac; }
+[data-activity=sendFailed] { --bot-accent: #dda792; }
+[data-activity=sendUnknown] { --bot-accent: #e1bd81; }
+[data-activity=sending] { --bot-accent: #91c5f2; }
 .bot-line[data-activity] { color: var(--bot-accent); }
 .bot-activity-avatar:is([data-activity=blocked], [data-activity=error])::after {
   content: "";

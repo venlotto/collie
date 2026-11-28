@@ -1,0 +1,23 @@
+
+• [2mWaiting for background terminal[0m [2m(9m 14s • [0;1mesc[0;2m to …
+  └ sleep 600[0m
+
+[2m• [0mQueued follow-up inputs
+[2m  ↳ [3mCXbaseline5600: keep waiting; acknowledge this[0m
+    [2;3mcode at the end.[0m
+[2m  ↳ [3mCXbaseline5601: keep waiting; acknowledge this[0m
+    [2;3mcode at the end.[0m
+[2m  ↳ [3mCXbaseline5602: keep waiting; acknowledge this[0m
+    [2;3mcode at the end.[0m
+[2m  ↳ [3mCXbaseline5603: keep waiting; acknowledge this[0m
+    [2;3mcode at the end.[0m
+[2m  ↳ [3mCXbaseline5604: keep waiting; acknowledge this[0m
+    [2;3mcode at the end.[0m
+[2m  ↳ [3mCXbaseline5605: keep waiting; acknowledge this[0m
+    [2;3mcode at the end.[0m
+[2m  ↳ [3mCXbaseline5606: keep waiting; acknowledge this[0m
+
+[1m›[0m [2mAsk Codex to do anything[0m
+
+  GPT-6.2-Sol low · ~/codexp-stability/cx-status · …
+  [1m←[0m for agents · [1m?[0m for shortcuts

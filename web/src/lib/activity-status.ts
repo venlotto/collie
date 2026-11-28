@@ -1,7 +1,8 @@
 import { isErrorBlocked, shownStatus } from "./triage";
 import type { AgentStatus, AgentView } from "./types";
 
-export type ActivityStatus = Exclude<AgentStatus, "unknown"> | "error";
+type RunActivityStatus = Exclude<AgentStatus, "unknown"> | "error";
+export type ActivityStatus = RunActivityStatus | "sendFailed" | "sendUnknown" | "sending";
 
 /** Accept the schema-2 status file or the smaller agent-run-live snapshot projection (end in ms). */
 export type AgentRunActivity = {
@@ -10,7 +11,7 @@ export type AgentRunActivity = {
   exit_code: number | null;
 } | { status: string; end: number | null };
 
-export function activityStatusFromAgentRun(run: AgentRunActivity): ActivityStatus {
+export function activityStatusFromAgentRun(run: AgentRunActivity): RunActivityStatus {
   if ("exit_code" in run && run.exit_code != null) return run.exit_code === 0 ? "done" : "error";
   if ("end" in run) {
     if (run.status === "done") return "done";
@@ -23,11 +24,21 @@ export function activityStatusFromAgentRun(run: AgentRunActivity): ActivityStatu
   return "idle";
 }
 
-type ActivityPane = Pick<AgentView, "kind" | "status" | "blockedBy" | "lastActiveAt" | "lastSeenAt">
+type ActivityPane = Pick<AgentView, "kind" | "status" | "blockedBy" | "lastActiveAt" | "lastSeenAt" | "surface" | "lastSend">
   & { agentRun?: AgentRunActivity };
 
 // agent-run-live owns the optional snapshot field. Older snapshots have just the pane.
-export function activityStatusOf(pane: ActivityPane): ActivityStatus {
+export function activityStatusOf(pane: ActivityPane, local: "sending" | "sendUnknown" | null = null): ActivityStatus {
+  if (local !== null) return local;
+  const delivery = pane.lastSend?.outcome;
+  if (pane.lastSend?.late === "returned") return "sendFailed";
+  if (delivery === "refused" || delivery === "typed_not_submitted" || delivery === "expired") return "sendFailed";
+  if (delivery === "unknown" && pane.lastSend?.word !== "arrived") return "sendUnknown";
+  if (delivery === "pending" || delivery === "held") return "sending";
+  // A positive running screen corrects a delayed mux idle/done report. A blocked
+  // pane still wins: an asynchronous question can coexist with a running turn.
+  if ((pane.status === "idle" || pane.status === "done") && pane.surface?.turn === "running"
+    && pane.surface.modal === "none" && !pane.surface.reason && !pane.surface.staleFrame) return "working";
   let source = pane;
   if (pane.agentRun && (pane.kind === "shell" || pane.status === "unknown")) {
     const run = pane.agentRun;
