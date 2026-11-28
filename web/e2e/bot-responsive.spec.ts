@@ -286,7 +286,7 @@ test("a finished agent run keeps the composer and its actions whole", async ({ p
 });
 
 
-test("moving the open bot follows its new workspace without leaving the chat", async ({ page }) => {
+for (const entry of ["title", "menu"] as const) test(`moving the open bot from ${entry} follows its new workspace without leaving the chat`, async ({ page }) => {
   const source = { ...fixtureSnapshot.workspaces[0]!, workspaceId: "w1", label: "Origen" };
   const destination = { ...source, workspaceId: "w2", label: "Destino" };
   const original = { ...fixtureAgents[0]!, terminalId: "move-chat-terminal", agent: "kiro", hasSession: true,
@@ -312,15 +312,23 @@ test("moving the open bot follows its new workspace without leaving the chat", a
   await page.goto("/");
   await page.getByRole("button").filter({ hasText: TITLE }).first().click();
   await page.getByRole("textbox").fill("Mi mensaje pendiente");
-  await page.locator(".bot-chat-bar").getByRole("button", { name: TITLE }).click();
-  const dialog = page.getByRole("dialog", { name: "Editar bot", exact: true });
-  const workspaces = dialog.getByRole("combobox", { name: "Workspace existente" });
-  await expect(workspaces.getByRole("option")).toHaveText(["Origen", "Destino"]);
-  await expect(workspaces.getByRole("option", { name: deletedSpace.label })).toHaveCount(0);
-  await workspaces.selectOption("w2");
   const returnedToList: string[] = [];
   page.on("framenavigated", frame => { if (frame === page.mainFrame() && new URL(frame.url()).pathname === "/") returnedToList.push(frame.url()); });
-  await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
+  if (entry === "title") {
+    await page.locator(".bot-chat-bar").getByRole("button", { name: TITLE }).click();
+    const dialog = page.getByRole("dialog", { name: "Editar bot", exact: true });
+    const workspaces = dialog.getByRole("combobox", { name: "Workspace existente" });
+    await expect(workspaces.getByRole("option")).toHaveText(["Origen", "Destino"]);
+    await expect(workspaces.getByRole("option", { name: deletedSpace.label })).toHaveCount(0);
+    await workspaces.selectOption("w2");
+    await dialog.getByRole("button", { name: "Guardar", exact: true }).click();
+  } else {
+    await page.getByRole("button", { name: "Opciones del chat" }).click();
+    await page.getByRole("button", { name: "Cambiar workspace", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Cambiar workspace" });
+    await expect(dialog.getByRole("button", { name: deletedSpace.label })).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Destino", exact: true }).click();
+  }
   await expect(page).toHaveURL(/\/pane\/w2%3Ap4/);
   await expect(page.locator(".bot-chat-bar")).toContainText(TITLE);
   await expect(page.getByRole("textbox")).toHaveValue("Mi mensaje pendiente");
