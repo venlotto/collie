@@ -146,6 +146,9 @@ test("a headless run keeps its duration, stop control and live portrait", async 
   const stop = page.getByRole("button", { name: "Detener", exact: true });
   await expect(stop).toBeEnabled();
   await expect(stop.locator("..")).toContainText(/Corriendo · \d+ min/);
+  const activity = page.getByRole("button", { name: "Sigue trabajando…", exact: true });
+  await expect(activity).toHaveAttribute("aria-expanded", "false");
+  await activity.click();
   await expect(page.getByText(progress, { exact: true })).toBeVisible();
   await expect.poll(() => page.locator(".bot-detail").evaluate(el => getComputedStyle(el).transform)).toBe("none");
   const runGeometry = await page.locator(".bot-agent-run").evaluate(root => {
