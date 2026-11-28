@@ -43,6 +43,26 @@ test.describe("en una pantalla ancha", () => {
   test.beforeEach(() => test.skip(test.info().project.name === "phone-webkit", "the desk is a wide-screen layout"));
   test.use({ viewport: { width: 1600, height: 950 } });
 
+  test("un borrador sigue visible al abrir otro chat y vuelve completo al editor", async ({ page }) => {
+    await setup(page);
+    await page.goto("/");
+    await row(page, "Alfa").click();
+    const draft = "Primera parte del mensaje\n\nSegunda parte pendiente";
+    await page.locator("textarea").fill(draft);
+    await row(page, "Beta").click();
+    const preview = win(page, "Alfa").getByRole("button", { name: /Borrador sin enviar/ });
+    await expect(preview).toContainText("Segunda parte pendiente");
+    const bounds = await preview.boundingBox();
+    const pane = await win(page, "Alfa").boundingBox();
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(pane!.y + pane!.height);
+    await page.reload();
+    await expect(preview).toContainText("Segunda parte pendiente");
+    await preview.click();
+    await expect(win(page, "Alfa").locator("textarea")).toHaveValue(draft);
+    await expect(win(page, "Alfa").locator("textarea")).toBeFocused();
+    await shot(page, "borrador-restaurado");
+  });
+
   test("varios bots a la vez: abrir, minimizar, maximizar, restaurar, cerrar y recordar", async ({ page }) => {
     const agents = await setup(page);
     await page.goto("/");

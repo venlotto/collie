@@ -12,6 +12,7 @@
 import { Maximize2, Minimize2, Minus, MessagesSquare, X } from "lucide-react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { DeskControlsContext } from "./bot-desk-controls";
+import { BotDeskReply } from "./bot-desk-reply";
 import "./bot-desk.css";
 import { useBotChromeOverlap } from "@/hooks/use-bot-chrome-overlap";
 import { useChatWindow } from "@/hooks/use-chat-window";
@@ -137,9 +138,8 @@ function DeskPeek({ pane, scope, onReply }: { pane: AgentView; scope: Scope; onR
           {t("bot.desk.questionWaiting")}
         </button>
       )}
-      <button type="button" className="bot-desk-reply" onClick={e => { e.stopPropagation(); onReply(); }}>
-        {pane.kind === "shell" && !run ? "Escribir un comando…" : `Preguntar a ${bot.name}…`}
-      </button>
+      <BotDeskReply paneId={id} scope={scope} onReply={onReply}
+        placeholder={pane.kind === "shell" && !run ? "Escribir un comando…" : `Preguntar a ${bot.name}…`} />
     </footer>
   </div>;
 }

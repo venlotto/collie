@@ -78,6 +78,9 @@
 }
 .bot-conversation > .bot-desk-reply-row > .bot-desk-reply { color: #f2f2f5; min-height: 44px; padding-inline: 18px; }
 .bot-desk-reply:hover { background: #303033; }
+.bot-desk-reply[data-draft] { height: auto; padding-block: 10px; white-space: normal; }
+.bot-desk-draft-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #b8b8bf; }
+.bot-desk-draft-text { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
 .bot-desk-reply-row:has(.bot-desk-waiting) { flex-direction: column; gap: 8px; }
 .bot-desk-waiting {
   min-height: 44px;
