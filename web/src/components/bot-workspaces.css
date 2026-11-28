@@ -415,16 +415,44 @@
 .bot-conversation [data-slot="draft-notice-slot"] { bottom: var(--bot-bottom-overlap, 0px); z-index: 4; }
 .bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-bottom, .bot-conversation > .bot-desk-reply-row {
   position: absolute; inset: auto 0 0; z-index: 3;
-  padding-bottom: 4px;
-  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
-  box-shadow: var(--glass-edge);
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+/* Only the floating controls paint glass. A filtered bar behind them would leave a second panel
+   and keep their backdrop from sampling the conversation itself. */
+.bot-chat-bar,
+.bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-bottom, .bot-conversation > .bot-desk-reply-row {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.bot-chat-bar :is(.bot-circle, .bot-pill, .bot-desk-ctrl), .bot-desk-reply {
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
 }
-@media (min-width: 768px) {
-  .bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-bottom, .bot-conversation > .bot-desk-reply-row {
-    padding-bottom: 0;
-  }
+.bot-detail [data-slot="composer-box"] > ul > li {
+  border-radius: 14px;
+  padding: 6px;
+  color: var(--foreground);
+  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
+  box-shadow: var(--glass-edge);
+}
+.bot-detail [data-slot="composer-box"] > ul > li > :is(div, button):first-child {
+  background: transparent;
+  border-color: rgb(255 255 255 / .12);
+  color: inherit;
+}
+.bot-detail [data-slot="composer-box"] > ul > li img { border-radius: 10px; }
+.bot-detail [data-slot="composer-box"] > ul > li > span:not(.sr-only),
+.bot-detail [data-slot="composer-box"] > ul > li > button:last-child,
+.bot-detail [data-slot="composer-box"] > ul > li > button > span {
+  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
+  box-shadow: var(--glass-edge);
+  border-color: transparent;
+  color: var(--foreground);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
 }
 .bot-detail [data-slot="chrome-block"], .bot-detail [data-slot="chrome-block"] > .bg-chrome { background: transparent; }
 

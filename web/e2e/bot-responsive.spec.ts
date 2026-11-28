@@ -77,11 +77,14 @@ test("list, chat, composer and menus fit the viewport", async ({ page, browserNa
   const field = page.getByRole("textbox");
   await expect(field).toBeVisible();
   await capture(page, "chat");
-  // The composer paints the bottom safe area; no separate black shell strip remains below it.
+  // The transparent dock reaches the edge while the glass input floats above the safe area.
   const composerBottom = await field.evaluate(el => el.closest('[data-slot="pane-bottom"]')!.getBoundingClientRect().bottom);
   expect(Math.abs(composerBottom - page.viewportSize()!.height)).toBeLessThanOrEqual(1);
   const fieldBottom = await field.evaluate(el => el.closest('[data-slot="composer-box"]')!.getBoundingClientRect().bottom);
-  expect(composerBottom - fieldBottom).toBeLessThanOrEqual(5);
+  expect(composerBottom - fieldBottom).toBeGreaterThanOrEqual(12);
+  expect(composerBottom - fieldBottom).toBeLessThanOrEqual(35);
+  await expect(page.locator('[data-slot="pane-bottom"]')).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.locator(".bot-chat-bar")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await fits(field);
   await field.fill("Borrador de auditoría\nSegunda línea con texto largo para comprobar el ajuste a la pantalla\nTercera línea");
   await fits(page.getByRole("button", { name: "Enviar", exact: true }));
@@ -162,6 +165,12 @@ test("attachments, editing and a short viewport stay usable", async ({ page }) =
   await expect(attachments.getByRole("button", { name: "Videos", exact: true })).toBeVisible();
   await capture(page, "adjuntos");
   await page.keyboard.press("Escape");
+  await page.route(/\/api\/pane\/[^/]+\/upload(?:\?|$)/, route => route.fulfill({ json: { ok: true, path: "/uploads/nota.txt" } }));
+  await page.getByTestId("attach-files").setInputFiles({ name: "nota.txt", mimeType: "text/plain", buffer: Buffer.from("Nota adjunta") });
+  const chip = page.locator('[data-slot="composer-box"] > ul > li');
+  await expect(chip).toBeVisible();
+  await fits(chip);
+  await capture(page, "adjunto-preview");
   const title = page.locator(".bot-chat-bar").getByRole("button", { name: TITLE });
   if (test.info().project.use.hasTouch) await title.tap();
   else await title.click();
@@ -345,7 +354,7 @@ test.describe("wide-screen reply layout", () => {
     isMobile: async ({ browserName }, use) => use(browserName === "webkit"),
   });
 
-test("desktop reply meets the bottom edge in chat and terminal", async ({ page }) => {
+test("desktop reply floats over the chat and terminal", async ({ page }) => {
   await page.setViewportSize({ width: 1630, height: 900 });
   await page.getByRole("button").filter({ hasText: TITLE }).first().click();
   const field = page.getByRole("textbox");
@@ -358,7 +367,7 @@ test("desktop reply meets the bottom edge in chat and terminal", async ({ page }
     await field.fill("Borrador de escritorio");
     await capture(page, "desktop-" + view);
     const bottom = await field.evaluate(el => el.closest('[data-slot="composer-box"]')!.getBoundingClientRect().bottom);
-    expect(Math.abs(page.viewportSize()!.height - bottom)).toBeLessThanOrEqual(1);
+    expect(page.viewportSize()!.height - bottom).toBeCloseTo(12, 0);
   }
 });
 });

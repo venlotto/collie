@@ -158,6 +158,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The idle reference demonstrates resuming without a blocking overlay.** Pause the real idle store in the design reference and check that the next input refreshes the view and still reaches its control. Shell tests follow the current chat, settings and history routes.
 - **Messages starting with a new attachment send without command popups.** Terminal-owned upload names are recognised alongside older attachments, so Codex receives the image path and message as one paste instead of interpreting the leading slash as a command.
 - **Live activity has one status and closes from below.** The activity heading shows its step count while the working indicator stays at the end of the chat. Collapse is also available below the expanded detail, without scrolling back to its heading.
+- **Chat controls float on glass without a surrounding panel.** The message field has breathing room below it, the title and header buttons float over the conversation, and attachment previews share their translucent rounded finish.
+
 
 ## [1.31.0] - 2026-11-24
 
