@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRevalidator } from "react-router";
 
@@ -100,7 +101,7 @@ export function SpaceRoute() {
   useEffect(() => {
     if (gone && data.bridge === "connected" && !data.error && exited.current !== spaceId) {
       exited.current = spaceId;
-      setStatus(everExisted.current ? "Space closed" : "Space not found", "info");
+      setStatus(t(everExisted.current ? "notice.spaceClosed" : "notice.spaceMissing"), "info");
       nav.up(homePath(data.scope));
     }
   }, [gone, data.bridge, data.error, data.scope, nav, spaceId]);

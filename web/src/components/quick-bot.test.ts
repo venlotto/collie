@@ -1,3 +1,4 @@
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 import { act, renderHook } from "@testing-library/react";
 import { vi } from "vitest";
 import { BOT_DEFAULT_NAMES } from "@/lib/bot-default-names";
@@ -17,7 +18,9 @@ const agents = [
   { id: "codexp", harness: "codex", efforts: ["low", "high"] },
   { id: "claudep", harness: "claude", efforts: ["medium", "high", "max"] },
 ];
-beforeEach(() => {
+beforeEach(async () => {
+  setLocale("es");
+  await whenLocaleReady("es");
   localStorage.clear();
   start.mockReset().mockResolvedValue({ kind: "done", paneId: "p9" });
   renamePane.mockReset().mockResolvedValue({ ok: true });

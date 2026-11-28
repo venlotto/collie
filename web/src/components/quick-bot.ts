@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useCallback, useRef, useState } from "react";
 import { fetchLaunchers, renamePane, type SpaceTarget } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
@@ -20,8 +21,6 @@ export function quickBotTarget(spaces: readonly WorkspaceView[]): SpaceTarget {
   return newest ? { id: newest.workspaceId } : unassignedTarget(spaces);
 }
 
-const unconfirmed = "No se pudo confirmar la creación. Vuelve a intentar.";
-
 /**
  * A bot in one gesture: no sheet, the most recently created active workspace, a random name that
  * gives way to the agent's own title for the work, and the agent and reasoning of the last bot created on that machine. `quick` resolves to the error to
@@ -40,7 +39,7 @@ export function useQuickBot({ canRename }: { canRename: boolean }) {
       const profiles = catalog.botCreate;
       const last = profiles?.last ?? readBotPrefs(scope.host);
       const profile = profiles?.agents.find(a => a.id === last.agent) ?? profiles?.agents[0];
-      if (profiles && !profile) return "No hay agentes disponibles.";
+      if (profiles && !profile) return t("bot.create.noAgents");
       const prefs: BotCreatePrefs | undefined = profile && { agent: profile.id, effort: profile.efforts.includes(last.effort) ? last.effort : "high" };
       const harness = catalog.harnesses?.find(h => h.found);
       const outcome = await start({
@@ -50,7 +49,7 @@ export function useQuickBot({ canRename }: { canRename: boolean }) {
         space, requestId: mintRequestId(),
       }, scope);
       if (outcome.kind === "refused") return outcome.message || undefined;
-      if (outcome.kind === "unknown") return unconfirmed;
+      if (outcome.kind === "unknown") return t("bot.create.unconfirmed");
       if (!outcome.paneId) return undefined;
       if (prefs) cacheBotPrefs(scope.host, prefs);
       const name = randomBotName(taken);

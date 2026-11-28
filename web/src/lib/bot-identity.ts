@@ -2,7 +2,7 @@ import { asJsonNumber, asJsonString, parseJsonObject } from "@/lib/json";
 import { paneScopeKey, type Scope } from "@/lib/scope";
 
 export const colors = ["#fff", "#85552f", "#ff273f", "#ff6200", "#ff9500", "#00c76a", "#00b5a7", "#0a84ff", "#854dff", "#ff2d87", "#727276"];
-export const colorNames = ["Blanco", "Marrón", "Rojo", "Mandarina", "Naranja", "Verde", "Turquesa", "Azul", "Violeta", "Rosa", "Gris"];
+export const colorNameKeys = ["bot.color.white", "bot.color.brown", "bot.color.red", "bot.color.tangerine", "bot.color.orange", "bot.color.green", "bot.color.turquoise", "bot.color.blue", "bot.color.violet", "bot.color.pink", "bot.color.gray"] as const;
 export const silhouetteCount = 13;
 
 /** Shared defaults for quick creation and the editable creation sheet. */

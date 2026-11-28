@@ -27,7 +27,7 @@ import { kindOfBlock, measureBlocks, rememberSilhouette, silhouetteOf } from "@/
 import type { ChatStatus } from "@/lib/chat-window";
 import { HANDOVER_KEEP_MS, dropPending, unmatched, usePending } from "@/lib/durable-pending";
 import { clockTime } from "@/lib/format";
-import { t, type MessageKey } from "@/lib/i18n";
+import { t, tn, type MessageKey } from "@/lib/i18n";
 import { holdsMask } from "@/lib/masked-text";
 import { blockOfPin, isPinnable, writingItemId } from "@/lib/message-pins";
 import type { AgentView, Ask, PinRow, QueuedSendRow } from "@/lib/types";
@@ -1106,6 +1106,7 @@ export function SessionStream({
   const self = useWalkySelf();
   const live = useWalkyLive();
   const thread = useMemo(() => {
+    void revision; // Recompute translated captions and plural counts when the locale changes.
     if (!botStyle) return null;
     let messages = window.entries.filter(e => !e.abandoned && (e.role === "user" || e.role === "assistant") &&
       e.parts.some(p => p.kind === "text" && p.text.trim())).length;
@@ -1122,7 +1123,7 @@ export function SessionStream({
         const row = log.byId.get(item.walky.id);
         if (!row || directionOf(row, self) !== "received") continue;
         const face = row.kind === "agent" && row.from.address ? portrait(row.from.address) : null;
-        captions.set(item.id, <>Mensaje de {face} {senderNameOf(row, live, self).name}</>);
+        captions.set(item.id, <>{t("bot.thread.from")} {face} {senderNameOf(row, live, self).name}</>);
         if (row.kind === "agent" && row.from.address && bareAddress(row.from.address) !== bareAddress(selfOf(row, self ?? ""))) {
           peers.set(bareAddress(row.from.address), face);
         }
@@ -1135,16 +1136,16 @@ export function SessionStream({
         if (!row || directionOf(row, self) !== "sent") continue;
         const target = sentTargetAddress(row);
         const face = row.receipt.target !== "all" ? portrait(target) : null;
-        captions.set(item.id, <>Escribió a {face} {sentTargetWords(row, live, self)}</>);
+        captions.set(item.id, <>{t("bot.thread.to")} {face} {sentTargetWords(row, live, self)}</>);
         if (face) peers.set(bareAddress(target), face);
         messages++;
       }
     }
     const count = peers.size + 1;
-    return { captions, summary: messages > 1 && bot ? <>{messages} mensajes con <span aria-hidden="true" className="bot-participants">
+    return { captions, summary: messages > 1 && bot ? <>{tn("bot.thread.messages", messages)} · <span aria-hidden="true" className="bot-participants">
       <BlobAvatar {...bot} />{Array.from(peers).slice(0, 2).map(([peerAddress, face]) => <Fragment key={peerAddress}>{face}</Fragment>)}
-    </span> {count} {count === 1 ? "Bot" : "Bots"}</> : null };
-  }, [botStyle, bot, peerIdentity, blocks, log, self, live, window.entries]);
+    </span> {tn("bot.thread.bots", count)}</> : null };
+  }, [botStyle, bot, peerIdentity, blocks, log, self, live, window.entries, revision]);
   const firstUnread = unreadSince === undefined ? -1 : blocks.findIndex(group => group.some(item => item.ts && Date.parse(item.ts) > unreadSince));
   return (
     <ChatMessageList
@@ -1222,10 +1223,10 @@ export function SessionStream({
         return (
           <Fragment key={first.id}>
             {botStyle && first.ts && (index === 0 || first.ts.slice(0,16) !== blocks[index-1]?.[0]?.ts?.slice(0,16)) && <p className="bot-date">{botTime(Date.parse(first.ts), true)}</p>}
-            {botStyle && index === firstUnread && <div className="bot-new-line"><span>Nuevos</span></div>}
-            {bot && first.kind === "reply" && botKind !== "activity" && <p className="bot-attribution">Mensaje de <BlobAvatar {...bot} /> {bot.name}</p>}
+            {botStyle && index === firstUnread && <div className="bot-new-line"><span>{t("bot.thread.new")}</span></div>}
+            {bot && first.kind === "reply" && botKind !== "activity" && <p className="bot-attribution">{t("bot.thread.from")} <BlobAvatar {...bot} /> {bot.name}</p>}
             {caption && <p className="bot-attribution">{caption}</p>}
-            {bot && first.kind === "user" && !first.walky && <p className="bot-attribution">Escribió a <BlobAvatar {...bot} /> {bot.name}</p>}
+            {bot && first.kind === "user" && !first.walky && <p className="bot-attribution">{t("bot.thread.to")} <BlobAvatar {...bot} /> {bot.name}</p>}
           <StreamBlock
             n={group.length}
             item={pinnable ? item : null}

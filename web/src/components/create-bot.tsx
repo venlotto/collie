@@ -14,11 +14,11 @@ import { type SpaceTarget } from "@/lib/api";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 import { BlobAvatar, identityOf } from "./bot-identity";
-import { colorNames, colors, randomBotAppearance, saveBot, silhouetteCount } from "@/lib/bot-identity";
+import { colorNameKeys, colors, randomBotAppearance, saveBot, silhouetteCount } from "@/lib/bot-identity";
 import { setBotDisplay } from "@/lib/bot-display";
 import { randomBotName } from "@/lib/bot-default-names";
 
-function localName() { setStatus("El nombre quedó guardado en este dispositivo.", "info"); }
+function localName() { setStatus(t("bot.create.localName"), "info"); }
 
 /** The workspace a bot lands in when the person picks none. */
 export const UNASSIGNED_SPACE = "Sin asignar";
@@ -160,53 +160,53 @@ export function CreateBot({ scope, beside, spaces = NO_SPACES, writable, close, 
       setLeaving(true);
     } else {
       setRetryOnly(outcome.kind === "unknown");
-      setError(outcome.kind === "refused" ? outcome.message : "No se pudo confirmar la creación. Vuelve a intentar.");
+      setError(outcome.kind === "refused" ? outcome.message : t("bot.create.unconfirmed"));
     }
   }
 
   return <dialog ref={dialog} className="bot-dialog" aria-labelledby="create-bot-title" data-leaving={leaving}
     onCancel={(e) => { e.preventDefault(); dismiss(); }}>
-    <button type="button" aria-label="Descartar" tabIndex={-1} className="bot-backdrop" onClick={dismiss} />
+    <button type="button" aria-label={t("composer.held.dismiss")} tabIndex={-1} className="bot-backdrop" onClick={dismiss} />
     <form className="bot-sheet" onSubmit={(e) => { e.preventDefault(); void create(); }}>
-      <header><button type="button" className="bot-circle" onClick={dismiss} aria-label="Cerrar"><X /></button><h2 id="create-bot-title">{edit ? t("bot.edit.title") : "Crear nuevo Bot"}</h2></header>
+      <header><button type="button" className="bot-circle" onClick={dismiss} aria-label={t("common.closeAria")}><X /></button><h2 id="create-bot-title">{edit ? t("bot.edit.title") : t("bot.create.title")}</h2></header>
       <div className="bot-preview"><BlobAvatar silhouette={silhouette} color={color} large /></div>
-      <input aria-label="Nombre del bot" placeholder={fallbackName} maxLength={80} disabled={busy || (!!edit && !rename.capable)} value={name} onChange={(e) => setName(e.target.value)} />
-      <fieldset disabled={busy} className="bot-shapes" aria-label="Forma">{Array.from({ length: silhouetteCount }, (_, i) =>
-        <button key={i} type="button" aria-label={`Forma ${i + 1}`} aria-pressed={silhouette === i} onClick={() => setSilhouette(i)}><BlobAvatar silhouette={i} color={color} /></button>)}</fieldset>
-      <fieldset disabled={busy} className="bot-colors" aria-label="Color">{colors.map((hex, i) =>
-        <button key={hex} type="button" aria-label={colorNames[i]} aria-pressed={color === i} onClick={() => setColor(i)}><span style={{ background: hex }} /></button>)}</fieldset>
+      <input aria-label={t("bot.create.name")} placeholder={fallbackName} maxLength={80} disabled={busy || (!!edit && !rename.capable)} value={name} onChange={(e) => setName(e.target.value)} />
+      <fieldset disabled={busy} className="bot-shapes" aria-label={t("theme.preview.shape")}>{Array.from({ length: silhouetteCount }, (_, i) =>
+        <button key={i} type="button" aria-label={t("bot.create.shapeIndex", { number: i + 1 })} aria-pressed={silhouette === i} onClick={() => setSilhouette(i)}><BlobAvatar silhouette={i} color={color} /></button>)}</fieldset>
+      <fieldset disabled={busy} className="bot-colors" aria-label={t("bot.create.color")}>{colors.map((hex, i) =>
+        <button key={hex} type="button" aria-label={t(colorNameKeys[i]!)} aria-pressed={color === i} onClick={() => setColor(i)}><span style={{ background: hex }} /></button>)}</fieldset>
       <div className="bot-launch-fields">
-        {!edit && <><fieldset disabled={!canChoose} aria-label="Agente">
-          <legend>Agente</legend>
+        {!edit && <><fieldset disabled={!canChoose} aria-label={t("agentRun.implement.agent")}>
+          <legend>{t("agentRun.implement.agent")}</legend>
           {profiles.map(agent => <button type="button" key={agent.id} aria-pressed={agent.id === prefs.agent} onClick={() => {
             setPrefs({ agent: agent.id, effort: agent.efforts.includes(prefs.effort) ? prefs.effort : "high" });
           }}>{agent.id}</button>)}
         </fieldset>
-        <fieldset disabled={!canChoose} aria-label="Reasoning">
-          <legend>Reasoning</legend>
+        <fieldset disabled={!canChoose} aria-label={t("agentRun.implement.effort")}>
+          <legend>{t("agentRun.implement.effort")}</legend>
           {(shownProfile?.efforts ?? [prefs.effort]).map(effort =>
             <button type="button" key={effort} aria-pressed={effort === prefs.effort}
               onClick={() => setPrefs({ ...prefs, effort })}>{effort}</button>)}
         </fieldset>
         </>}
-        <fieldset disabled={!writable || busy || retryOnly || (!!edit && !edit.terminalId)} aria-label="Workspace">
-          <legend>Workspace</legend>
-          <button type="button" aria-pressed={spaceMode === "none"} onClick={() => setSpaceMode("none")}>{UNASSIGNED_SPACE}</button>
-          <button type="button" aria-pressed={spaceMode === "existing"} disabled={!spaces.length} onClick={() => setSpaceMode("existing")}>Existente</button>
-          <button type="button" aria-pressed={spaceMode === "new"} onClick={() => setSpaceMode("new")}>Nuevo</button>
+        <fieldset disabled={!writable || busy || retryOnly || (!!edit && !edit.terminalId)} aria-label={t("bot.create.workspace")}>
+          <legend>{t("bot.create.workspace")}</legend>
+          <button type="button" aria-pressed={spaceMode === "none"} onClick={() => setSpaceMode("none")}>{t("bot.create.unassigned")}</button>
+          <button type="button" aria-pressed={spaceMode === "existing"} disabled={!spaces.length} onClick={() => setSpaceMode("existing")}>{t("bot.create.existing")}</button>
+          <button type="button" aria-pressed={spaceMode === "new"} onClick={() => setSpaceMode("new")}>{t("home.new.label")}</button>
         </fieldset>
-        {spaceMode === "existing" && pickedSpace && <select className="bot-space-choice" aria-label="Workspace existente" disabled={busy || retryOnly}
+        {spaceMode === "existing" && pickedSpace && <select className="bot-space-choice" aria-label={t("bot.create.existingWorkspace")} disabled={busy || retryOnly}
           value={pickedSpace.workspaceId} onChange={e => setSpaceId(e.target.value)}>
           {spaces.map(w => <option key={w.workspaceId} value={w.workspaceId}>{w.label || w.workspaceId}</option>)}
         </select>}
-        {spaceMode === "new" && <input className="bot-space-choice" aria-label="Nombre del workspace nuevo" placeholder="Nombre del workspace"
+        {spaceMode === "new" && <input className="bot-space-choice" aria-label={t("bot.create.newWorkspaceName")} placeholder={t("bot.workspace.name")}
           maxLength={80} value={spaceName} disabled={busy || retryOnly} onChange={e => setSpaceName(e.target.value)} />}
-        {catalog && !catalog.botCreate && <p role="status">Este equipo no ofrece elegir agente.</p>}
-        {catalog?.botCreate?.agents.length === 0 && <p role="status">No hay agentes disponibles.</p>}
+        {catalog && !catalog.botCreate && <p role="status">{t("bot.create.noAgentChoice")}</p>}
+        {catalog?.botCreate?.agents.length === 0 && <p role="status">{t("bot.create.noAgents")}</p>}
       </div>
-      {loadFailed && <button type="button" onClick={() => setReload(n => n + 1)}>Reintentar</button>}
+      {loadFailed && <button type="button" onClick={() => setReload(n => n + 1)}>{t("connection.retry")}</button>}
       {error && <p role="alert">{error}</p>}
-      <button className="bot-create" disabled={!ready || busy || leaving}>{edit ? t("settings.worktreeFolder.save") : busy ? "Creando…" : "Crear"}</button>
+      <button className="bot-create" disabled={!ready || busy || leaving}>{edit ? t("settings.worktreeFolder.save") : busy ? t("bot.create.creating") : t("chat.card.create")}</button>
     </form>
   </dialog>;
 }

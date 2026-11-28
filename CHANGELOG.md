@@ -182,6 +182,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Workspace positions match the list, including externally created workspaces.** New chat activity keeps its workspace in place, and each workspace has a visible menu for moving, renaming and sending it to the trash.
 
 - **Chat and workspace controls follow the chosen language consistently.** Menus, desktop windows, selection and Trash use translated labels in every supported language. Previously untranslated sent-message and cross-session message labels are also translated.
+- **Bot creation, run status and chat dates use the selected language.** Names, workspace identities and agent output keep their original content while controls and accessible color labels translate with the interface.
 
 - **Each desktop chat opens its menu beside its own button.** Menus stay inside their chat window as the desk resizes, and destructive chat actions use red text.
 

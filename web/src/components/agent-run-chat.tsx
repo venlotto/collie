@@ -9,7 +9,7 @@ import { implementAgentRun, newAgentRunChat, resumeAgentRun, stopAgentRun } from
 import { describeThrownError } from "@/lib/api-error-message";
 import { randomBotAppearance, saveBot } from "@/lib/bot-identity";
 import { setBotDisplay } from "@/lib/bot-display";
-import { t } from "@/lib/i18n";
+import { getLocaleSnapshot, t } from "@/lib/i18n";
 import { homePath, panePath } from "@/lib/nav";
 import { paneSurface, UNREAD_SURFACE } from "@/lib/send-slot";
 import { paneScopeKey, type Scope } from "@/lib/scope";
@@ -26,11 +26,15 @@ import type { ChatMessageListHandle } from "./ui/chat/chat-message-list";
 
 type Run = NonNullable<AgentView["agentRun"]>;
 
-const runState = { running: "Corriendo", done: "Listo", stopped: "Detenido", failed: "Falló", timeout: "Tiempo agotado", orphaned: "Sin supervisor" };
-export function runProgress(run: Run, label = runState[run.status]) {
+const runState = { running: "bot.run.running", done: "bot.run.done", stopped: "bot.run.stopped", failed: "bot.run.failed", timeout: "bot.run.timeout", orphaned: "bot.run.orphaned" } as const;
+export function runProgress(run: Run, label = t(runState[run.status])) {
   const seconds = Math.max(0, Math.floor(((run.end ?? Date.now()) - run.start) / 1000));
-  const elapsed = seconds >= 3600 ? Math.floor(seconds / 3600) + " h " + Math.floor(seconds % 3600 / 60) + " min" :
-    seconds >= 60 ? Math.floor(seconds / 60) + " min" : seconds + " s";
+  const locale = getLocaleSnapshot().locale;
+  const duration = (value: number, unit: string) => new Intl.NumberFormat(locale, {
+    style: "unit", unit, unitDisplay: "short",
+  }).format(value);
+  const elapsed = seconds >= 3600 ? duration(Math.floor(seconds / 3600), "hour") + " " + duration(Math.floor(seconds % 3600 / 60), "minute") :
+    seconds >= 60 ? duration(Math.floor(seconds / 60), "minute") : duration(seconds, "second");
   return label + " · " + elapsed;
 }
 
@@ -97,7 +101,7 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
     try {
       await stopAgentRun(run.id, scope);
     } catch {
-      setError("No se pudo detener el run.");
+      setError(t("bot.run.stopFailed"));
       setStopping(false);
     } finally {
       void refresh.revalidate();
@@ -154,7 +158,7 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
         {run.status !== "running" && <small>{continued ? t("agentRun.finished.pending") : canResume ? t("agentRun.finished.hint") : fallback}</small>}
         {error && <span role="alert">{error}</span>}
       </div>
-        {run.status === "running" && writable && <button disabled={stopping} onClick={stop}>{stopping ? "Deteniendo…" : "Detener"}</button>}
+        {run.status === "running" && writable && <button disabled={stopping} onClick={stop}>{stopping ? t("bot.run.stopping") : t("bot.run.stop")}</button>}
         {run.status !== "running" && run.plan === true && canResume && writable &&
           <Button className="agent-run-implement" disabled={busy || continued} onClick={() => setImplementOpen(true)}>{t("agentRun.implement.action")}</Button>}
       </footer>
