@@ -48,3 +48,14 @@ is in them.
 - `codex--v0172-native-paragraphs--w56.txt`: a separate 56 by 35 tmux terminal in
   `/tmp/collie-stranded-send-lab`, with a harmless multiline send regression prompt.
   Codex shows the model status and warning footer below the draft.
+
+# Codex 0.172.0: scrolled paragraphs at 23 rows (2026-11-28)
+
+`protocol.codex-longdraft.test.ts` reads `codex--v0172-scrolled-paragraphs--w52.txt`
+and `codex--v0172-scrolled-paragraphs--w56.txt`, captured from private tmux panes
+at 52×23 and 56×23. The matching `--message.txt` and `--w56-message.txt` files
+contain the complete bracketed pastes. The editor keeps only their tail, puts
+`↑` at the right of the prompt row, and pushes the model/footer below the viewport.
+The 56-column read also shows a working turn and two queued messages above it.
+No user-owned pane received input. Raw trials and receipts are in
+`/home/ubuntu/briefs/collie-redesign/verify/codexp-1000/longdraft/` on coder1.

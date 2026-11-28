@@ -172,6 +172,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
 - **Every open bot window offers an editable reply field.** Click or tab into “Preguntar a…” to write directly, keeping unsent text when switching between chats.
 
+- **Long Codex drafts submit even when their footer scrolls away.** The visible tail is checked before sending, and a stranded draft can be submitted with one tap without pasting it again.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

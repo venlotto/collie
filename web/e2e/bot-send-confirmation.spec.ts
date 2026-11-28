@@ -10,8 +10,8 @@ const PROMPT = "Revisa el inicio de la ronda.\nComprueba también la despedida."
 const UNKNOWN: Surface = { revision: 0, turn: "unknown", modal: "unknown", composer: "unknown" };
 const IDLE: Surface = { revision: 0, turn: "idle", modal: "none", composer: "empty" };
 
-async function setup(page: Page, hasSession = true) {
-  await pinLocale(page, "en");
+async function setup(page: Page, hasSession = true, locale: "en" | "es" = "en") {
+  await pinLocale(page, locale);
   await installApiStub(page);
   const agent = { ...fixtureAgents[0]!, agent: "codex", hasSession, surface: IDLE, status: hasSession ? "idle" as const : "done" as const,
     paneLabel: "Confirmation", terminalId: "confirmation-codex" };
@@ -122,4 +122,32 @@ test("a later delivery replaces an earlier unread refusal", async ({ page }) => 
   await expect(world.field).toHaveValue("");
   await expect(page.getByRole("button", { name: "It arrived", exact: true })).toHaveCount(0);
   expect(world.posts).toEqual([PROMPT, PROMPT]);
+});
+
+
+test("a long unsubmitted draft is recovered in Messages with one tap and no second paste", async ({ page }) => {
+  const world = await setup(page, true, "es");
+  const text = ["Revisa «no va más», café y 🎉.", ...Array.from({ length: 5 }, (_, i) => `Párrafo ${i + 1}: conserva las líneas en blanco, las comillas y la opción para enviar.`)].join("\n\n");
+  const posts: { text: string; mode: string }[] = [];
+  await page.route(url => url.pathname === "/api/send", async route => {
+    // SAFETY: the isolated fixture route receives only this app's typed Send Protocol requests.
+    const body = route.request().postDataJSON() as { id: string; text: string; mode: string };
+    posts.push({ text: body.text, mode: body.mode });
+    await route.fulfill({ json: posts.length === 1
+      ? sendAnswer(body.id, "typed_not_submitted", "mismatch", { offers: ["submit", "discard", "keys"], rowsHash: "long-draft", surface: { ...IDLE, composer: "draft" } })
+      : sendAnswer(body.id, "sent") });
+  });
+  await world.field.fill(text);
+  await page.getByRole("button", { name: "Enviar", exact: true }).click();
+  const recover = page.getByRole("button", { name: "Enviar lo que está en la caja", exact: true });
+  await expect(recover).toBeVisible();
+  await expect(recover).toBeInViewport({ ratio: 1 });
+  await expect(world.field).toHaveValue(text);
+  await page.screenshot({ path: `${process.env.LONGDRAFT_SHOTS ?? test.info().outputDir}/${test.info().project.name}-recover.png` });
+  await recover.click();
+  await expect.poll(() => posts.length).toBe(2);
+  expect(posts).toEqual([{ text, mode: "send" }, { text, mode: "submit" }]);
+  await expect(world.field).toHaveValue("");
+  await expect(page.getByRole("button", { name: "It arrived", exact: true })).toHaveCount(0);
+  await page.screenshot({ path: `${process.env.LONGDRAFT_SHOTS ?? test.info().outputDir}/${test.info().project.name}-recovered.png` });
 });
