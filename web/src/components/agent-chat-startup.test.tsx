@@ -63,6 +63,15 @@ beforeEach(() => {
 });
 
 describe("AgentChat: a launch's startup gate", () => {
+  it("keeps the field editable while the launched pane's capabilities have not arrived", () => {
+    mount({ agent: undefined });
+    const box = screen.getByRole("textbox");
+    expect(box).not.toBeDisabled();
+    expect(box).not.toHaveAttribute("placeholder", expect.stringContaining("COLLIE_SEND_PROTOCOL"));
+    fireEvent.change(box, { target: { value: "keep this first message" } });
+    expect(box).toHaveValue("keep this first message");
+  });
+
   it.each([false, true])("keeps the draft editable and sends through the ordinary protocol before the first screen (inStrip: %s)", async (inStrip) => {
     const sent = vi.fn();
     server.use(...sendHandler((request) => { sent(request.text); return sendAnswer(request.id, "sent"); }));
@@ -103,17 +112,16 @@ describe("AgentChat: a launch's startup gate", () => {
     expect(sent).toHaveBeenCalledOnce();
   });
 
-  it("opens on a dialog the bridge lifted, and the composer's own answer slot takes it", async () => {
+  it("keeps startup text sendable while the lifted dialog takes its own answers", async () => {
     const user = userEvent.setup();
     const view = mount({ agent: shell, agentLaunch: undefined });
     await user.type(screen.getByRole("textbox"), "kept");
     view.update({ agentLaunch: launch });
     expect(screen.getByRole("textbox")).not.toHaveAttribute("readonly");
     view.update({ text: TRUST, agent: { ...known, surface: ASK } });
-    await waitFor(() => expect(screen.getByRole("button", { name: "Answer the dialog" })).toBeInTheDocument());
-    expect(view.onReady).toHaveBeenCalledOnce();
-    expect(startingTitle()).toBeNull();
-    expect(startingBeads()).toBe("");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument());
+    expect(view.onReady).not.toHaveBeenCalled();
+    expect(startingTitle()).toBeInTheDocument();
     expect(screen.getByRole("textbox")).toHaveValue("kept");
     expect(screen.getByRole("textbox")).not.toHaveAttribute("readonly");
   });

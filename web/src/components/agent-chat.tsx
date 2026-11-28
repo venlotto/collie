@@ -753,7 +753,7 @@ export function AgentChat({
   // screen is what the phone kept, and a pane missing from it is a pane this phone cannot place, not
   // a pane that closed: it may simply never have been kept. So `gone` needs a live herd, and the other
   // case is `unplaced`: the header names the pane by its id, nothing says "gone", and nothing acts.
-  const gone = !agent && !error && !stale;
+  const gone = !agent && !error && !stale && !connecting && agentLaunch === undefined;
   const unplaced = !agent && !gone;
 
   // Drag the ACTIONS BELT up to bring up the pane switcher, tracked finger-by-finger so the sheet
@@ -1145,8 +1145,8 @@ export function AgentChat({
   // The composer's Surface (M56 spec 06): the bridge's read, with the facts the phone knows before
   // any read folded in as `composer: unreachable` (lib/send-slot.ts, `paneSurface`).
   const { surface: composerSurface, unreachableNote } = useMemo(
-    () => paneSurface(agent?.surface, agent?.sendProtocol === true, hostBlock),
-    [agent?.surface, agent?.sendProtocol, hostBlock],
+    () => paneSurface(agent?.surface, agent === undefined ? undefined : agent.sendProtocol === true, hostBlock),
+    [agent, hostBlock],
   );
   // THE UNREAD CARD A REFUSAL OPENS (M102 spec 03): a send refused on a screen Collie cannot read opens the unread
   // card with no declared key, on the screen as it is. Never over a card a grammar lifted: a read permission prompt

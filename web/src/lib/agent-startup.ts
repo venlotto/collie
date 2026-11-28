@@ -48,13 +48,14 @@ export function readAgentLaunch(state: JsonValue | undefined, paneId: string, sc
 
 /**
  * Whether the bridge has read the launched agent's first screen: the multiplexer names the harness and
- * its Surface shows a dialog or an input box. This is the read that ends the bridge's launch window
+ * its Surface shows an input box. Startup dialogs keep the launch pending so text can be held
+ * by the bridge while their separate cards take answers. This is the read that ends the bridge's launch window
  * (`LaunchWindow.drawn`), so the phone opens Send when the bridge stops refusing it. A shell row, an
  * unread pane, a stale, torn or contested read, or a box proven not to take keys is not that screen.
  */
 export function firstScreenRead(harness: string, agent: string | undefined, surface: Surface | undefined): boolean {
   if (!namesHarness(harness, agent) || surface === undefined) return false;
   if (surface.reason !== undefined || surface.staleFrame === true) return false;
-  if (askOf(surface.modal) !== null || surface.modal === "unreadable") return true;
+  if (askOf(surface.modal) !== null || surface.modal === "unreadable") return false;
   return surface.composer === "empty" || surface.composer === "draft";
 }

@@ -1015,6 +1015,8 @@ export interface Profile {
      * token), and Replace empties the box before its probe. Optional.
      */
     readonly popupTails?: readonly string[];
+    /** A startup editor must show one of these rows before any probe is written. */
+    readonly readyRows?: readonly string[];
     readonly note: string;
   };
   /** How a send writes its text (M56 spec 05). Optional: a profile without it is written as typed keys. */
@@ -2015,6 +2017,10 @@ export function parseProfile(raw: JsonValue): Profile {
   if (probePaste === true) {
     if (paste?.block !== true) fail("probe.paste", "needs paste.block");
     probe = { ...probe, paste: true };
+  }
+  if (probeNode.readyRows !== undefined) {
+    const readyRows = list(probeNode.readyRows, "probe.readyRows").map((item, i) => pattern(item, `probe.readyRows[${String(i)}]`).source);
+    probe = { ...probe, readyRows };
   }
   if (probeNode.popupTails !== undefined) {
     const popupTails = list(probeNode.popupTails, "probe.popupTails").map((item, i) => {
