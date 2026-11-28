@@ -183,6 +183,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Chat and workspace controls follow the chosen language consistently.** Menus, desktop windows, selection and Trash use translated labels in every supported language. Previously untranslated sent-message and cross-session message labels are also translated.
 
+- **Each desktop chat opens its menu beside its own button.** Menus stay inside their chat window as the desk resizes, and destructive chat actions use red text.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

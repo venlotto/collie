@@ -1,6 +1,7 @@
 import { ChevronLeft, Ellipsis } from "lucide-react";
 import { useId, useState } from "react";
 import { createPortal } from "react-dom";
+import { useBotMenuPlacement } from "@/hooks/use-bot-menu-placement";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { localSendStatus, useSendIntents } from "@/lib/send-intent";
@@ -28,15 +29,16 @@ export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, t
   const manageable = actions && !actions.scope.host && (!!pane.terminalId || !!pane.agentRun) && !pane.trash;
   // On the desk (wide screens) the window controls stand where the phone keeps its Back arrow.
   const desk = useDeskControls();
+  const placement = useBotMenuPlacement(!!desk);
   return <><header className={`bot-bar bot-chat-bar ${className}`}>
-    {desk ?? <button className="bot-circle bot-back" onClick={back} aria-label="Volver a los chats"><ChevronLeft size={21} />{unread > 0 && <b>{unread}</b>}</button>}
+    {desk ?? <button className="bot-circle bot-back" onClick={back} aria-label={t("bot.chat.back")}><ChevronLeft size={21} />{unread > 0 && <b>{unread}</b>}</button>}
     <BotActivityPill bot={bot} status={activityStatusOf(pane, localSendStatus(actions?.scope, pane.paneId, pane.lastSend))} onClick={edit} />
-    <button className="bot-circle" aria-label="Opciones del chat" popoverTarget={menu}><Ellipsis size={21} /></button>
-    <div id={menu} className="bot-popup" popover="auto">
+    <button ref={placement.trigger} className="bot-circle" aria-label={t("bot.chat.options")} popoverTarget={menu}><Ellipsis size={21} /></button>
+    <div ref={placement.popup} id={menu} className="bot-popup" popover="auto">
       {edit && <button popoverTarget={menu} popoverTargetAction="hide" onClick={edit}>{t("bot.edit.title")}</button>}
-      <button popoverTarget={menu} popoverTargetAction="hide" onClick={pin}>{pinned ? "Desfijar chat" : "Fijar chat"}</button>
+      <button popoverTarget={menu} popoverTargetAction="hide" onClick={pin}>{t(pinned ? "bot.chat.unpin" : "bot.chat.pin")}</button>
       {view !== undefined && onViewChange ? <BotViewControl value={view} onChange={onViewChange} /> :
-        toggleView && <button popoverTarget={menu} popoverTargetAction="hide" onClick={toggleView}>{terminal ? "Ver conversación" : "Ver terminal"}</button>}
+        toggleView && <button popoverTarget={menu} popoverTargetAction="hide" onClick={toggleView}>{t(terminal ? "bot.chat.viewConversation" : "bot.chat.viewTerminal")}</button>}
       {manageable && <>
         <button popoverTarget={menu} popoverTargetAction="hide" disabled={!actions.writable} onClick={() => setAction("move")}>{t("bot.chatActions.move")}</button>
         <button className="bot-danger" popoverTarget={menu} popoverTargetAction="hide" disabled={!actions.writable} onClick={() => setAction("trash")}>{t("bot.chatActions.delete")}</button>

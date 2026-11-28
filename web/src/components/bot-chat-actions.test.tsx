@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { savedBot } from "@/lib/bot-identity";
-import { setLocale } from "@/lib/i18n";
+import { setLocale, t, whenLocaleReady } from "@/lib/i18n";
 import { fixtureAgents, fixtureWorkspaces } from "@/test/handlers";
 import { server } from "@/test/msw";
 import { BotChatBar } from "./bot-chat-bar";
@@ -19,7 +19,7 @@ function mount(writable = true, host?: string, terminalId: string | undefined = 
       onDone, onChanged }} />);
 }
 async function open(action: string) {
-  await userEvent.click(screen.getByRole("button", { name: "Opciones del chat" }));
+  await userEvent.click(screen.getByRole("button", { name: t("bot.chat.options") }));
   await userEvent.click(screen.getByText(action));
   return screen.getByRole("dialog", { name: action });
 }
@@ -100,14 +100,14 @@ describe("actions from the open chat", () => {
   });
   it("disables writes for a read-only chat", async () => {
     mount(false);
-    await userEvent.click(screen.getByRole("button", { name: "Opciones del chat" }));
+    await userEvent.click(screen.getByRole("button", { name: t("bot.chat.options") }));
     expect(screen.getByText("Delete chat")).toBeDisabled();
     expect(screen.getByText("Change workspace")).toBeDisabled();
     expect(writes).toEqual([]);
   });
   it("does not offer local mutations for a remote chat", async () => {
     mount(true, "remote");
-    await userEvent.click(screen.getByRole("button", { name: "Opciones del chat" }));
+    await userEvent.click(screen.getByRole("button", { name: t("bot.chat.options") }));
     expect(screen.queryByText("Delete chat")).toBeNull();
     expect(screen.queryByText("Change workspace")).toBeNull();
   });
@@ -123,4 +123,17 @@ it("deletes an external bot from the open chat menu without a terminal", async (
   await userEvent.click(within(dialog).getByRole("button", { name: "Delete chat" }));
   await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
   expect(writes).toEqual([{ scope: null, body: { action: "trash", runId: "external" } }]);
+});
+
+
+it("updates every chat-menu label when the chosen language changes", async () => {
+  mount();
+  expect(screen.getByRole("button", { name: "Chat options" })).toBeInTheDocument();
+  await act(async () => { setLocale("es"); await whenLocaleReady("es"); });
+  expect(screen.getByRole("button", { name: "Opciones del chat" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Volver a los chats" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Opciones del chat" }));
+  expect(screen.getByText("Fijar chat")).toBeInTheDocument();
+  expect(screen.getByText("Eliminar chat")).toBeInTheDocument();
+  expect(screen.queryByText("Delete chat")).toBeNull();
 });

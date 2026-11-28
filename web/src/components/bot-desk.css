@@ -51,12 +51,6 @@
 .bot-desk-close:hover { background: #ff453a; color: #fff; }
 .bot-desk-ctrl:focus-visible, .bot-desk-reply:focus-within, .bot-desk-chip:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
 
-/* The chat menu opens under its own button, not at the screen's corner. */
-@supports (anchor-name: --a) {
-  .bot-window .bot-chat-bar > .bot-circle:last-of-type { anchor-name: --bot-desk-menu; }
-  .bot-window .bot-popup { position-anchor: --bot-desk-menu; inset: auto; top: anchor(bottom); right: anchor(right); margin-top: 8px; }
-}
-
 /* A window without the focus reads its chat live; the reply box hands it the focus. */
 .bot-desk-peek .agent-run-bar + div:has(> .bot-desk-mirror) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
 .bot-desk-mirror { flex: 1; min-height: 0; overflow: auto; padding-inline: 14px; scrollbar-width: thin; }
