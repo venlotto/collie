@@ -1153,15 +1153,19 @@ export function AgentChat({
   // or question keeps its own card (hard stop 6a). It stays while the pane is unread, whatever its rows or revision
   // do, and goes when a read LATER than the one it opened on is one Collie can read, or the pane changes (the M102
   // review 2, H). A later read only: the phone's own read may be a moment old when the refusal comes back.
+  // Herdr may keep revision zero: changed live rows also prove a later read. Frozen scrollback does not.
   // `past`: whether the refusal that opened it is one an override can go past (overridePasses); false hides Send anyway.
-  const [unreadOpenedOn, setUnreadOpenedOn] = useState<{ readonly paneId: string; readonly revision: number; readonly past: boolean } | null>(null);
+  const [unreadOpenedOn, setUnreadOpenedOn] = useState<{ readonly paneId: string; readonly revision: number; readonly screen: string; readonly past: boolean } | null>(null);
   const composerRevisionRef = useRef(composerSurface.revision);
   composerRevisionRef.current = composerSurface.revision;
+  const composerScreenRef = useRef(text);
+  composerScreenRef.current = text;
   useEffect(() => {
     if (unreadOpenedOn === null) return;
-    const ended = unreadOpenedOn.paneId !== paneId || (composerSurface.revision > unreadOpenedOn.revision && !readsUnread(composerSurface));
+    // A later send with an unknown outcome owns recovery now; its confirmation card replaces the refusal.
+    const ended = cannotTell !== null || unreadOpenedOn.paneId !== paneId || ((composerSurface.revision > unreadOpenedOn.revision || text !== unreadOpenedOn.screen) && !readsUnread(composerSurface));
     if (ended) setUnreadOpenedOn(null);
-  }, [unreadOpenedOn, paneId, composerSurface]);
+  }, [unreadOpenedOn, paneId, composerSurface, text, cannotTell]);
   const unreadFallback = unreadOpenedOn !== null && unreadOpenedOn.paneId === paneId && !hasDialogCard(blocks) ? screenLines : null;
   const unreadPast = unreadOpenedOn === null || unreadOpenedOn.paneId !== paneId || unreadOpenedOn.past;
   const unreadOnScreen = blocks.find((b) => b.kind === "unread-dialog");
@@ -1419,6 +1423,7 @@ export function AgentChat({
     grid: !gridless,
     chat: chatChosen && chatHarness,
     chatUnavailable,
+    keepChat: botDisplayEnabled && chatChosen,
     session: Boolean(agent?.hasSession),
     journal,
     history: paneStart.history,
@@ -3738,6 +3743,7 @@ export function AgentChat({
             <CardDock
               ref={cardDockRef}
               blocks={blocks}
+              mirrorVisible={!chatShown && !agentView.showing}
               onPromptAction={handlePromptAction}
               onWizardAction={handleWizardAction}
               onWizardAnswer={handleWizardAnswer}
@@ -4037,7 +4043,7 @@ export function AgentChat({
                   dialogCard={display ? hasDialogCard(blocks) || unreadFallback !== null || exitShown !== null : false}
                   // An exit's Keys drawer opens once per exit raised, as the unread card's does once per screen.
                   unreadState={display ? (exitShown !== null ? `exit:${exitShown.n}` : unreadState) : null}
-                  onScreenUnread={(past) => setUnreadOpenedOn({ paneId, revision: composerRevisionRef.current, past })}
+                  onScreenUnread={(past) => setUnreadOpenedOn({ paneId, revision: composerRevisionRef.current, screen: composerScreenRef.current, past })}
                   // The `answer` slot with no card for its dialog (M102 spec 10, diagnosis B): the exit opens.
                   onAnswerUnseen={() => {
                     raiseExit(composerAsk === null ? null : askExitKey(composerAsk), "unseen");
