@@ -140,6 +140,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **The chat prompt sits close to the bottom edge.** The phone’s reply dock keeps a small margin instead of adding a separate home-indicator-sized band below the message field.
 
 
+- **A tap on the chat title opens bot editing.** Change the bot’s name, appearance or workspace without holding its title.
+
+
 ## [1.31.0] - 2026-11-24
 
 ### Added
