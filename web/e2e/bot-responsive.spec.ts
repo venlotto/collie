@@ -337,6 +337,9 @@ for (const entry of ["title", "menu"] as const) test(`moving the open bot from $
 });
 
 
+test.describe("desktop pointer and keyboard", () => {
+  test.use({ hasTouch: false, isMobile: false });
+
 test("desktop reply meets the bottom edge in chat and terminal", async ({ page }) => {
   await page.setViewportSize({ width: 1630, height: 900 });
   await page.getByRole("button").filter({ hasText: TITLE }).first().click();
@@ -352,4 +355,5 @@ test("desktop reply meets the bottom edge in chat and terminal", async ({ page }
     const bottom = await field.evaluate(el => el.closest('[data-slot="composer-box"]')!.getBoundingClientRect().bottom);
     expect(Math.abs(page.viewportSize()!.height - bottom)).toBeLessThanOrEqual(1);
   }
+});
 });
