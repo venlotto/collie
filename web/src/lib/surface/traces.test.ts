@@ -18,7 +18,7 @@ const negative = all.filter((trace) => trace.header.set === "negative");
 const positive = all.filter((trace) => trace.header.set === "positive");
 /** The share of the positive traces of a harness with a profile that must read free (the rule of scripts/surface-corpus.ts). */
 const POSITIVE_SHARE = 0.95;
-/** Time limit of a test that replays the whole negative corpus: room for a slow shared runner (vitest's default is 5 s). */
+/** Time limit of a test that replays the whole corpus: room for a slow shared runner (vitest's default is 5 s). */
 const SWEEP_TIMEOUT_MS = 30_000;
 
 describe("golden traces on disk", () => {
@@ -128,7 +128,7 @@ describe("the sets, marked by label (traces/README.md)", () => {
     expect(failures).toEqual([]);
   });
 
-  it("reads free on at least 95% of the positive traces of a harness with a profile", () => {
+  it("reads free on at least 95% of the positive traces of a harness with a profile", { timeout: SWEEP_TIMEOUT_MS }, () => {
     const profiled = positive.filter((trace) => loadProfiles().has(trace.header.harness));
     expect(profiled.length).toBeGreaterThan(0);
     const missed = profiled.filter((trace) => freeSteps(replayTrace(trace, { mode: "present", fixture: fixtureText })).length === 0);

@@ -338,7 +338,8 @@ for (const entry of ["title", "menu"] as const) test(`moving the open bot from $
 
 
 test.describe("desktop pointer and keyboard", () => {
-  test.use({ hasTouch: false, isMobile: false });
+  test.use({ hasTouch: false, isMobile: false,
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15" });
 
 test("desktop reply meets the bottom edge in chat and terminal", async ({ page }) => {
   await page.setViewportSize({ width: 1630, height: 900 });
