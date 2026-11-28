@@ -751,7 +751,7 @@ export function SessionStream({
       user: entry.role === "user",
       items: itemsOf(entry, showCompactions).map(item => working ? item : finished(item)),
     }));
-    if (botStyle) return groupBotTurns(turns);
+    if (botStyle) return groupBotTurns(turns, working);
     return { blocks: groupRuns(turns.flatMap(turn => turn.items), showToolCalls ? 3 : 1), latestActivity: undefined };
   }, [window.entries, botStyle, showToolCalls, showCompactions, revision, working]);
 
@@ -1223,7 +1223,7 @@ export function SessionStream({
           <Fragment key={first.id}>
             {botStyle && first.ts && (index === 0 || first.ts.slice(0,16) !== blocks[index-1]?.[0]?.ts?.slice(0,16)) && <p className="bot-date">{botTime(Date.parse(first.ts), true)}</p>}
             {botStyle && index === firstUnread && <div className="bot-new-line"><span>Nuevos</span></div>}
-            {bot && first.kind === "reply" && <p className="bot-attribution">Mensaje de <BlobAvatar {...bot} /> {bot.name}</p>}
+            {bot && first.kind === "reply" && botKind !== "activity" && <p className="bot-attribution">Mensaje de <BlobAvatar {...bot} /> {bot.name}</p>}
             {caption && <p className="bot-attribution">{caption}</p>}
             {bot && first.kind === "user" && !first.walky && <p className="bot-attribution">Escribió a <BlobAvatar {...bot} /> {bot.name}</p>}
           <StreamBlock

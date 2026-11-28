@@ -47,7 +47,8 @@ export type ChatItem =
   | { id: string; ts?: string; kind: "user"; text: string; requestId?: string; walky?: EnvelopeHeader }
   // `partial`: the program is still writing this text and will write it again under the same id (a durable pane,
   // WIRE.md 7.15). The card draws a cursor at its end until the flag goes.
-  | { id: string; ts?: string; kind: "reply"; text: string; partial?: true }
+  // `intermediate`: the bot view folds progress prose with the steps of its response.
+  | { id: string; ts?: string; kind: "reply"; text: string; partial?: true; intermediate?: true }
   | { id: string; ts?: string; kind: "thinking"; text: string; partial?: true }
   | { id: string; ts?: string; kind: "notice"; text: string; note?: true; partial?: true }
   // A compaction. `text` is the agent's recap of its own history and is present only when the reader

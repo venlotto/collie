@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { createRef } from "react";
 import { SessionStream } from "./session-stream";
 import type { ChatMessageListHandle } from "./ui/chat/chat-message-list";
@@ -38,6 +38,8 @@ function stream(working: boolean, rows = entries, questionPending = false, reada
 describe("the bot chat's working status", () => {
   it("keeps a live status after a progress message and later grouped steps until the turn ends", () => {
     const { rerender, ...view } = render(stream(true));
+    expect(view.queryByText("I found the cause and am fixing it.")).not.toBeInTheDocument();
+    fireEvent.click(view.getByRole("button", { name: "Still working…" }));
     const progress = view.getByText("I found the cause and am fixing it.");
     const status = view.getByRole("status", { name: "Still working…" });
     expect(status).toHaveTextContent("Still working…");
@@ -49,9 +51,15 @@ describe("the bot chat's working status", () => {
     rerender(stream(true, continued));
     expect(view.getByRole("status", { name: "Still working…" })).toBe(status);
 
-    rerender(stream(false, continued));
+    const completed: ChatEntry[] = [...continued, {
+      uuid: "answer", seq: 5, ts: "2026-11-28T00:00:05Z", role: "assistant", parts: [{ kind: "text", text: "Fixed and checked." }],
+    }];
+    rerender(stream(false, completed));
     expect(view.queryByRole("status", { name: "Still working…" })).not.toBeInTheDocument();
     expect(progress).toBeInTheDocument();
+    fireEvent.click(view.getByRole("button", { name: "3 steps" }));
+    expect(view.queryByText("I found the cause and am fixing it.")).not.toBeInTheDocument();
+    expect(view.getByText("Fixed and checked.")).toBeVisible();
   });
 
   it("keeps the tail status even when grouped activity is the newest content", () => {
