@@ -2193,6 +2193,11 @@ export function stopAgentRun(id: string, scope: Scope) {
 }
 
 export interface AgentRunActionResponse { ok: true; runId: string | null; paneId: string | null }
+export function newAgentRunChat(id: string, text: string, workspaceId: string, requestId: string, scope: Scope): Promise<AgentRunActionResponse> {
+  return req<AgentRunActionResponse>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/new-chat`, scope), {
+    method: "POST", body: JSON.stringify({ text, workspaceId, requestId }),
+  });
+}
 export function resumeAgentRun(id: string, text: string, requestId: string, scope: Scope): Promise<AgentRunActionResponse> {
   return req<AgentRunActionResponse>(withScope(`/api/pane/${encodeURIComponent("agent-run:" + id)}/resume`, scope), {
     method: "POST", body: JSON.stringify({ text, requestId }),

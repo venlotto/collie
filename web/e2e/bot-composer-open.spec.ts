@@ -192,10 +192,22 @@ test("stopped: an unsupported done run offers a new chat and never writes to the
   expect(page.url()).toBe(before);
   expect(sends).toEqual([]);
   expect(world.writes).toEqual([]);
+  const created: unknown[] = [];
+  await page.route(url => url.pathname.endsWith("/new-chat"), async route => {
+    created.push(route.request().postDataJSON());
+    const fresh = { ...fixtureAgents[0]!, paneId: "w1:p9", paneLabel: "Nuevo bot", workspaceId: "w1" };
+    await installPaneWorld(page, { paneId: fresh.paneId,
+      snapshot: { ...fixtureSnapshot, agents: [fresh], shellPanes: [] },
+      chat: { ...fixtureKiroChat, paneId: fresh.paneId },
+      screens: { idle: paneCapture("kiro--v3-idle-w120") }, start: "idle" });
+    await route.fulfill({ json: { ok: true, paneId: fresh.paneId, runId: null } });
+  });
   const action = page.getByRole("button", { name: "Abrir chat nuevo", exact: true });
   await expect(action).toBeEnabled();
   await action.click();
-  await expect(page).toHaveURL(/\/new\?pane=w1%3Ap1|[?&]over=%2Fnew%3Fpane%3Dw1%253Ap1/);
+  await expect.poll(() => created.length).toBe(1);
+  expect(created[0]).toMatchObject({ text: "Continuar sin tocar la shell", workspaceId: "w1", requestId: expect.any(String) });
+  await expect(page).toHaveURL(/\/pane\/w1%3Ap9/);
   expect(sends).toEqual([]);
   expect(world.writes).toEqual([]);
 });

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import nodeProcess from "node:process";
 import { join } from "node:path";
@@ -231,4 +231,54 @@ test("the resume write route refuses a request without a paired credential", asy
     expect(denied?.status).toBe(403);
     expect(await denied?.text()).toBe("device not paired");
   } finally { await cleanup(root); }
+});
+
+
+test("new chat starts the original wrapper in the current workspace with private context, without resuming or notifying", async () => {
+  const f = await fixture("kimi");
+  try {
+    await writeFile(join(f.dir, PARENT + ".status"), JSON.stringify({ ...f.status, bot: null, session_id: SID }));
+    const recorded: string[][] = [];
+    const source = new AgentRuns(f.dir, async () => false, new ActivityLedger({ stateDir: f.root }), async argv => {
+      recorded.push([...argv]);
+      return { code: 0, stdout: "", stderr: "" };
+    });
+    const tabs: string[] = [];
+    const mux: AgentRunMux = { ...f.mux, createTab: async request => {
+      tabs.push(request.spaceId);
+      expect(request.cwd).toBe(f.cwd);
+      return f.mux.createTab(request);
+    } };
+    const answer = await source.newChat(PARENT, "Revisa los pendientes", REQ1, "w2", mux);
+    expect(answer).toEqual({ ok: true, paneId: "w1:p9", runId: null });
+    expect(await source.newChat(PARENT, "Revisa los pendientes", REQ1, "w2", mux)).toEqual(answer);
+    expect(tabs).toEqual(["w2"]);
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0]!.slice(0, 4)).toEqual(["herdr", "pane", "run", "w1:p9"]);
+    expect(recorded[0]![4]).toStartWith("'kimi' ");
+    expect(recorded[0]![4]).not.toContain("--resume");
+    expect(recorded[0]![4]).not.toContain("--bot");
+    const file = (await readdir(f.dir)).find(name => name.includes(".new-chat-"))!;
+    const prompt = await readFile(join(f.dir, file), "utf8");
+    expect(prompt).toContain("resumen breve");
+    expect(prompt).toContain("Prepara un plan. No implementes.");
+    expect(prompt).toContain("resultado previo");
+    expect(prompt).toContain("Revisa los pendientes");
+    expect((await stat(join(f.dir, file))).mode & 0o777).toBe(0o600);
+    expect((await source.read(PARENT))?.status).toBe("done");
+    expect(await readdir(f.dir)).not.toContain(CHILD + ".collie.json");
+  } finally { await cleanup(f.root); }
+});
+
+test("new chat without a draft summarizes and waits, and refuses a running source", async () => {
+  const f = await fixture("codexp");
+  try {
+    const source = new AgentRuns(f.dir, async () => false, new ActivityLedger({ stateDir: f.root }), async () =>
+      ({ code: 0, stdout: "", stderr: "" }));
+    expect(await source.newChat(PARENT, "", REQ1, "w1", f.mux)).toMatchObject({ ok: true });
+    const file = (await readdir(f.dir)).find(name => name.includes(".new-chat-"))!;
+    expect(await readFile(join(f.dir, file), "utf8")).toContain("espera las instrucciones del usuario");
+    await writeFile(join(f.dir, PARENT + ".status"), JSON.stringify({ ...f.status, status: "running" }));
+    expect(await source.newChat(PARENT, "", REQ2, "w1", f.mux)).toEqual({ ok: false, reason: "running" });
+  } finally { await cleanup(f.root); }
 });

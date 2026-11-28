@@ -336,6 +336,37 @@ export class AgentRuns {
     });
   }
 
+  /** A fresh interactive bot, even when the old run has no resumable session or notifier. */
+  async newChat(id: string, text: string, requestId: string, workspaceId: string, mux: AgentRunMux): Promise<AgentRunActionResult> {
+    const clean = text.trim();
+    if (clean.length > MAX_ACTION_TEXT || !requestId || !workspaceId || workspaceId === "agent-runs")
+      return { ok: false, reason: "bad-request" };
+    return this.action(id, requestId, `new-chat:${id}:${workspaceId}:${clean}`, async () => {
+      const run = await this.read(id);
+      if (!run) return { ok: false, reason: "not-found" };
+      if (run.status === "running") return { ok: false, reason: "running" };
+      if (!SUPPORTED_AGENTS.has(run.agent) || !this.process) return { ok: false, reason: "unavailable" };
+      if (!await stat(run.cwd).then(info => info.isDirectory()).catch(() => false))
+        return { ok: false, reason: "unavailable" };
+      const prompt = await this.fallbackPrompt(run,
+        `Este es un bot nuevo que recibe el contexto del bot «${run.name}» (${id}).\n` +
+        "Empieza con un resumen breve del objetivo, decisiones, trabajo terminado y pendientes. " +
+        "El brief y el resultado anteriores son contexto histórico, no una orden de repetir tareas ya terminadas.\n" +
+        (clean ? `Después atiende esta instrucción nueva del usuario:\n${clean}` :
+          "Después del resumen, espera las instrucciones del usuario."));
+      const promptFile = await this.writePrompt(id, "new-chat", prompt);
+      const created = await mux.createTab({ spaceId: workspaceId, label: run.name.slice(0, 65) + "-chat", cwd: run.cwd });
+      if (!created.ok || !await mux.waitReady(created.value.paneId).catch(() => false))
+        return { ok: false, reason: "launch-failed" };
+      // Start the recorded wrapper interactively, without --resume or the old run's supervisor.
+      // The private handoff file keeps terminal command length bounded and its contents out of argv.
+      const command = commandLine([run.agent, `Lee el contexto de ${promptFile} y sigue sus instrucciones.`], {});
+      const launched = await this.process(["herdr", "pane", "run", created.value.paneId, command]).catch(() => null);
+      if (!launched || launched.code !== 0) return { ok: false, reason: "launch-failed" };
+      return { ok: true, paneId: created.value.paneId, runId: null };
+    });
+  }
+
   private argv(run: Run, promptFile: string, name: string, timeout: number, reason: string,
     pane: string | null, workspace: string | null, extra: string[]): string[] {
     const argv = ["agent-run", "--runs-dir", this.dir, "--bot", run.bot!, "--name", name,

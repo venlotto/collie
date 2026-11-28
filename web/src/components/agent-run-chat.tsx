@@ -6,9 +6,12 @@ import { useDisplayPrefs } from "@/hooks/use-display-prefs";
 import { useLocale } from "@/hooks/use-locale";
 import { useNav } from "@/hooks/use-nav";
 import { useBotChromeOverlap } from "@/hooks/use-bot-chrome-overlap";
-import { implementAgentRun, resumeAgentRun, stopAgentRun } from "@/lib/api";
+import { implementAgentRun, newAgentRunChat, resumeAgentRun, stopAgentRun } from "@/lib/api";
+import { describeThrownError } from "@/lib/api-error-message";
+import { randomBotAppearance, saveBot } from "@/lib/bot-identity";
+import { setBotDisplay } from "@/lib/bot-display";
 import { t } from "@/lib/i18n";
-import { homePath, newPath, panePath } from "@/lib/nav";
+import { homePath, panePath } from "@/lib/nav";
 import { paneSurface, UNREAD_SURFACE } from "@/lib/send-slot";
 import { paneScopeKey, type Scope } from "@/lib/scope";
 import type { AgentView } from "@/lib/types";
@@ -56,6 +59,8 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
   const [error, setError] = useState<string | null>(null);
   const resumeRequest = useRef(mintRequestId());
   const implementRequest = useRef(mintRequestId());
+  const newChatRequest = useRef(mintRequestId());
+  const creatingChat = useRef(false);
   const { prefs } = useDisplayPrefs();
   const bot = identityOf(agent, scope);
   const desk = useDeskControls();
@@ -63,10 +68,28 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
   const canSend = run.status === "running" && physical;
   const canResume = run.canResume === true && !resumeFailed;
   const composerSurface = canSend ? paneSurface(agent.surface, agent.sendProtocol === true, undefined) : { surface: UNREAD_SURFACE, unreachableNote: undefined };
-  const openNewChat = () => {
-    nav.down(newPath({ machine: scope.host, pane: physical ? agent.paneId : undefined, session: scope.session }));
-    return false;
-  };
+  async function openNewChat(text: string): Promise<boolean> {
+    if (creatingChat.current || busy || !writable || readOnly || stale) return false;
+    creatingChat.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const answer = await newAgentRunChat(run.id, text, agent.workspaceId, newChatRequest.current, scope);
+      if (!answer.paneId) return false;
+      saveBot(scope, answer.paneId, { name: bot.name + " · " + t("agentRun.finished.newChat"), ...randomBotAppearance() });
+      setBotDisplay(scope, answer.paneId, "chat");
+      composer.current?.clearDraft();
+      await refresh.revalidate();
+      nav.open(panePath(answer.paneId, scope));
+      return true;
+    } catch (err) {
+      setError(describeThrownError(err));
+      return false;
+    } finally {
+      creatingChat.current = false;
+      setBusy(false);
+    }
+  }
   useEffect(() => {
     if (run.status === "running") setContinued(false);
   }, [run.id, run.status]);
@@ -160,7 +183,7 @@ export function AgentRunChat({ run, agent, scope, active, writable, readOnly, st
         sendAction={canSend ? undefined : canResume ?
           { label: continued ? t("agentRun.finished.working") : busy ? t("agentRun.finished.launching") : t("agentRun.finished.resume"),
             onSelect: resume, requiresDraft: true, busy: busy || continued } :
-          { label: t("agentRun.finished.newChat"), onSelect: openNewChat }}
+          { label: busy ? t("agentRun.finished.launching") : t("agentRun.finished.newChat"), onSelect: openNewChat, busy }}
         held={agent.held}
         layout="box"
         minimal

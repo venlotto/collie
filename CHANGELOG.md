@@ -133,6 +133,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Recent bots lead their workspaces and creation offers varied appearances.** Workspaces and their chats sort newest first, ready bots have no avatar ring, and each creation sheet starts with a random editable icon and color, like quick creation.
 
 - **Workspace holds open reliably without selecting the chat list.** Multi-selection includes workspaces and the pinned bot, with one deletion per workspace and its chats. The chat composer background reaches the bottom safe area instead of leaving a black strip.
+- **Opening a new chat keeps the bot in its workspace.** Finished runs open a fresh bot with the same agent and a summary of the previous work, without leaving the bot interface. Repeated taps reuse the same creation request.
+
 
 - **Holding a workspace clears the phone’s residual text selection.** The list and its action sheet reject native text selection together, while search, workspace names and conversation text remain editable or selectable.
 

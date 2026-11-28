@@ -3439,7 +3439,7 @@ export function startServer(opts: {
         return localRuntime(sessionName, req.headers.get("accept-encoding"));
       };
 
-      const runRoute = /^\/api\/pane\/agent-run(?:%3a|:)([a-zA-Z0-9._-]+)\/(chat|stop-run|resume|implement)$/iu.exec(pathname);
+      const runRoute = /^\/api\/pane\/agent-run(?:%3a|:)([a-zA-Z0-9._-]+)\/(chat|stop-run|resume|implement|new-chat)$/iu.exec(pathname);
       if (runRoute && opts.agentRuns) {
         const action = runRoute[2]!;
         if (req.method !== (action === "chat" ? "GET" : "POST")) return text("method not allowed", 405);
@@ -3454,7 +3454,7 @@ export function startServer(opts: {
           audit.record({ action: "agent-run.stop", device: whois(req).device, detail: { id } });
           return json({ ok: true }, null);
         }
-        if (action === "resume" || action === "implement") {
+        if (action === "resume" || action === "implement" || action === "new-chat") {
           const bytes = await readCappedBody(new Response(req.body), 64 * 1024);
           if (!bytes) return text("body too large", 413);
           const fields = parseJsonObject(new TextDecoder().decode(bytes));
@@ -3468,13 +3468,15 @@ export function startServer(opts: {
             waitReady: async (paneId: string) => (await awaitPaneReady(rt.herdr, paneId, { accepts: endsInShellPrompt })).ready,
             createTab: (request: Parameters<typeof rt.herdr.createTab>[0]) => rt.herdr.createTab(request),
           };
-          const result = action === "resume" ? await opts.agentRuns.resume(id, textField, requestId, mux)
+          const result = action === "new-chat" ? await opts.agentRuns.newChat(id, textField, requestId, asJsonString(fields?.workspaceId) ?? "", mux)
+            : action === "resume" ? await opts.agentRuns.resume(id, textField, requestId, mux)
             : await opts.agentRuns.implement(id, textField, requestId, asJsonString(fields?.agent) ?? "", asJsonString(fields?.effort) ?? "high", mux);
           if (!result.ok) {
             const status = result.reason === "not-found" ? 404 : result.reason === "bad-request" ? 400 :
               result.reason === "launch-failed" ? 502 : result.reason === "unavailable" ? 422 : 409;
             return text(result.reason, status);
           }
+          await rt.herdr.refresh();
           audit.record({ action: "agent-run." + action, device: whois(req).device, detail: { id, runId: result.runId, paneId: result.paneId } });
           return json({ ok: true, runId: result.runId, paneId: result.paneId }, null);
         }
