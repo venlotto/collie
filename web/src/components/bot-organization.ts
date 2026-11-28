@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { identityOf } from "./bot-identity";
 import { useBotFeatured } from "@/lib/bot-featured";
@@ -89,7 +90,7 @@ export function useBotOrganization(groups: Map<string, WorkspaceChoice & { rows:
         setOrder(current => new Map(current).set(drop.target, saved.paneIds));
       }
     } catch (err) {
-      setError((transferred ? "El chat se movió, pero no se guardó la posición. " : "") + describeThrownError(err));
+      setError((transferred ? t("bot.error.chatOrder") + " " : "") + describeThrownError(err));
     } finally {
       locked.current = false;
       refresh();

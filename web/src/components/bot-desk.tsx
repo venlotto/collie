@@ -1,3 +1,4 @@
+import { useLocale } from "@/hooks/use-locale";
 // THE DESK (local patch, Koperca Agent Hub): on a wide screen, several bot chats open side by side.
 //
 // The route's pane is the focused window and is the full chat screen it always was (composer, menus,
@@ -54,11 +55,12 @@ function own(act: () => void) {
 function WindowControls({ name, maxed, onMin, onMax, onClose }: {
   name: string; maxed: boolean; onMin: () => void; onMax: () => void; onClose: () => void;
 }) {
-  return <div className="bot-desk-ctrls" role="group" aria-label={"Ventana de " + name}>
-    <button type="button" className="bot-desk-ctrl" aria-label="Minimizar" title="Minimizar" onClick={own(onMin)}><Minus size={16} /></button>
-    <button type="button" className="bot-desk-ctrl" aria-label={maxed ? "Restaurar" : "Maximizar"} title={maxed ? "Restaurar" : "Maximizar"}
+  useLocale();
+  return <div className="bot-desk-ctrls" role="group" aria-label={t("bot.desk.window", { name })}>
+    <button type="button" className="bot-desk-ctrl" aria-label={t("bot.desk.minimize")} title={t("bot.desk.minimize")} onClick={own(onMin)}><Minus size={16} /></button>
+    <button type="button" className="bot-desk-ctrl" aria-label={maxed ? t("bot.desk.restore") : t("bot.desk.maximize")} title={maxed ? t("bot.desk.restore") : t("bot.desk.maximize")}
       aria-pressed={maxed} onClick={own(onMax)}>{maxed ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
-    <button type="button" className="bot-desk-ctrl bot-desk-close" aria-label="Cerrar ventana" title="Cerrar ventana" onClick={own(onClose)}><X size={16} /></button>
+    <button type="button" className="bot-desk-ctrl bot-desk-close" aria-label={t("bot.desk.close")} title={t("bot.desk.close")} onClick={own(onClose)}><X size={16} /></button>
   </div>;
 }
 
@@ -99,6 +101,7 @@ function DeskWindow({ windowKey, name, maxed, focused, leaving, acts, children }
 
 /** A window without the focus: its chat, live, read only. Any click on it hands it the focus. */
 function DeskPeek({ pane, scope, onReply }: { pane: AgentView; scope: Scope; onReply: () => void }) {
+  useLocale();
   const data = useRootData();
   const refresh = useRevalidator();
   const { featured, setFeatured } = useBotFeatured();
@@ -151,6 +154,7 @@ export function BotDesk({ focusKey, screen, capacity }: {
   screen: ReactNode;
   capacity: Capacity;
 }) {
+  useLocale();
   const data = useRootData();
   const nav = useNav();
   const desk = useDesk();
@@ -218,7 +222,7 @@ export function BotDesk({ focusKey, screen, capacity }: {
   return <div className="bot-desk" data-windows={shown.length}>
     {shown.length === 0 ? <div className="bot-detail-empty">
       <MessagesSquare size={36} strokeWidth={1.5} aria-hidden />
-      <p>Selecciona un chat</p>
+      <p>{t("bot.desk.select")}</p>
     </div> : <div ref={grid} className="bot-desk-grid"
       style={{ gridTemplateColumns: `repeat(${cells.cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${cells.rows}, minmax(0, 1fr))` }}>
       {shown.map(key => {
@@ -230,14 +234,14 @@ export function BotDesk({ focusKey, screen, capacity }: {
         </DeskWindow>;
       })}
     </div>}
-    {tray.length > 0 && <nav className="bot-desk-tray" aria-label="Chats minimizados">
+    {tray.length > 0 && <nav className="bot-desk-tray" aria-label={t("bot.desk.minimized")}>
       {tray.flatMap(key => {
         const pane = byKey.get(key);
         if (pane === undefined) return [];
         const bot = identityOf(pane, scopeOf(pane));
         return [<button key={key} type="button" className="bot-pill bot-desk-chip" onClick={() => focus(key)} title={bot.name}>
           <BotActivityAvatar bot={bot} status={activityStatusOf(pane)} /><strong>{bot.name}</strong>
-          {isUnseen(pane) && <span className="bot-unread" aria-label="Sin leer" />}
+          {isUnseen(pane) && <span className="bot-unread" aria-label={t("bot.list.unread")} />}
         </button>];
       })}
     </nav>}

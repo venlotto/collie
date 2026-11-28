@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+import { useLocale } from "@/hooks/use-locale";
 import { MessagesSquare } from "lucide-react";
 import { Activity, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
@@ -15,6 +17,7 @@ import { BotDesk } from "./bot-desk";
 import { StatusArea } from "./status-area";
 
 export function BotStack({ paneId, pane }: { paneId?: string; pane?: PaneData }) {
+  useLocale();
   const location = useLocation();
   // CSS places the panels. Only the covered list leaves the tab order on a phone.
   const split = useMediaQuery("(min-width: 768px)");
@@ -95,13 +98,13 @@ export function BotStack({ paneId, pane }: { paneId?: string; pane?: PaneData })
     (focusKey !== null && !stored.wins.some(w => w.key === focusKey) ? 1 : 0);
   const desk = roomy && windows >= 2;
   return <div className="bot-layout" data-detail={open}>
-    <aside inert={open && !split} className="bot-sidebar" aria-label="Lista de chats"><HomeRoute /></aside>
+    <aside inert={open && !split} className="bot-sidebar" aria-label={t("bot.list.sidebar")}><HomeRoute /></aside>
     <main inert={!open && !split} className="bot-detail" ref={panel} data-desk={desk ? "" : undefined}>
       {desk ? <BotDesk focusKey={focusKey} screen={open ? chat : null} capacity={capacity} /> : <>
         <Activity mode={open || !parked ? "visible" : "hidden"}>{chat}</Activity>
         {!open && <div className="bot-detail-empty">
           <MessagesSquare size={36} strokeWidth={1.5} aria-hidden />
-          <p>Selecciona un chat</p>
+          <p>{t("bot.desk.select")}</p>
         </div>}
       </>}
     </main>

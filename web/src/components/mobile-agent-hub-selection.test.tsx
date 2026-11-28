@@ -3,10 +3,11 @@ import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { fixtureAgents, fixtureWorkspaces } from "@/test/handlers";
 import { server } from "@/test/msw";
-import { t } from "@/lib/i18n";
+import { t, setLocale, whenLocaleReady } from "@/lib/i18n";
 import { wipeDevice } from "@/lib/wipe";
 import { MobileAgentHub } from "./mobile-agent-hub";
 
+beforeEach(async () => { setLocale("es"); await whenLocaleReady("es"); });
 const spaces = ["Ideas", "Viajes"].map((label, i) => Object.assign({}, fixtureWorkspaces[0]!, { workspaceId: `w${i}`, label }));
 const panes = ["Notas", "Bocetos", "Rutas"].map((paneLabel, i) => Object.assign({}, fixtureAgents[0]!, { paneLabel,
   paneId: `p${i}`, terminalId: `t${i}`, workspaceId: i < 2 ? "w0" : "w1", workspaceLabel: i < 2 ? "Ideas" : "Viajes", hasSession: false }));
