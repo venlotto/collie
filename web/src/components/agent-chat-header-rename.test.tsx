@@ -7,6 +7,9 @@ import { withHeaderHost } from "@/test/header-host";
 import { CROSSFADE_QUIET_MS } from "@/components/ui/crossfade-text";
 import { AgentChat } from "./agent-chat";
 
+beforeAll(() => {
+  if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => {};
+});
 afterEach(cleanup);
 
 describe("AgentChat header — a rename fades", () => {

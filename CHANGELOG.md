@@ -153,6 +153,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 
 - **Bots created by other agents can enter the Trash.** Right-click or hold a background bot to delete it, restore it within seven days, or delete it permanently, even when it has no terminal.
+- **The idle reference demonstrates resuming without a blocking overlay.** Pause the real idle store in the design reference and check that the next input refreshes the view and still reaches its control. Shell tests follow the current chat, settings and history routes.
+
 
 ## [1.31.0] - 2026-11-24
 

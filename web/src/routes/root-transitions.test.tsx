@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { RootLayout } from "./root";
@@ -11,6 +11,9 @@ vi.mock("@/lib/status", async (original) => ({
   ...(await original<typeof import("@/lib/status")>()),
   setStatus: vi.fn(),
 }));
+
+// These cases test RootLayout's transition subscription, independently of the chat renderer.
+vi.mock("@/components/bot-stack", () => ({ BotStack: () => <div>chat screen</div> }));
 
 // RootLayout hands useAgentTransitions the open pane as a ROW key. It resolves the route's paneId
 // through `findPane` with the pane route's own scope (`pane?.scope ?? data.scope`), so on a crew
@@ -85,7 +88,7 @@ async function pollInto(
     { initialEntries: [entry] },
   );
   render(<RouterProvider router={router} />);
-  await waitFor(() => expect(router.state.initialized).toBe(true));
+  await screen.findByText("chat screen");
   herd = after;
   await router.revalidate();
   await waitFor(() => expect(router.state.revalidation).toBe("idle"));
