@@ -293,6 +293,38 @@ describe("parseCodexTranscript", () => {
     expect(entries[0]!.parts[0]).toMatchObject({ text: "help me fix the typescript errors" });
   });
 
+  test.each([
+    "# AGENTS.md instructions\n\n<INSTRUCTIONS>\nRepository rules\n</INSTRUCTIONS>",
+    "  # AGENTS.md instructions for /home/ubuntu\r\n\r\n<INSTRUCTIONS>\r\nRepository rules\r\n</INSTRUCTIONS>",
+    "# AGENTS.md instructions\n\n<INSTRUCTIONS>\nRepository rules\n</INSTRUCTIONS><environment_context>\n<cwd>/repo</cwd>\n</environment_context>",
+  ])("drops injected repository instructions: %s", (instructions) => {
+    const entries = parseCodexTranscript([
+      message("user", instructions),
+      message("user", "remove AGENTS.md instructions from the chat"),
+      message("assistant", "Done."),
+    ].join("\n"));
+    expect(entries.map((entry) => entry.parts)).toEqual([
+      [{ kind: "text", text: "remove AGENTS.md instructions from the chat" }],
+      [{ kind: "text", text: "Done." }],
+    ]);
+  });
+
+  test("keeps ordinary discussion and assistant quotes of repository instructions", () => {
+    const bodies = [
+      "Please review AGENTS.md before editing.",
+      "# AGENTS.md instructions\nPlease shorten this document.",
+      "# AGENTS.md instructions are useful.",
+    ];
+    const quote = "# AGENTS.md instructions\n\n<INSTRUCTIONS>\nExample\n</INSTRUCTIONS>";
+    const entries = parseCodexTranscript([
+      ...bodies.map((body) => message("user", body)),
+      message("assistant", quote),
+    ].join("\n"));
+    expect(entries.map((entry) => entry.parts)).toEqual(
+      [...bodies, quote].map((text) => [{ kind: "text", text }]),
+    );
+  });
+
   test("a clipped or partial line is skipped, not thrown on", () => {
     const entries = parseCodexTranscript(
       ['{"timestamp":"2026","type":"response_i', message("user", "hi")].join("\n"),

@@ -311,7 +311,9 @@ function enrichCall(call: ToolCall, raw: JsonValue | undefined): void {
  * operator never typed it — so it is dropped exactly like Claude's `system-reminder`.
  */
 function isInjectedContext(text: string): boolean {
-  return text.trimStart().startsWith("<environment_context>");
+  const body = text.trimStart();
+  return body.startsWith("<environment_context>")
+    || /^# AGENTS\.md instructions(?: for [^\r\n]+)?\r?\n\s*<INSTRUCTIONS>/.test(body);
 }
 
 /** A rollout line, once JSON.parse has admitted it is an object at all. */

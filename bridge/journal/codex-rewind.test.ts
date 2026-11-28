@@ -47,7 +47,7 @@ async function sessions(...names: string[]) {
 /** What a reader sees: the turns that are speech, as text, in order. Plumbing rows drop out. */
 function said(entries: readonly TranscriptEntry[]): string[] {
   return entries.flatMap((e) =>
-    e.parts.flatMap((p) => (p.kind === "text" && !p.text.startsWith("# AGENTS.md") ? [`${e.role}: ${p.text}`] : [])),
+    e.parts.flatMap((p) => (p.kind === "text" ? [`${e.role}: ${p.text}`] : [])),
   );
 }
 
