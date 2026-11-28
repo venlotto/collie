@@ -4347,3 +4347,22 @@ recipe's own words alone (`unproven`). Read with `tmux capture-pane -e -p`, CRLF
 | `codex--v0172-async-other-day-focused-23rows--w52.txt` | `3` on `Day?`: the pointer on its faint `Other` |
 | `codex--v0172-async-other-day-typed-long-23rows--w52.txt` | A 54-character answer typed on `Day?`: the row wraps onto a continuation |
 
+
+### Codex 0.172.0, 23-row narrow panes (2026-11-28, codexp-1000)
+
+`codex--v0172-surface-*` are real captures, not hand-wrapped screens. The disposable tmux server
+`cx-unreadable` ran Codex 0.172.0 with an isolated home and project, at 52, 56 and 80 columns.
+Three/seven intentionally invalid local skills produced real warning counts. `/rename` supplied
+short (`OK`), long, and separator-containing titles. `short/long-*-warn3` retain the inherited
+`NO_COLOR=1`: Codex still paints bold keys and its dim placeholder, but no coloured fields.
+The `warn7` laboratory captures unset `NO_COLOR`. The `running` and `finished` screens surround
+one real `seq 1 20; sleep 30` turn; `/model` captures are genuine numbered pickers, never idle.
+`Draft for the screen reader` was pasted and cleared without submitting it.
+
+Four read-only Herdr captures supplied with the incident supplement the lab: `mobile-idle-warn7`
+(w2D:p6), `duck-idle-warn3` (w2H:pB), `clarify-idle-warn3` (w2J:p6), and `tip-running-warn3`
+(w2H:p9). They retain their original 23 rows, including the Working tip and collapsed tool output.
+Their `--herdr` suffix deliberately makes no column-width claim: the supplied metadata did not
+record the width. Earlier test logs called these four files `--w56`; only their names changed.
+The two incident captures whose editor hides the entire footer are tracked by the separate
+long-draft work; they are not silently labelled as recognised by these tests.

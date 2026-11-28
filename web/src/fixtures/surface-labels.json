@@ -7249,6 +7249,206 @@
    "harness": "codex",
    "version": "0.172.0",
    "state": "dialog"
+  },
+  "codex--v0172-surface-clarify-idle-warn3--herdr.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-duck-idle-warn3--herdr.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-finished-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-finished-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-finished-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-long-draft-warn3--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-long-draft-warn3--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-long-draft-warn3--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-long-draft-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-long-draft-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-long-draft-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-long-idle-warn3--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-long-idle-warn3--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-long-idle-warn3--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-long-idle-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-long-idle-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-long-idle-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-mobile-idle-warn7--herdr.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-model-dialog--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-surface-model-dialog--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-surface-model-dialog--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-surface-running-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
+  },
+  "codex--v0172-surface-running-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
+  },
+  "codex--v0172-surface-running-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
+  },
+  "codex--v0172-surface-separated-idle-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-separated-idle-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-separated-idle-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-short-draft-warn3--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-short-draft-warn3--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-short-draft-warn3--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-short-draft-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-short-draft-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-short-draft-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "draft"
+  },
+  "codex--v0172-surface-short-idle-warn3--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-short-idle-warn3--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-short-idle-warn3--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-short-idle-warn7--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-short-idle-warn7--w56.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-short-idle-warn7--w80.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "idle"
+  },
+  "codex--v0172-surface-tip-running-warn3--herdr.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "running"
   }
  },
  "knownMismatches": {

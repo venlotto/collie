@@ -436,26 +436,27 @@ function isPlainStatusRow(row: string): boolean {
 /** A dialog's key row, never a word wrapped out of a status field. */
 const DIALOG_KEY_ROW = /^(?:press )?(?:enter|esc(?:ape)?|tab|space|ctrl\+\S+|shift\+\S+|[↑↓←→?⚠])(?:\s|$)/iu;
 
-/**
- * The second row of a status field soft-wrapped on its own, with no ` · ` left on it. Codex breaks a
- * long thread title this way: the first status row ends inside the coloured title and the next row
- * holds only its remaining words in that same paint. The caller still proves the upper row is the
- * box's bottom edge and that the words really wrap; this predicate contributes the row shape and,
- * on a styled read, the renderer evidence. On a plain read the shape and the caller's geometry are
- * all the evidence there is, so a dialog's key lead is refused by its words too.
- */
-export function isFieldOnlyStatusContinuation(upper: StyledLine, lower: StyledLine, plain: boolean): boolean {
-  const text = rstrip(lineText(lower));
-  if (!HINT_ROW.test(text) || hasControlChar(text) || text.includes(STATUS_SEPARATOR) || DIALOG_KEY_ROW.test(text.trimStart())) return false;
-  if (codePointCount(text) > MAX_STATUS_FIELD_CHARS + STATUS_INDENT.length) return false;
-  if (plain) return true;
-
-  const above = foldTrailingPadding(upper.segments);
-  const below = foldTrailingPadding(lower.segments);
-  if (above === null || below === null || below.length !== 2 || !isIndentSegment(below[0]!)) return false;
-  const field = above[above.length - 1]!;
-  const continuation = below[1]!;
-  return isFieldSegment(field) && isFieldSegment(continuation) && continuation.fg === field.fg;
+/** Reassemble physical status rows without losing the field/separator paint the grammar checks. */
+export function joinStatusRows(lines: StyledLine[]): StyledLine | null {
+  const segments: AnsiSegment[] = [];
+  for (const [index, line] of lines.entries()) {
+    const row = rstrip(lineText(line));
+    if (!/^ {2}\S/u.test(row) || (index > 0 && DIALOG_KEY_ROW.test(row.trimStart()))) return null;
+    const folded = foldTrailingPadding(line.segments);
+    if (folded === null) return null;
+    let skip = index === 0 ? 0 : 2;
+    const previous = segments.at(-1);
+    if (previous !== undefined && !previous.text.endsWith("-")) previous.text += " ";
+    for (const run of folded) {
+      const text = run.text.slice(skip);
+      skip = Math.max(0, skip - run.text.length);
+      if (text.length === 0) continue;
+      const last = segments.at(-1);
+      if (last !== undefined && last.fg === run.fg && last.bg === run.bg && last.bold === run.bold && last.dim === run.dim && last.italic === run.italic && last.underline === run.underline && last.strike === run.strike && last.inverse === run.inverse) last.text += text;
+      else segments.push({ ...run, text });
+    }
+  }
+  return { segments };
 }
 
 /** True when the row could be the composer's status line. Never decisive alone — the composer

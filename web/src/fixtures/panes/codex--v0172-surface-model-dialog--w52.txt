@@ -1,0 +1,23 @@
+
+  [1mSelect Model and Effort[0m
+
+
+  1. GPT-6.2-Sol            [2mFast, go-to model for[0m
+                            [2mcoding and everyday[0m
+                            [2mwork.[0m
+  2. GPT-6.2-Astra          [2mOur most capable model[0m
+                            [2mfor complex coding and[0m
+                            [2mprofessional work.[0m
+  3. GPT-6.1 Terra          [2mEfficient model that[0m
+                            [2mexcels at visual[0m
+                            [2munderstanding and[0m
+                            [2mcomputer use.[0m
+  4. GPT-6.1-Sol            [2mPrevious generation[0m
+                            [2mmodel for coding and[0m
+                            [2meveryday work.[0m
+[1;7m› 5. GPT-6-Astra (current)  [0;7mPrevious generation[1m
+                            [0;7mmodel for complex coding
+[1m                            [0;7mand professional work.[1m
+[0m  6. GPT-6-Sol              [2mLegacy model for coding[0m
+[38;2;99;168;248m↓[39m
+  [1menter[0;2m select · [0;1mesc[0;2m back
