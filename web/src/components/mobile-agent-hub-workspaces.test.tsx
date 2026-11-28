@@ -1,3 +1,4 @@
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 import { cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -6,6 +7,7 @@ import { server } from "@/test/msw";
 import { wipeDevice } from "@/lib/wipe";
 import { MobileAgentHub } from "./mobile-agent-hub";
 
+beforeEach(async () => { setLocale("es"); await whenLocaleReady("es"); });
 const workspaces = ["Duck Race", "Nexo", "Optimización koper"].map((label, index) => Object.assign({}, fixtureWorkspaces[0]!, {
   workspaceId: `w${index}`, number: index + 1, label,
 }));

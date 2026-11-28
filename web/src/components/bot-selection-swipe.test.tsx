@@ -1,7 +1,9 @@
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BotRow } from "./bot-selection";
 
+beforeEach(async () => { setLocale("es"); await whenLocaleReady("es"); });
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("matchMedia", () => ({ matches: true }));

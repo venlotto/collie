@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+import { useLocale } from "@/hooks/use-locale";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Check, Trash2, X } from "lucide-react";
 
@@ -14,6 +16,7 @@ interface RowProps {
 
 /** Leave vertical scrolling to the browser. Consume exactly the click after a successful hold. */
 export function BotRow({ children, current, checked, disabled, onHold, onSwipeRight, onOpen, onPress }: RowProps) {
+  useLocale();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const start = useRef({ x: 0, y: 0 });
   const held = useRef(false);
@@ -45,7 +48,7 @@ export function BotRow({ children, current, checked, disabled, onHold, onSwipeRi
     }
   }
   return <div className="bot-swipe">
-    {swipeEnabled && <span className="bot-swipe-hint" aria-hidden="true"><Trash2 size={20} />Eliminar</span>}
+    {swipeEnabled && <span className="bot-swipe-hint" aria-hidden="true"><Trash2 size={20} />{t("chat.card.delete")}</span>}
     <button ref={row} data-swipeable={swipeEnabled || undefined} type="button" className="bot-row" aria-current={current || undefined}
     role={checked === undefined ? undefined : "checkbox"} aria-checked={checked} disabled={disabled}
     onContextMenu={e => { if (onHold) { e.preventDefault(); hold(); } }}
@@ -99,6 +102,7 @@ export function BotRow({ children, current, checked, disabled, onHold, onSwipeRi
 export function BotActionSheet({ title, children, busy, close, leaving, dismiss }: {
   title: string; children: ReactNode; busy: boolean; leaving: boolean; close: () => void; dismiss: () => void;
 }) {
+  useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
   const closeRef = useRef(close);
   closeRef.current = close;
@@ -114,9 +118,9 @@ export function BotActionSheet({ title, children, busy, close, leaving, dismiss 
   }, [leaving]);
   return <dialog className="bot-dialog" ref={dialog} data-leaving={leaving} aria-label={title}
     onCancel={e => { e.preventDefault(); if (!busy) dismiss(); }}>
-    <button aria-label="Descartar" tabIndex={-1} className="bot-backdrop" disabled={busy} onClick={dismiss} />
+    <button aria-label={t("composer.held.dismiss")} tabIndex={-1} className="bot-backdrop" disabled={busy} onClick={dismiss} />
     <div className="bot-sheet bot-action-sheet">
-      <header><button className="bot-circle" disabled={busy} onClick={dismiss} aria-label="Cerrar"><X /></button><h2>{title}</h2></header>
+      <header><button className="bot-circle" disabled={busy} onClick={dismiss} aria-label={t("common.closeAria")}><X /></button><h2>{title}</h2></header>
       {children}
     </div>
   </dialog>;

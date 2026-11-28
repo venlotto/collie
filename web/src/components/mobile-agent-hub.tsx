@@ -1,5 +1,5 @@
 import { trashMinutesRemaining } from "@/lib/trash-retention";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useBotListSelection } from "@/hooks/use-bot-list-selection";
@@ -193,7 +193,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     try {
       await restoreWorkspace(space.scope, space.id, space.at);
     } catch {
-      setError("No se pudo restaurar el workspace. Revisa la Papelera y vuelve a intentar.");
+      setError(t("bot.error.restoreWorkspace"));
     } finally {
       lock.current = false;
       setBusy(false);
@@ -274,7 +274,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       if (sheet) setLeaving(true);
       done();
     } catch {
-      setError("No se pudo completar la acción. Revisa la selección y vuelve a intentar.");
+      setError(t("bot.error.selection"));
     } finally {
       lock.current = false;
       setBusy(false);
@@ -299,20 +299,20 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       <span className="bot-copy">
         <span className="bot-row-title"><strong>{bot.name}</strong><time>{botTime(p.lastActiveAt || activityAt(p))}</time></span>
         {minutes !== undefined ? <span className="bot-line">{minutes ? t("bot.trash.remaining", { minutes }) : t("bot.trash.pending")}</span> :
-          <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} status={status} label={activityLabel(status)} />{isUnseen(p) && <span className="bot-unread" aria-label="Sin leer" />}</span>}
+          <span className="bot-row-preview"><Preview pane={p} scope={scope} active={current} status={status} label={activityLabel(status)} />{isUnseen(p) && <span className="bot-unread" aria-label={t("bot.list.unread")} />}</span>}
       </span>
     </BotRow></li>;
   }
   const featuredBot = featured && identityOf(featured, scopeOf(featured));
   const initial = (segmenter?.segment(deviceName).containing(0)?.segment ?? Array.from(deviceName)[0])?.toLocaleUpperCase();
-  return <div ref={surface} className="bot-index" aria-label="Chats">
+  return <div ref={surface} className="bot-index" aria-label={t("bot.list.title")}>
     <div className="bot-list-surface">
       {mode ? <header className="bot-bar bot-select-bar">
-        <button disabled={busy} onClick={done}>Listo</button>
-        <strong aria-live="polite">{chosenCount} {chosenCount === 1 ? "seleccionado" : "seleccionados"}</strong>
-        <button disabled={busy} onClick={() => { setSelection(new Set(choices.map(rowId))); setWorkspaceSelection(new Set(workspaceChoices.map(g => sectionKey(g.scope, g.id)))); }}>Seleccionar todo</button>
+        <button disabled={busy} onClick={done}>{t("shortcuts.bar.done")}</button>
+        <strong aria-live="polite">{tn("bot.list.selected", chosenCount)}</strong>
+        <button disabled={busy} onClick={() => { setSelection(new Set(choices.map(rowId))); setWorkspaceSelection(new Set(workspaceChoices.map(g => sectionKey(g.scope, g.id)))); }}>{t("bot.list.selectAll")}</button>
       </header> : <header className="bot-bar">
-        <span role="img" className="bot-user" aria-label={deviceName || "Perfil"}>{initial || <UserRound size={19} aria-hidden />}</span>
+        <span role="img" className="bot-user" aria-label={deviceName || t("accounts.new.label")}>{initial || <UserRound size={19} aria-hidden />}</span>
         <PlusButton onNew={onNew} onQuickNew={onQuickNew && (() => void onQuickNew().then(message => setError(message ?? "")))} busy={quickBusy} />
       </header>}
       <div className="bot-scroll" ref={scroll} onScroll={countUnread} data-jump-below={below > 0 || undefined}>
@@ -336,57 +336,57 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
             {group.title}{!mode && <ChevronDown size={14} />}
           </button>
           {!mode && writable && !group.scope.host && group.id !== "agent-runs" && <button className="bot-group-menu"
-            aria-label={`Opciones de ${group.title}`} disabled={busy || !!needle} onClick={() => organize.openMenu(key)}><MoreHorizontal size={18} aria-hidden /></button>}
+            aria-label={t("bot.workspace.options", { name: group.title })} disabled={busy || !!needle} onClick={() => organize.openMenu(key)}><MoreHorizontal size={18} aria-hidden /></button>}
           </div>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}
         {(trashRows.length > 0 || trashedSpaces.length > 0) && <section data-workspace="trash">
-          <button className="bot-group" aria-expanded={!folded.has("trash") || !!needle} disabled={!!needle} onClick={() => toggle("trash")}>Papelera<ChevronDown size={14} /></button>
+          <button className="bot-group" aria-expanded={!folded.has("trash") || !!needle} disabled={!!needle} onClick={() => toggle("trash")}>{t("bot.list.trash")}<ChevronDown size={14} /></button>
           {(!folded.has("trash") || !!needle) && <ul>{trashedSpaces.map(space =>
             <li className="bot-trashed-workspace" key={sectionKey(space.scope, space.id)}>
               <FolderInput size={22} aria-hidden /><span><strong>{space.title}</strong>
-                <small>{space.count} {space.count === 1 ? "chat" : "chats"} · {trashMinutesRemaining(space.at) ? t("bot.trash.remaining", { minutes: trashMinutesRemaining(space.at) }) : t("bot.trash.pending")}</small></span>
-              <button disabled={!writable || busy || !!mode || !!space.scope.host} onClick={() => void recover(space)}>Restaurar workspace</button>
+                <small>{tn("bot.list.chatCount", space.count)} · {trashMinutesRemaining(space.at) ? t("bot.trash.remaining", { minutes: trashMinutesRemaining(space.at) }) : t("bot.trash.pending")}</small></span>
+              <button disabled={!writable || busy || !!mode || !!space.scope.host} onClick={() => void recover(space)}>{t("bot.list.restoreWorkspace")}</button>
             </li>)}{trashRows.map(row)}</ul>}
         </section>}
-        {!trashedSpaces.length && !trashRows.length && !accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? "Sin resultados" : "Aún no hay chats"}</p>}
+        {!trashedSpaces.length && !trashRows.length && !accessNotice && (!panes.length || (needle && !Array.from(groups.values()).some(g => g.rows.length))) && <p className="bot-empty">{needle ? t("bot.list.noResults") : t("bot.list.empty")}</p>}
       </div>
-      {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.row.scrollIntoView({ block: "center" })}>{above} sin leer <ChevronDown size={14} /></button>}
+      {above > 0 && <button className="bot-jump bot-jump-up" onClick={() => unreadOutside().above.at(-1)?.row.scrollIntoView({ block: "center" })}>{t("bot.list.unreadCount", { count: above })} <ChevronDown size={14} /></button>}
     </div>
     {organize.menu && <WorkspaceMenu {...organize.menu} />}
-    {organize.dragging && <div className="bot-drop-trash"><Trash2 size={19} />Papelera</div>}
+    {organize.dragging && <div className="bot-drop-trash"><Trash2 size={19} />{t("bot.list.trash")}</div>}
     <div className="bot-search-foot" ref={footer}>
-      {below > 0 && <div className="bot-jump-slot"><button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.row.scrollIntoView({ block: "center" })}>{below} sin leer <ChevronDown size={14} /></button></div>}
-      {mode ? <div className="bot-search bot-actions" role="toolbar" aria-label="Acciones de selección">
+      {below > 0 && <div className="bot-jump-slot"><button className="bot-jump bot-jump-down" onClick={() => unreadOutside().below[0]?.row.scrollIntoView({ block: "center" })}>{t("bot.list.unreadCount", { count: below })} <ChevronDown size={14} /></button></div>}
+      {mode ? <div className="bot-search bot-actions" role="toolbar" aria-label={t("bot.list.selectionActions")}>
         {mode === "chats" ? <>
-          <button disabled={!chosen.length || !!chosenWorkspaces.length || !destinations.length || busy} onClick={() => openSheet("move")}><FolderInput size={18} />Mover</button>
-          <button disabled={!chosenCount || busy} onClick={() => { if (chosenWorkspaces.length) openSheet("trash"); else void apply("trash"); }}><Trash2 size={18} />Eliminar</button>
+          <button disabled={!chosen.length || !!chosenWorkspaces.length || !destinations.length || busy} onClick={() => openSheet("move")}><FolderInput size={18} />{t("chat.card.move")}</button>
+          <button disabled={!chosenCount || busy} onClick={() => { if (chosenWorkspaces.length) openSheet("trash"); else void apply("trash"); }}><Trash2 size={18} />{t("chat.card.delete")}</button>
         </> : <>
           <button disabled={!chosen.length || busy} onClick={() => {
             if (chosen.every(p => p.workspaceId === p.trash?.originalWorkspaceId || (p.agentRun && p.trash?.originalWorkspaceId === "agent-runs") ||
               destinations.some(g => g.id === p.trash?.originalWorkspaceId))) void apply("restore");
             else openSheet("restore");
-          }}><Undo2 size={18} />Restaurar</button>
-          <button disabled={!chosen.length || busy} onClick={() => openSheet("purge")}><Trash2 size={18} />Eliminar</button>
+          }}><Undo2 size={18} />{t("bot.list.restore")}</button>
+          <button disabled={!chosen.length || busy} onClick={() => openSheet("purge")}><Trash2 size={18} />{t("chat.card.delete")}</button>
         </>}
-      </div> : <>{groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
+      </div> : <>{groups.size > 0 && <><button aria-label={t("bot.workspace.jump")} className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
         <div className="bot-picker" id={picker} popover="auto">{orderedGroups.map(([key, section]) =>
           <button key={key} popoverTarget={picker} popoverTargetAction="hide" onClick={() => {
             setQuery("");
             setClosed(key, false);
             requestAnimationFrame(() => Array.from(scroll.current?.querySelectorAll("section") ?? []).find(el => el.dataset.workspace === key)?.scrollIntoView({ block: "start" }));
           }}>{section.title}</button>)}</div></>}
-      <label className="bot-search"><Search size={18} /><input type="search" aria-label="Buscar" placeholder="Buscar" value={query} onChange={e => setQuery(e.target.value)} /></label></>}</div>
+      <label className="bot-search"><Search size={18} /><input type="search" aria-label={t("chat.card.search")} placeholder={t("chat.card.search")} value={query} onChange={e => setQuery(e.target.value)} /></label></>}</div>
     {sheet && <BotActionSheet busy={busy} leaving={leaving} dismiss={() => setLeaving(true)} close={() => { setSheet(null); setLeaving(false); }}
-      title={sheet === "trash" ? t("bot.selection.trashTitle") : sheet === "purge" ? "Eliminar definitivamente" : sheet === "restore" ? "Restaurar en" : "Mover a"}>
+      title={sheet === "trash" ? t("bot.selection.trashTitle") : sheet === "purge" ? t("bot.list.permanentTitle") : sheet === "restore" ? t("bot.list.restoreTo") : t("bot.list.moveTo")}>
       {sheet === "trash" ? <>
         <p>{t("bot.selection.trashBody")}</p>
         <button className="bot-choice bot-danger" disabled={busy || leaving || !chosenCount} onClick={() => void apply("trash")}>{t("bot.selection.trashConfirm")}</button>
         <button className="bot-choice" disabled={busy || leaving} onClick={() => setLeaving(true)}>{t("bot.selection.cancel")}</button>
       </> : sheet === "purge" ? <>
-        <p>Se cerrarán los chats seleccionados. Esta acción es permanente.</p>
-        <button className="bot-choice bot-danger" disabled={busy || leaving || !chosen.length} onClick={() => void apply("purge")}>Eliminar definitivamente</button>
-        <button className="bot-choice" disabled={busy || leaving} onClick={() => setLeaving(true)}>Cancelar</button>
+        <p>{t("bot.list.permanentBody")}</p>
+        <button className="bot-choice bot-danger" disabled={busy || leaving || !chosen.length} onClick={() => void apply("purge")}>{t("bot.list.permanentTitle")}</button>
+        <button className="bot-choice" disabled={busy || leaving} onClick={() => setLeaving(true)}>{t("bot.selection.cancel")}</button>
       </> : sheetOptions.map(g => <button key={g.id} className="bot-choice" disabled={busy || leaving}
         onClick={() => void apply(sheet, g.id)}>{g.title}</button>)}
       {error && <p role="alert">{error}</p>}
@@ -396,8 +396,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
 
 /** Tap or click: a quick bot. Hold or right-click: the full create sheet. */
 function PlusButton({ onNew, onQuickNew, busy }: { onNew?: () => void; onQuickNew?: () => void; busy: boolean }) {
+  useLocale();
   const hold = useLongPress(!busy ? onNew : undefined);
-  return <button {...hold} aria-label="Crear nuevo" aria-busy={busy || undefined} className="bot-circle bot-plus" disabled={(!onQuickNew && !onNew) || busy}
+  return <button {...hold} aria-label={t("bot.list.new")} aria-busy={busy || undefined} className="bot-circle bot-plus" disabled={(!onQuickNew && !onNew) || busy}
     onClick={(e) => {
       if (busy || e.detail >= 2) return;
       (onQuickNew ?? onNew)?.();

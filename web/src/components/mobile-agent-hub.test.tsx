@@ -5,8 +5,9 @@ import { wipeDevice } from "@/lib/wipe";
 import { vi } from "vitest";
 import { fixtureAgents, fixtureShellPanes, fixtureWorkspaces } from "@/test/handlers";
 import { MobileAgentHub } from "./mobile-agent-hub";
-import { setLocale } from "@/lib/i18n";
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 
+beforeEach(async () => { setLocale("es"); await whenLocaleReady("es"); });
 const props = {
   panes: [...fixtureAgents, ...fixtureShellPanes], workspaces: fixtureWorkspaces,
   writable: true, listScope: {}, onChanged: vi.fn(),

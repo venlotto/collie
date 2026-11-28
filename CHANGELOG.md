@@ -177,6 +177,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Workspace positions match the list, including externally created workspaces.** New chat activity keeps its workspace in place, and each workspace has a visible menu for moving, renaming and sending it to the trash.
 
+- **Chat and workspace controls follow the chosen language consistently.** Menus, desktop windows, selection and Trash use translated labels in every supported language. Previously untranslated sent-message and cross-session message labels are also translated.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

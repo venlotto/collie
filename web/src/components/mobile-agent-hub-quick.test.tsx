@@ -1,3 +1,4 @@
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw";
@@ -6,6 +7,7 @@ import { vi } from "vitest";
 import { fixtureAgents, fixtureShellPanes, fixtureWorkspaces } from "@/test/handlers";
 import { MobileAgentHub } from "./mobile-agent-hub";
 
+beforeEach(async () => { setLocale("es"); await whenLocaleReady("es"); });
 const base = {
   panes: [...fixtureAgents, ...fixtureShellPanes], workspaces: fixtureWorkspaces,
   writable: true, listScope: {}, onChanged: vi.fn(),
