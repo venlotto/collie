@@ -29,12 +29,13 @@ describe("the startup gate", () => {
     expect(onReady).toHaveBeenCalledOnce();
   });
 
-  it("opens on a dialog the bridge lifted, so the composer's answer slot takes over", () => {
+  it("waits through a lifted dialog until the editor arrives", () => {
     const { result, rerender } = hook(input);
     rerender({ ...input, agent: "kiro", surface: ASK });
-    expect(result.current.starting).toBe(false);
-    // The dialog leaving does not close it again.
+    expect(result.current.starting).toBe(true);
     rerender({ ...input, agent: "kiro", surface: UNREAD_SURFACE });
+    expect(result.current.starting).toBe(true);
+    rerender({ ...input, agent: "kiro", surface: FREE });
     expect(result.current.starting).toBe(false);
   });
 
