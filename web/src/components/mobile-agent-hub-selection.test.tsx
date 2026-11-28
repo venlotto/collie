@@ -45,8 +45,8 @@ it("selects a workspace alongside a pinned bot and never deletes its chats twice
 it("keeps only failed workspaces selected so retry never repeats a completed deletion", async () => {
   const writes: string[] = [];
   let fail = true;
-  server.use(http.post("/api/bot-action", async ({ request }) => {
-    const body: { workspaceId: string } = await request.json();
+  server.use(http.post<Record<string, never>, { workspaceId: string }>("/api/bot-action", async ({ request }) => {
+    const body = await request.json();
     writes.push(body.workspaceId);
     return body.workspaceId === "w1" && fail ? HttpResponse.json({ error: "unavailable" }, { status: 503 }) : HttpResponse.json({ ok: true });
   }));
