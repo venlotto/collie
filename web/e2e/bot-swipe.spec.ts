@@ -22,6 +22,7 @@ async function world(page: Page) {
 }
 
 async function swipe(page: Page, row: Locator, browser: string, distance: number, pause = false, cancel = false) {
+  await expect(row).toHaveCSS("transform", "none");
   const box = (await row.boundingBox())!;
   const x = box.x + 24, y = box.y + box.height / 2;
   if (browser === "chromium") {
