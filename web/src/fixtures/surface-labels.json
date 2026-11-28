@@ -7245,6 +7245,16 @@
    "version": "0.172.0",
    "state": "running"
   },
+  "codex--v0172-startup-trust--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
+  "codex--v0172-startup-update--w52.txt": {
+   "harness": "codex",
+   "version": "0.172.0",
+   "state": "dialog"
+  },
   "codex--v0172-trust--w52.txt": {
    "harness": "codex",
    "version": "0.172.0",

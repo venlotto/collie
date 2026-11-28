@@ -402,6 +402,7 @@ describe("the walk-pair table", () => {
       [
         "claude | trust | Quick safety check",
         "codex | trust | Trust this folder?",
+        "codex | select | Update available · 0.172.0 → 0.173.0",
         "omp | select | Pick a colour",
         "omp | select | What work should I plan?",
         "omp | select | Which of these would be most useful for your work right now?",

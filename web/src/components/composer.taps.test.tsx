@@ -339,8 +339,9 @@ describe("composer taps: the round Send button that cannot act (fix 4)", () => {
     expect(field()).not.toHaveAttribute("aria-disabled");
     expect(field()).toHaveValue("hello");
     await expectTapAnswers(() => user.click(screen.getByRole("button", { name: "Send" })));
-    expect(field()).toHaveValue("");
-    expect(recordedSends()).toEqual([]);
+    // The launch no longer parks the line in a client-side queue (a refresh lost it): the tap goes
+    // straight to the send protocol, which holds the text on disk until the agent can take it.
+    expect(recordedSends()).toEqual([expect.objectContaining({ mode: "send", text: "hello" })]);
   });
 });
 

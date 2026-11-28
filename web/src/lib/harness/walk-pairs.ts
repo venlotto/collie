@@ -206,6 +206,10 @@ export const WALK_GAPS = {
     since: "2026-10-03",
     reason: "no second capture yet: one capture, pointer on the first row",
   },
+  "codex | select | Update available · 0.172.0 → 0.173.0": {
+    since: "2026-11-28",
+    reason: "no second capture yet: Codex shows the update dialog once per version, captured with the pointer on Update now",
+  },
   "opencode | permission | % WebFetch https": {
     since: "2026-10-03",
     reason:
