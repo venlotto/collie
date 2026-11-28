@@ -431,6 +431,25 @@
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
 }
+.bot-detail [data-slot="composer-box"] > [role="dialog"] {
+  --accent: rgb(255 255 255 / .09);
+  --accent-foreground: var(--foreground);
+  border: 0;
+  border-radius: 18px;
+  color: var(--foreground);
+  background: var(--glass-light), rgb(var(--glass-rgb) / var(--glass-opacity));
+  box-shadow: var(--glass-edge), 0 8px 24px rgb(0 0 0 / .2);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+/* The menu's invisible dismiss target is not one of the round composer controls. */
+.bot-detail [data-slot="composer-box"][data-box] > button[tabindex="-1"] {
+  width: auto; height: auto;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 .bot-detail [data-slot="composer-box"] > ul > li {
   border-radius: 14px;
   padding: 6px;
@@ -440,9 +459,10 @@
 }
 .bot-detail [data-slot="composer-box"] > ul > li > :is(div, button):first-child {
   background: transparent;
-  border-color: rgb(255 255 255 / .12);
+  border-color: transparent;
   color: inherit;
 }
+.bot-detail [data-slot="composer-box"] > ul > li[data-in-front] { outline: 1px dashed rgb(255 255 255 / .5); outline-offset: -1px; }
 .bot-detail [data-slot="composer-box"] > ul > li img { border-radius: 10px; }
 .bot-detail [data-slot="composer-box"] > ul > li > span:not(.sr-only),
 .bot-detail [data-slot="composer-box"] > ul > li > button:last-child,
