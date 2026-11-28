@@ -52,13 +52,12 @@ interface Entry { session: string; paneId: string; label: string; at: number }
 
 export class BotAutoName {
   private entries: Entry[] = [];
-  private readonly file: string;
   private readonly busy = new Set<string>();
 
-  constructor(stateDir: string, private readonly now = () => Date.now()) {
-    this.file = join(stateDir, "bot-auto-name.json");
+  constructor(private readonly stateDir: string, private readonly now = () => Date.now()) {
+    const file = join(stateDir, "bot-auto-name.json");
     try {
-      const raw = asJsonObject(parseJson(readFileSync(this.file, "utf8")));
+      const raw = asJsonObject(parseJson(readFileSync(file, "utf8")));
       const list = raw?.entries;
       for (const value of Array.isArray(list) ? list : []) {
         const e = asJsonObject(value);
@@ -120,10 +119,11 @@ export class BotAutoName {
 
   private save(next: Entry[]) {
     this.entries = next;
-    const tmp = `${this.file}.${randomUUID()}`;
+    const file = join(this.stateDir, "bot-auto-name.json");
+    const tmp = `${file}.${randomUUID()}`;
     try {
       writeFileSync(tmp, JSON.stringify({ version: 1, entries: next }), { flag: "wx", mode: 0o600 });
-      renameSync(tmp, this.file);
+      renameSync(tmp, file);
     } catch {
       console.warn("[bot-auto-name] Could not save the placeholder names");
       try { rmSync(tmp, { force: true }); } catch { /* The directory may be read-only. */ }

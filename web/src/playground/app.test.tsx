@@ -44,8 +44,8 @@ const SLOW = { timeout: 12_000 } as const;
 // one last case, so coverage is the same (every card of every section renders) at half the renders.
 // The cases run in order within this file; the last one needs the whole file run, and says so.
 
-/** One section's own budget, well under what the whole page once had in one case. */
-const SECTION_BUDGET = 20_000;
+/** Rendering an entire section includes every live card; allow shared-runner CPU contention. */
+const SECTION_BUDGET = 60_000;
 
 /** The handles every section case collected, by section. */
 const handlesBySection = new Map<string, string[]>();

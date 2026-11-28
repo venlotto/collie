@@ -68,7 +68,7 @@ describe("Motion section", () => {
       await waitFor(() => expect(routeLine()).toContain("route: /pane/"), SLOW);
       // The pane's own header, portalled into the one shell header by the real DetailRoute.
       expect(
-        await within(card).findByRole("button", { name: "Pane actions" }, SLOW),
+        await within(card).findByRole("button", { name: "Opciones del chat" }, SLOW),
       ).toBeInTheDocument();
 
       fireEvent.click(within(card).getByRole("button", { name: "Dashboard" }));
@@ -81,7 +81,7 @@ describe("Motion section", () => {
   );
 
   it(
-    "app-walkthrough: space, tab and pane chips inside the app all lead somewhere",
+    "app-walkthrough: Space control, tab chips and pane rows all lead somewhere",
     async () => {
       render(<MotionSection />);
       const card = cardFor("app-walkthrough");
@@ -90,10 +90,8 @@ describe("Motion section", () => {
 
       await waitFor(() => expect(routeLine()).toContain("route: /"), SLOW);
 
-      // The compact phone shell opens its workspace browser first; a row there drills in.
-      fireEvent.click(await within(card).findByRole("button", { name: /^Space /i }, SLOW));
-      const spaces = await screen.findByRole("dialog", { name: "Spaces" }, SLOW);
-      fireEvent.click(within(spaces).getByRole("button", { name: /collie.+pane/i }));
+      // The walkthrough's Space control enters the workspace; chat workspace headings now fold.
+      fireEvent.click(within(card).getByRole("button", { name: /^Space$/ }));
       await waitFor(() => expect(routeLine()).toContain("route: /space/"), SLOW);
 
       // A tab chip filters the space in place, so the route must NOT move off the space. The chip

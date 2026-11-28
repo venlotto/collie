@@ -5,6 +5,8 @@ node_modules
 
 # Build output
 dist/
+# `collie build` publishes this web bundle atomically into dist/ after validation.
+/web/dist-staging/
 # The playground's static builds (`bun run playground:build`, and a round's own `dist-playground-<name>/`), dev-only.
 dist-playground*/
 build/

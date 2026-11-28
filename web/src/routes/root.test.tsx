@@ -19,6 +19,9 @@ import {
   TOUR_VERSION,
 } from "@/lib/tour";
 
+// Shared header, ribbon and welcome behavior belongs to the non-chat shell. Mount these
+// fixtures at Settings and History: the chat index and pane now use their own persistent BotStack.
+
 // BootSplash is the router's HydrateFallback: it stays mounted until the FIRST loader run settles, so
 // over a dead tailnet (a hanging initial fetch) it can otherwise bloom the mark forever with no way
 // out. It must escalate to an actionable "Not connected" state once stuck past CONNECTION_LOST_MS.
@@ -156,8 +159,8 @@ describe("which 'last seen' the connection bar shows", () => {
 describe("RootLayout — the document itself never scrolls", () => {
   it("renders its flex column with overflow-hidden", async () => {
     const router = createMemoryRouter(
-      [{ id: ROOT_ROUTE_ID, path: "/", loader: () => home(AFTERNOON), element: <RootLayout /> }],
-      { initialEntries: ["/"] },
+      [{ id: ROOT_ROUTE_ID, path: "/settings", loader: () => home(AFTERNOON), element: <RootLayout /> }],
+      { initialEntries: ["/settings"] },
     );
     const { container } = render(<RouterProvider router={router} />);
     // The loader resolves on a microtask even though it's synchronous — the route isn't hydrated yet
@@ -186,8 +189,8 @@ describe("RootLayout — the document itself never scrolls", () => {
 describe("RootLayout — the safe-area inset is reserved exactly once", () => {
   function renderLayout(data: HomeData) {
     const router = createMemoryRouter(
-      [{ id: ROOT_ROUTE_ID, path: "/", loader: () => data, element: <RootLayout /> }],
-      { initialEntries: ["/"] },
+      [{ id: ROOT_ROUTE_ID, path: "/settings", loader: () => data, element: <RootLayout /> }],
+      { initialEntries: ["/settings"] },
     );
     return render(<RouterProvider router={router} />);
   }
@@ -256,10 +259,10 @@ describe("RootLayout — the header comes first, the band under it, the route la
           path: "/",
           loader: () => offered,
           element: <RootLayout />,
-          children: [{ index: true, element: <div>dashboard</div> }],
+          children: [{ path: "settings", element: <div>dashboard</div> }],
         },
       ],
-      { initialEntries: ["/"] },
+      { initialEntries: ["/settings"] },
     );
     const { container } = render(<RouterProvider router={router} />);
     const strip = await screen.findByText(/Collie 1.5.0 available/);
@@ -308,10 +311,10 @@ describe("RootLayout: the band floats over the route and moves nothing", () => {
           path: "/",
           loader: () => data,
           element: <RootLayout />,
-          children: [{ index: true, element: <div>dashboard</div> }],
+          children: [{ path: "settings", element: <div>dashboard</div> }],
         },
       ],
-      { initialEntries: ["/"] },
+      { initialEntries: ["/settings"] },
     );
     return render(<RouterProvider router={router} />);
   }
@@ -385,12 +388,12 @@ describe("RootLayout — the shell survives a navigation", () => {
           },
           element: <RootLayout />,
           children: [
-            { index: true, element: <div>dashboard</div> },
-            { path: "pane/:paneId", element: <div>pane</div> },
+            { path: "settings", element: <div>dashboard</div> },
+            { path: "pane/:paneId/history", element: <div>pane</div> },
           ],
         },
       ],
-      { initialEntries: ["/"] },
+      { initialEntries: ["/settings"] },
     );
     const { container } = render(<RouterProvider router={router} />);
     await waitFor(() => expect(screen.getByText("dashboard")).toBeInTheDocument());
@@ -402,7 +405,7 @@ describe("RootLayout — the shell survives a navigation", () => {
     expect(polite).not.toBeNull();
     expect(assertive).not.toBeNull();
 
-    await act(() => router.navigate("/pane/w1%3Ap1"));
+    await act(() => router.navigate("/pane/w1%3Ap1/history"));
     await waitFor(() => expect(screen.getByText("pane")).toBeInTheDocument());
 
     expect(container.querySelector("header")).toBe(header);
@@ -452,7 +455,7 @@ describe("RootLayout — the header identity survives a round trip to a pane", (
           element: <RootLayout />,
           children: [
             {
-              index: true,
+              path: "settings",
               element: (
                 <>
                   <RouteHeader wordmark />
@@ -461,7 +464,7 @@ describe("RootLayout — the header identity survives a round trip to a pane", (
               ),
             },
             {
-              path: "pane/:paneId",
+              path: "pane/:paneId/history",
               element: (
                 <>
                   <RouteHeader>
@@ -474,7 +477,7 @@ describe("RootLayout — the header identity survives a round trip to a pane", (
           ],
         },
       ],
-      { initialEntries: ["/"] },
+      { initialEntries: ["/settings"] },
     );
     const { container } = render(<RouterProvider router={router} />);
     await waitFor(() => expect(screen.getByText("on reference")).toBeInTheDocument());
@@ -487,14 +490,14 @@ describe("RootLayout — the header identity survives a round trip to a pane", (
     expect(logo?.getAttribute("src")).toMatch(/^blob:/);
 
     // Into the pane: the block yields the width, so it must not be SEEN…
-    await act(() => router.navigate("/pane/w1%3Ap1"));
+    await act(() => router.navigate("/pane/w1%3Ap1/history"));
     await waitFor(() => expect(screen.getByText("webapp › main")).toBeInTheDocument());
     expect(container.querySelector('[data-slot="header-identity"]')).toBe(identity);
     expect(identity).not.toBeVisible();
     // …and it is still the same two nodes, so nothing re-requests the logo on the way back.
     expect(container.querySelector('[data-slot="header-identity"] img')).toBe(logo);
 
-    await act(() => router.navigate("/"));
+    await act(() => router.navigate("/settings"));
     await waitFor(() => expect(screen.getByText("dashboard")).toBeInTheDocument());
     expect(container.querySelector('[data-slot="header-identity"]')).toBe(identity);
     expect(container.querySelector('[data-slot="header-identity"] img')).toBe(logo);
@@ -512,8 +515,8 @@ describe("RootLayout — the first-run gate", () => {
 
   function renderWith(data: HomeData) {
     const router = createMemoryRouter(
-      [{ id: ROOT_ROUTE_ID, path: "/", loader: () => data, element: <RootLayout /> }],
-      { initialEntries: ["/"] },
+      [{ id: ROOT_ROUTE_ID, path: "/settings", loader: () => data, element: <RootLayout /> }],
+      { initialEntries: ["/settings"] },
     );
     return { ...render(<RouterProvider router={router} />), router };
   }
@@ -626,12 +629,12 @@ describe("RootLayout — the tour holds the push prompt back", () => {
       [
         {
           id: ROOT_ROUTE_ID,
-          path: "/",
+          path: "/settings",
           loader: () => ({ ...home(AFTERNOON), error: false }),
           element: <RootLayout />,
         },
       ],
-      { initialEntries: ["/"] },
+      { initialEntries: ["/settings"] },
     );
     render(<RouterProvider router={router} />);
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
@@ -647,12 +650,12 @@ describe("RootLayout — the tour holds the push prompt back", () => {
       [
         {
           id: ROOT_ROUTE_ID,
-          path: "/",
+          path: "/settings",
           loader: () => ({ ...home(AFTERNOON), error: false }),
           element: <RootLayout />,
         },
       ],
-      { initialEntries: ["/"] },
+      { initialEntries: ["/settings"] },
     );
     render(<RouterProvider router={router} />);
     await waitFor(() => expect(register).toHaveBeenCalledTimes(1));

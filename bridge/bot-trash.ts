@@ -27,13 +27,12 @@ export function botUploadPrefix(session: string, terminalId: string): string {
 }
 
 export class BotTrash {
-  private readonly file: string;
   private rows = new Map<string, Entry>();
   private lane = Promise.resolve();
-  constructor(private dir: string, private runtime: (session: string) => Target | undefined, private now = Date.now) {
-    this.file = join(dir, "bot-trash.json");
-    if (!existsSync(this.file)) return;
-    const saved = parseJson(readFileSync(this.file, "utf8"));
+  constructor(private readonly stateDir: string, private runtime: (session: string) => Target | undefined, private now = Date.now) {
+    const file = join(stateDir, "bot-trash.json");
+    if (!existsSync(file)) return;
+    const saved = parseJson(readFileSync(file, "utf8"));
     if (!Array.isArray(saved)) throw new Error("Invalid bot trash file");
     for (const value of saved) {
       const obj = asJsonObject(value);
@@ -88,11 +87,12 @@ export class BotTrash {
   }
 
   private persist(next: Map<string, Entry>) {
+    const file = join(this.stateDir, "bot-trash.json");
     if (next.size) {
-      const tmp = this.file + ".tmp";
+      const tmp = `${file}.tmp`;
       writeFileSync(tmp, JSON.stringify([...next.values()]), { mode: 0o600 });
-      renameSync(tmp, this.file);
-    } else rmSync(this.file, { force: true });
+      renameSync(tmp, file);
+    } else rmSync(file, { force: true });
     this.rows = next;
   }
 
@@ -159,7 +159,7 @@ export class BotTrash {
         if (!row.deleting) this.save(session, terminalId, { ...row, deleting: true });
         if (pane) await this.closeTrashedPane(mux, terminalId, pane, snapshot, row.workspaceLabel !== undefined && pane.spaceId === row.originalWorkspaceId);
         this.cleanUploads(session, terminalId);
-        new ChatOrderStore(this.dir).forget(session, terminalId);
+        new ChatOrderStore(this.stateDir).forget(session, terminalId);
         this.save(session, terminalId);
         rt.engine.pokeNow();
         return;
@@ -208,7 +208,7 @@ export class BotTrash {
   }
 
   private cleanUploads(session: string, terminalId: string) {
-    const uploads = join(this.dir, "uploads");
+    const uploads = join(this.stateDir, "uploads");
     if (!existsSync(uploads)) return;
     const prefix = botUploadPrefix(session, terminalId);
     for (const name of readdirSync(uploads)) {
