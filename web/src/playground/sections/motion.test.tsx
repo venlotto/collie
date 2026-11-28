@@ -91,7 +91,7 @@ describe("Motion section", () => {
       await waitFor(() => expect(routeLine()).toContain("route: /"), SLOW);
 
       // The walkthrough's Space control enters the workspace; chat workspace headings now fold.
-      fireEvent.click(within(card).getByRole("button", { name: "Space", exact: true }));
+      fireEvent.click(within(card).getByRole("button", { name: /^Space$/ }));
       await waitFor(() => expect(routeLine()).toContain("route: /space/"), SLOW);
 
       // A tab chip filters the space in place, so the route must NOT move off the space. The chip
