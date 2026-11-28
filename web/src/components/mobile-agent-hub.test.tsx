@@ -68,7 +68,7 @@ it("keeps the trash folded after remount and keeps a renamed or reordered worksp
 });
 
 
-it("orders workspaces and bots newest first, ahead of saved positions, and updates on new activity", async () => {
+it("keeps workspace positions while chats inside each workspace follow new activity", async () => {
   const base = fixtureAgents[0]!;
   const panes = [
     { ...base, paneId: "older", terminalId: "older", paneLabel: "Older bot", lastActiveAt: 100, lastSeenAt: 900 },
@@ -81,8 +81,8 @@ it("orders workspaces and bots newest first, ahead of saved positions, and updat
   const page = render(<MobileAgentHub {...props} panes={panes} workspaces={workspaces} />);
   const names = () => [...page.container.querySelectorAll(".bot-row strong")].map(el => el.textContent);
   await waitFor(() => expect(orderRead).toHaveBeenCalled());
-  expect(names()).toEqual(["Newest bot", "Newer bot", "Older bot"]);
-  expect(page.container.querySelector(".bot-group")).toHaveTextContent("Recent workspace");
+  expect(names()).toEqual(["Newer bot", "Older bot", "Newest bot"]);
+  expect(page.container.querySelector(".bot-group")).toHaveTextContent("webapp");
   const updated = panes.map(p => p.paneId === "older" ? { ...p, lastActiveAt: 400 } : p);
   page.rerender(<MobileAgentHub {...props} panes={updated} workspaces={workspaces} />);
   expect(names()).toEqual(["Older bot", "Newer bot", "Newest bot"]);

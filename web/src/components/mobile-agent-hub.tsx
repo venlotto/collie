@@ -11,7 +11,7 @@ import { WorkspaceMenu } from "./bot-workspace-menu";
 import { dragScope, sectionKey, useBotOrganization } from "./bot-organization";
 import { saveBot, forgetBot } from "@/lib/bot-identity";
 import { BotRow, BotActionSheet } from "./bot-selection";
-import { Check, FolderInput, Trash2, Undo2, ChevronDown, LayoutGrid, ListChecks, MessageCircle, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
+import { Check, FolderInput, Trash2, Undo2, ChevronDown, LayoutGrid, ListChecks, MessageCircle, MoreHorizontal, Plus, Search, Send, Star, UserRound, UsersRound } from "lucide-react";
 import { graphemeSegmenter } from "@/lib/env";
 import { actOnBot, restoreWorkspace, trashWorkspace, fetchChat, type BotAction } from "@/lib/api";
 import { loadChatTail } from "@/lib/chat-tail";
@@ -153,10 +153,10 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     return () => observer.disconnect();
   }, []);
   const needle = query.trim().toLocaleLowerCase();
-  const groups = new Map<string, { title: string; id: string; scope: Scope; rows: AgentView[]; updatedAt: number }>();
+  const groups = new Map<string, { title: string; id: string; scope: Scope; rows: AgentView[] }>();
   function sectionFor(host: string | undefined, session: string | undefined, id: string, label: string) {
     const key = JSON.stringify([host, session, id]);
-    if (!groups.has(key)) groups.set(key, { title: label || id, id, scope: { host, session }, rows: [], updatedAt: 0 });
+    if (!groups.has(key)) groups.set(key, { title: label || id, id, scope: { host, session }, rows: [] });
     return groups.get(key)!;
   }
   for (const w of workspaces) sectionFor(w.host ?? listScope.host, listScope.session, w.workspaceId, w.label);
@@ -177,7 +177,6 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
       continue;
     }
     const section = sectionFor(scopeOf(p).host, scopeOf(p).session, p.workspaceId, p.workspaceLabel);
-    section.updatedAt = Math.max(section.updatedAt, p.lastActiveAt ?? 0);
     if (!needle || [identityOf(p, scopeOf(p)).name, section.title, p.agent, p.subtitle].join(" ").toLocaleLowerCase().includes(needle)) section.rows.push(p);
   }
   for (const key of removed.keys()) {
@@ -185,9 +184,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     if (!panes.some(p => !p.trash && sectionKey(scopeOf(p), p.workspaceId) === key)) groups.delete(key);
   }
   const organize = useBotOrganization(groups, scroll, writable && !needle && !mode && !busy, onChanged);
-  // Recency takes priority over saved drag positions; ties keep that order.
+  // Chats follow activity within their workspace; workspace placement follows the mux.
   for (const group of groups.values()) group.rows.sort((a, b) => (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0));
-  const recentGroups = [...groups].toSorted(([, a], [, b]) => b.updatedAt - a.updatedAt);
+  const orderedGroups = [...groups];
   const trashedSpaces = [...removed.values()].filter(s => !needle || s.title.toLocaleLowerCase().includes(needle));
   async function recover(space: typeof trashedSpaces[number]) {
     if (lock.current || !writable) return;
@@ -329,8 +328,8 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <span className="bot-featured-face"><BlobAvatar {...featuredBot} /><i><Star size={12} fill="currentColor" /></i></span>
           <span className="bot-featured-name">{featuredBot.name}</span>
         </button>}
-        {recentGroups.map(([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
-          <button className="bot-group" role={mode === "chats" ? "checkbox" : undefined}
+        {orderedGroups.map(([key, group]) => (!needle || group.rows.length > 0) && <section key={key} data-workspace={key} data-drag-space={(!group.scope.host && group.id !== "agent-runs") || undefined} data-drag-scope={dragScope(group.scope)}>
+          <div className="bot-group-header"><button className="bot-group" role={mode === "chats" ? "checkbox" : undefined}
             aria-checked={mode === "chats" ? workspaceSelection.has(key) : undefined}
             aria-expanded={mode ? undefined : !folded.has(key) || !!needle}
             disabled={busy || (mode ? mode !== "chats" || !workspaceChoices.includes(group) : !!needle)}
@@ -338,6 +337,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
             {mode === "chats" && <span aria-hidden className="bot-check">{workspaceSelection.has(key) && <Check size={14} strokeWidth={3} />}</span>}
             {group.title}{!mode && <ChevronDown size={14} />}
           </button>
+          {!mode && writable && !group.scope.host && group.id !== "agent-runs" && <button className="bot-group-menu"
+            aria-label={`Opciones de ${group.title}`} disabled={busy || !!needle} onClick={() => organize.openMenu(key)}><MoreHorizontal size={18} aria-hidden /></button>}
+          </div>
           {(!folded.has(key) || !!needle) && <ul>{group.rows.map(row)}</ul>}
         </section>)}
         {(trashRows.length > 0 || trashedSpaces.length > 0) && <section data-workspace="trash">
@@ -370,7 +372,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <button disabled={!chosen.length || busy} onClick={() => openSheet("purge")}><Trash2 size={18} />Eliminar</button>
         </>}
       </div> : <>{groups.size > 0 && <><button aria-label="Ir a un workspace" className="bot-circle bot-spaces" popoverTarget={picker}><LayoutGrid size={19} /></button>
-        <div className="bot-picker" id={picker} popover="auto">{recentGroups.map(([key, section]) =>
+        <div className="bot-picker" id={picker} popover="auto">{orderedGroups.map(([key, section]) =>
           <button key={key} popoverTarget={picker} popoverTargetAction="hide" onClick={() => {
             setQuery("");
             setClosed(key, false);
