@@ -101,7 +101,7 @@ test("explicit Terminal shows one screen alongside delivery controls", async ({ 
   await world.field.fill(PROMPT);
   await page.locator('[data-slot="composer-primary"]').click();
   await expect(page.getByRole("button", { name: "It arrived", exact: true })).toBeVisible();
-  await expect(page.getByText("Tip: Press ctrl+t to open the full transcript.", { exact: true })).toHaveCount(1);
+  await expect(page.getByText(/directory: \/tmp\/collie-canary-project/)).toHaveCount(1);
   await page.screenshot({ path: test.info().outputPath("single-terminal.png") });
   expect(world.posts).toEqual([PROMPT]);
 });
