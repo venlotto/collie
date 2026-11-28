@@ -1,6 +1,7 @@
 import { t } from "@/lib/i18n";
 import { runProgress } from "./agent-run-chat";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useBotListSelection } from "@/hooks/use-bot-list-selection";
 import { useLongPress } from "@/hooks/use-long-press";
 import { useBotSections } from "@/lib/bot-sections";
 import { useBotFeatured } from "@/lib/bot-featured";
@@ -88,6 +89,8 @@ const segmenter = graphemeSegmenter();
 
 export function MobileAgentHub({ writable, listScope, onChanged, panes, workspaces, featured, active, scopeOf, onOpen, onPress, onNew, onQuickNew, quickBusy = false, deviceName = "", accessNotice }: Props) {
   useLocale();
+  const surface = useRef<HTMLDivElement>(null);
+  useBotListSelection(surface);
   const [query, setQuery] = useState("");
   const { folded, toggle, setClosed } = useBotSections();
   const { clearFeatured } = useBotFeatured();
@@ -298,7 +301,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
   }
   const featuredBot = featured && identityOf(featured, scopeOf(featured));
   const initial = (segmenter?.segment(deviceName).containing(0)?.segment ?? Array.from(deviceName)[0])?.toLocaleUpperCase();
-  return <div className="bot-index" aria-label="Chats">
+  return <div ref={surface} className="bot-index" aria-label="Chats">
     <div className="bot-list-surface">
       {mode ? <header className="bot-bar bot-select-bar">
         <button disabled={busy} onClick={done}>Listo</button>

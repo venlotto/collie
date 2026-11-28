@@ -134,6 +134,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Workspace holds open reliably without selecting the chat list.** Multi-selection includes workspaces and the pinned bot, with one deletion per workspace and its chats. The chat composer background reaches the bottom safe area instead of leaving a black strip.
 
+- **Holding a workspace clears the phone’s residual text selection.** The list and its action sheet reject native text selection together, while search, workspace names and conversation text remain editable or selectable.
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

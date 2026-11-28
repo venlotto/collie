@@ -185,11 +185,8 @@ export function useBotDrag(listRef: RefObject<HTMLDivElement | null>, enabled: b
         e.preventDefault(); callbacks.current.onMenu(e.target.closest("section")!.dataset.workspace!);
       }
     }
-    // Safari may select ancestors of a held label even when the label is unselectable.
-    function selection(e: Event) { e.preventDefault(); }
     const controller = new AbortController();
     const opts = { signal: controller.signal };
-    list.addEventListener("selectstart", selection, opts);
     list.addEventListener("pointerdown", down, opts);
     list.addEventListener("touchmove", touchMove, { ...opts, passive: false });
     list.addEventListener("click", click, { ...opts, capture: true });

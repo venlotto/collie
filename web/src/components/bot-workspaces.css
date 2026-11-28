@@ -283,7 +283,10 @@
 
 .bot-turn:not([data-revealed]) [data-slot="block-more"]:not(:focus-visible) { opacity: 0; pointer-events: none; }
 
-.bot-list-surface, .bot-list-surface * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.bot-index, .bot-index *, .bot-dialog, .bot-dialog * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.bot-index :is(input,textarea,[contenteditable=true]), .bot-dialog :is(input,textarea,[contenteditable=true]) {
+  -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+}
 .bot-row, .bot-group, .bot-featured { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: pan-y; }
 .bot-select-bar { grid-template-columns: auto 1fr auto; min-height: calc(57px + env(safe-area-inset-top)); font-size: 14px; }
 .bot-select-bar button { min-height: 40px; color: #0a84ff; }
