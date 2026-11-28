@@ -138,6 +138,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Holding a workspace clears the phone’s residual text selection.** The list and its action sheet reject native text selection together, while search, workspace names and conversation text remain editable or selectable.
 
+- **A tap on the chat title opens bot editing.** Change the bot’s name, appearance or workspace without holding its title.
+
+
 ## [1.31.0] - 2026-11-24
 
 ### Added

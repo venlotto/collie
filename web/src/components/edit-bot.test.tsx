@@ -35,13 +35,11 @@ it("edits an existing bot without offering or starting another agent", async () 
   expect(move).not.toHaveBeenCalled();
 });
 
-it("opens editing from the title context gesture, never from a plain tap", () => {
+it("opens editing immediately from a plain click on the title", () => {
   const edit = vi.fn();
   render(<BotChatBar bot={{ name: "Bot prueba", color: 1, silhouette: 2 }} pane={fixtureAgents[0]!}
     edit={edit} unread={0} pinned={false} back={vi.fn()} pin={vi.fn()} terminal={false} />);
-  fireEvent.click(screen.getByText("Bot prueba"));
-  expect(edit).not.toHaveBeenCalled();
-  fireEvent.contextMenu(screen.getByText("Bot prueba"));
+  fireEvent.click(screen.getByRole("button", { name: /^Bot prueba/ }));
   expect(edit).toHaveBeenCalledOnce();
 });
 

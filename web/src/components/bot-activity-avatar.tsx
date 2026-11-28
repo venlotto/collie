@@ -1,4 +1,3 @@
-import type { HTMLAttributes } from "react";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 import type { ActivityStatus } from "@/lib/activity-status";
@@ -14,11 +13,12 @@ export function BotActivityAvatar({ bot, status }: { bot: BotIdentity; status: A
   </span>;
 }
 
-export function BotActivityPill({ bot, status, interaction }: { bot: BotIdentity; status: ActivityStatus; interaction?: HTMLAttributes<HTMLDivElement> }) {
+export function BotActivityPill({ bot, status, onClick }: { bot: BotIdentity; status: ActivityStatus; onClick?: () => void }) {
   useLocale();
   const label = activityLabel(status);
-  return <div className="bot-pill" title={label || undefined} {...interaction}>
+  const Tag = onClick ? "button" : "div";
+  return <Tag className="bot-pill" title={label || undefined} type={onClick ? "button" : undefined} onClick={onClick} aria-haspopup={onClick ? "dialog" : undefined}>
     <BotActivityAvatar bot={bot} status={status} /><strong>{bot.name}</strong>
     <span className="sr-only" role="status">{label}</span>
-  </div>;
+  </Tag>;
 }

@@ -155,8 +155,9 @@ test("attachments, editing and a short viewport stay usable", async ({ page }) =
   await expect(attachments.getByRole("button", { name: "Videos", exact: true })).toBeVisible();
   await capture(page, "adjuntos");
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Opciones del chat" }).click();
-  await page.getByRole("button", { name: "Editar bot", exact: true }).click();
+  const title = page.locator(".bot-chat-bar").getByRole("button", { name: TITLE });
+  if (test.info().project.use.hasTouch) await title.tap();
+  else await title.click();
   const dialog = page.getByRole("dialog", { name: "Editar bot", exact: true });
   await expect(dialog.locator("form")).toHaveCSS("transform", "none");
   await fits(dialog.getByRole("textbox", { name: "Nombre del bot" }));
