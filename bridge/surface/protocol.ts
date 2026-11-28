@@ -1392,7 +1392,9 @@ function typedBoxVerdict(s0: Snap, snap: Snap, prefix: string, lines: readonly s
   if (s0.frame === null || snap.frame === null) return "changed";
   if (snap.otherScreen !== null) return "other_screen";
   if (boxHolds(snap.frame, prefix, lines, collapse, whole) === null) return "mismatch";
-  if (!belowKept(s0, snap)) return "changed";
+  // A marked scrolling editor can push its entire footer below the viewport. Its verified tail
+  // and the modal checks above still identify the box; there are no footer rows left to compare.
+  if (!belowKept(s0, snap) && snap.frame.bottomClipped !== true) return "changed";
   return "pass";
 }
 
@@ -2026,8 +2028,8 @@ function commitKeys(state: RunState): readonly string[] {
   const { s0, s1 } = state.marks;
   const version = state.match?.version;
   if (
-    version && keys.idleEnterVersions?.includes(version) && state.request.mode === "send" && !state.manual &&
-    state.probed && s0?.frame && s1?.frame &&
+    version && keys.idleEnterVersions?.includes(version) && !state.manual &&
+    ((state.request.mode === "send" && state.probed) || state.request.mode === "submit") && s0?.frame && s1?.frame &&
     s0.surface.turn === "idle" && s1.surface.turn === "idle" &&
     s0.surface.modal === "none" && s1.surface.modal === "none" && aboveUnchanged(s0, s1)
   ) return ["Enter"];
@@ -5272,12 +5274,12 @@ export class SendProtocol {
    * reads it so it never types the same text a second time after it (a Submit refused for a popup, then
    * Send anyway with a new id).
    */
-  private ownTextInBox(state: RunState, s0: Snap, lines: readonly string[]): boolean {
+  private ownTextInBox(state: RunState, s0: Snap, lines: readonly string[], offerTail = false): boolean {
     const { request } = state;
     if (request.mode !== "send" && request.mode !== "command") return false;
     if (!ownTextKind(state)) return false;
     const { frame, surface } = s0;
-    if (frame === null || frame.scrolled === true) return false;
+    if (frame === null || (frame.scrolled === true && !offerTail)) return false;
     if (surface.composer !== "draft" || mayHoldPlaceholder(state.match, s0)) return false;
     // In memory since this bridge started; after a restart, the request files (leftInStore).
     const left = this.leftTyped.get(state.lockKey) ?? this.leftInStore(state);
@@ -5285,7 +5287,8 @@ export class SendProtocol {
     if (this.now() - left.at > LEFT_TYPED_MS) return false;
     if (state.command) return commandBoxMatches(boxText(frame), "", lines, collapseOf(state.match));
     const whole = this.deps.mux.pasteBlock !== undefined ? wholePaste(state.match, lines, this.deps.imageFile) : uploadAlone(state.match, lines, this.deps.imageFile);
-    return boxHolds(frame, "", whole?.lines ?? lines, collapseOf(state.match), whole) === "all";
+    const held = boxHolds(frame, "", whole?.lines ?? lines, collapseOf(state.match), whole);
+    return held === "all" || (offerTail && held === "tail");
   }
 
   /**
@@ -5504,6 +5507,13 @@ export class SendProtocol {
       if (!state.command) state.whole = this.deps.mux.pasteBlock !== undefined ? wholePaste(match, lines, this.deps.imageFile) : uploadAlone(match, lines, this.deps.imageFile);
       await this.submitTyped(state, s0, holds, lines);
       return;
+    }
+    // A retry (including after reconnect) must keep the way out of its own scrolled draft. Its
+    // hidden head cannot be checked again, so offer Submit rather than auto-submitting or pasting.
+    if (!state.command && s0.frame?.scrolled === true && s0.surface.modal === "none" &&
+      s0.otherScreen === null && s0.notice === null && s0.popup === null && this.ownTextInBox(state, s0, lines, true)) {
+      throw new Ended("typed_not_submitted", "mismatch", { surface: s0.surface, framed: true,
+        rowsHash: s0.rowsHash, offers: ["submit", "discard", "keys"], detail: TAIL_ONLY });
     }
     // A box whose whole text is Collie's own probe characters (a box that was drawn before it read keys
     // kept them, probe-marker.ts) is proven like a draft, then emptied of exactly them.

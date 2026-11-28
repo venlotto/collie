@@ -95,13 +95,16 @@ export interface Frame {
   readonly ownPrompt?: { readonly row: number; readonly end: number };
   /**
    * The box may hide the head of its draft above its view (`idle.frame.scroll`), so `interior.text` is
-   * only the tail and never the whole draft ({@link wholeDraft}). Set in one of two ways: a box whose
+   * only the tail and never the whole draft ({@link wholeDraft}). A prompt-row `scroll.promptMarker`
+   * marks it directly. Otherwise: a box whose
    * prompt row is in view shows at least `scroll.rows` non-blank draft rows, or a box whose prompt row
    * scrolled out carries the layout's `scroll.marker` as its top edge's label ({@link pastPrompt}: there
    * text is always hidden, so the box is never empty). Absent on a box that shows its whole draft, and
    * on every layout that does not scroll.
    */
   readonly scrolled?: true;
+  /** The marked editor reaches the viewport edge; its footer is below the captured screen. */
+  readonly bottomClipped?: true;
   /**
    * The box's own key hint inside it, the trailer row and its padding, when the layout's trailer says
    * so (`idle.frame.trailer.hint`). No modal cue reads these rows (cues.ts `readCuesFor`). Absent otherwise.
@@ -756,12 +759,15 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   const texts = rows.map(rowText);
   if (idle.frame.walk === "interior") return interiorFrameAt(rows, bottom, idle);
   const bottomText = texts[bottom];
-  if (bottomText === undefined || anchored(bottomText, c.bottom) === null) return null;
+  // A marked scrolling editor may push its footer beyond the viewport. Only its own prompt
+  // marker can close that otherwise missing edge; ordinary cut screens still have no frame.
+  const clipped = bottom === rows.length && idle.frame.scroll?.promptMarker !== undefined;
+  if (!clipped && (bottomText === undefined || anchored(bottomText, c.bottom) === null)) return null;
 
   const strict = blankTop(idle);
   const budget = idle.frame.maxDraftRows;
   // The width an edge row must reach ({@link spansBox}); a blank top edge measures nothing.
-  const span = c.top.blank ? null : bottomText;
+  const span = c.top.blank ? null : bottomText ?? null;
   /** The edge a row is, a prompt row or a row as wide as the box: a narrower rule is the draft's. */
   const edgeAt = (row: string): "prompt" | "bottom" | "top" | null => {
     const edge = frameEdge(row, idle);
@@ -783,6 +789,8 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   const promptMatch = anchored(texts[i]!, c.prompt);
   if (promptMatch === null) return scrolledFrameAt(rows, texts, i, bottom, span, idle);
   const prompt = i;
+  const marker = promptScrollMarker(texts[prompt]!, idle);
+  if (clipped && marker === null) return null;
   i--;
   let top: number;
   let topMatch: RegExpExecArray | null;
@@ -818,7 +826,7 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   const listed = inside !== null && (hole ?? "").trim().startsWith(inside.entries[0]!.charAt(0)) ? inside : null;
   // A bracketed argument hint after a complete entry (`commandList.argumentHint`) is no draft
   // either: the hole ends where the hint starts, so the read is the command as typed.
-  let holeEnd = holeStart + (hole ?? "").length;
+  let holeEnd = marker ?? holeStart + (hole ?? "").length;
   if (listed !== null && idle.volatile.below.commandList?.argumentHint === true) {
     const cut = argumentHintStart(rows[prompt]!, texts[prompt]!, holeStart, holeEnd, rows[bottom], listed.entries);
     if (cut !== null) holeEnd = cut;
@@ -841,15 +849,17 @@ export function frameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePro
   const { status, footer, named } = walkBelowNamed(texts, bottom, end, idle, c.footerRows);
   const above = bandAbove(texts, top, idle);
 
-  return {
+  const frame: Frame = {
     top,
-    bottom,
+    bottom: clipped ? bottom - 1 : bottom,
     label: label.length > 0 ? label : null,
     interior: { first: top + 1, prompt, last: bottom - 1, text },
     placeholder,
     volatile: { above, status, footer, named },
     anchorsHit,
   };
+  if (clipped) return { ...frame, scrolled: true, bottomClipped: true };
+  return marker === null ? frame : { ...frame, scrolled: true };
 }
 
 /**
@@ -1167,6 +1177,12 @@ function answerBox(frame: Frame, idle: IdleProfile): Frame {
   return boxed;
 }
 
+/** Where the profile's prompt-row scroll indicator starts, or null on an unscrolled row. */
+function promptScrollMarker(text: string, idle: IdleProfile): number | null {
+  const marker = idle.frame.scroll?.promptMarker;
+  return marker === undefined ? null : new RegExp(marker, "u").exec(text.trimEnd())?.index ?? null;
+}
+
 /**
  * The frame marked {@link Frame.scrolled} when its layout scrolls and it shows at least the layout's
  * scroll height in draft rows (`scroll.rows`): the non-blank rows from the prompt row down to the
@@ -1247,7 +1263,7 @@ function findLayout(rows: readonly FrameRow[], idle: IdleProfile): Frame | null 
   for (let b = end - 1; b >= 0 && end - 1 - b <= idle.frame.maxTailRows; b--) {
     if (anchored(rowText(rows[b]!), c.bottom) !== null) return frameAt(rows, b, idle) ?? wrappedEdgeFrame(rows, b, idle);
   }
-  return listedLayout(rows, end, idle);
+  return (idle.frame.scroll?.promptMarker === undefined ? null : frameAt(rows, rows.length, idle)) ?? listedLayout(rows, end, idle);
 }
 
 /**

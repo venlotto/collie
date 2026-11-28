@@ -69,3 +69,12 @@ The reproducible real-pane lab and per-trial receipts are in
 by seeding **only an isolated home's** version cache with 0.173.0; no release
 availability is implied and no update was installed. Down selected Skip,
 Enter dismissed it. See `web/src/lib/harness/codex/STARTUP_NOTES.md`.
+# Codex 0.172.0: scrolled paragraphs at 23 rows (2026-11-28)
+`protocol.codex-longdraft.test.ts` reads `codex--v0172-scrolled-paragraphs--w52.txt`
+and `codex--v0172-scrolled-paragraphs--w56.txt`, captured from private tmux panes
+at 52×23 and 56×23. The matching `--message.txt` and `--w56-message.txt` files
+contain the complete bracketed pastes. The editor keeps only their tail, puts
+`↑` at the right of the prompt row, and pushes the model/footer below the viewport.
+The 56-column read also shows a working turn and two queued messages above it.
+No user-owned pane received input. Raw trials and receipts are in
+`/home/ubuntu/briefs/collie-redesign/verify/codexp-1000/longdraft/` on coder1.

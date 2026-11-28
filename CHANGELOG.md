@@ -178,6 +178,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 - **Bot activity keeps undelivered messages visible after a restart.** Chats and the list show the latest delivery result, queued questions still ask for attention when the terminal reports idle, and retrying a lost reply keeps its original request identifier. Busy editors get time to confirm the probe and its removal before a follow-up is queued.
 - **Codex stays readable when long titles wrap its status bar.** Narrow terminals now recognise up to three status rows, including a separator at a line break and monochrome warning footers, while real pickers still block typing.
+- **Long Codex drafts submit even when their footer scrolls away.** The visible tail is checked before sending, and a stranded draft can be submitted with one tap without pasting it again.
 
 ## [1.31.0] - 2026-11-24
 
