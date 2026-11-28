@@ -4,13 +4,15 @@ import type { Dictionary } from "./en";
 
 export const ja: Dictionary = {
   "bot.selection.trashTitle": "選択した項目を削除しますか？",
-  "bot.selection.trashBody": "選択したワークスペース、そのすべてのチャット、および選択したチャットは7日間ゴミ箱に保存されます。",
+  "bot.trash.remaining": "あと{minutes}分で削除",
+  "bot.trash.pending": "削除待ち",
+  "bot.selection.trashBody": "選択したワークスペース、そのすべてのチャット、および選択したチャットは15分間ゴミ箱に保存されます。",
   "bot.selection.trashConfirm": "ゴミ箱に移動",
   "bot.selection.cancel": "キャンセル",
   "bot.edit.title": "ボットを編集",
   "bot.chatActions.delete": "チャットを削除",
   "bot.chatActions.move": "ワークスペースを変更",
-  "bot.chatActions.confirm": "「{name}」はゴミ箱に7日間保存されます。",
+  "bot.chatActions.confirm": "「{name}」はゴミ箱に15分間保存されます。",
   "bot.chatActions.empty": "他のワークスペースはありません。",
   "bot.chatActions.cancel": "キャンセル",
   "bot.chatActions.failed": "操作を完了できませんでした。もう一度お試しください。",

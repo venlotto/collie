@@ -46,7 +46,7 @@ describe("actions from the open chat", () => {
     mount();
     const dialog = await open("Delete chat");
     expect(dialog).toHaveTextContent("Design");
-    expect(dialog).toHaveTextContent("7 days");
+    expect(dialog).toHaveTextContent("15 minutes");
     expect(writes).toEqual([]);
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete chat" }));
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
@@ -74,11 +74,11 @@ describe("actions from the open chat", () => {
     expect(writes).toEqual([{ scope: "design", body: { action: "move", terminalId: pane.terminalId, workspaceId: "w2" } }]);
   });
   it("keeps the chat open on failure and permits a retry", async () => {
-    server.use(http.post("/api/bot-action", () => HttpResponse.json({ message: "Workspace unavailable" }, { status: 409 })));
+    server.use(http.post("/api/bot-action", () => HttpResponse.json({ error: "Workspace unavailable" }, { status: 409 })));
     mount();
     const dialog = await open("Change workspace");
     await userEvent.click(await within(dialog).findByRole("button", { name: "Marketing" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("409");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Workspace unavailable");
     expect(onDone).not.toHaveBeenCalled();
     expect(onChanged).not.toHaveBeenCalled();
     expect(await within(dialog).findByRole("button", { name: "Marketing" })).toBeEnabled();

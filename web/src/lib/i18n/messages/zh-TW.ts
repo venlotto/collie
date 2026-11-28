@@ -5,13 +5,15 @@ import type { Dictionary } from "./en";
 
 export const zhTW: Dictionary = {
   "bot.selection.trashTitle": "刪除所選項目？",
-  "bot.selection.trashBody": "所選工作區、其中的所有聊天及所選聊天將在垃圾桶中保留7天。",
+  "bot.trash.remaining": "{minutes}分鐘後刪除",
+  "bot.trash.pending": "等待刪除",
+  "bot.selection.trashBody": "所選工作區、其中的所有聊天及所選聊天將在垃圾桶中保留15分鐘。",
   "bot.selection.trashConfirm": "移至垃圾桶",
   "bot.selection.cancel": "取消",
   "bot.edit.title": "編輯機器人",
   "bot.chatActions.delete": "刪除聊天",
   "bot.chatActions.move": "變更工作區",
-  "bot.chatActions.confirm": "「{name}」將在垃圾桶中保留7天。",
+  "bot.chatActions.confirm": "「{name}」將在垃圾桶中保留15分鐘。",
   "bot.chatActions.empty": "沒有其他可用的工作區。",
   "bot.chatActions.cancel": "取消",
   "bot.chatActions.failed": "無法完成操作，請重試。",

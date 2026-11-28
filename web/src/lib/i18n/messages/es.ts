@@ -4,13 +4,15 @@ import type { Dictionary } from "./en";
 
 export const es: Dictionary = {
   "bot.selection.trashTitle": "¿Eliminar selección?",
-  "bot.selection.trashBody": "Los workspaces seleccionados, todos sus chats y los chats seleccionados se guardarán en la Papelera durante 7 días.",
+  "bot.trash.remaining": "Se elimina en {minutes} min",
+  "bot.trash.pending": "Pendiente de eliminar",
+  "bot.selection.trashBody": "Los workspaces seleccionados, todos sus chats y los chats seleccionados se guardarán en la Papelera durante 15 minutos.",
   "bot.selection.trashConfirm": "Enviar a Papelera",
   "bot.selection.cancel": "Cancelar",
   "bot.edit.title": "Editar bot",
   "bot.chatActions.delete": "Eliminar chat",
   "bot.chatActions.move": "Cambiar workspace",
-  "bot.chatActions.confirm": "«{name}» se guardará en la Papelera durante 7 días.",
+  "bot.chatActions.confirm": "«{name}» se guardará en la Papelera durante 15 minutos.",
   "bot.chatActions.empty": "No hay otros workspaces disponibles.",
   "bot.chatActions.cancel": "Cancelar",
   "bot.chatActions.failed": "No se pudo completar la acción. Vuelve a intentar.",

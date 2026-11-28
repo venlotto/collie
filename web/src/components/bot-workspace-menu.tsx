@@ -72,7 +72,7 @@ export function WorkspaceMenu({ space, spaces, move, close, refresh, clearFeatur
             {spaces.map((s, i) => <option key={s.id} value={i}>{i + 1}</option>)}</select></label>
         </>}
         {view === "trash" && <>
-          <p>«{space.title}» y sus chats se guardarán en la Papelera durante 7 días.</p>
+          <p>«{space.title}» y sus chats se guardarán en la Papelera durante 15 minutos. Después se eliminarán definitivamente.</p>
           <button className="danger" onClick={() => void apply(async () => {
             const res = await trashWorkspace(space.scope, space.id);
             if (!res.ok) throw new Error(res.error);

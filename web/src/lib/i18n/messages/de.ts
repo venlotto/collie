@@ -5,13 +5,15 @@ import type { Dictionary } from "./en";
 
 export const de: Dictionary = {
   "bot.selection.trashTitle": "Auswahl löschen?",
-  "bot.selection.trashBody": "Die ausgewählten Arbeitsbereiche mit allen Chats und die ausgewählten Chats bleiben 7 Tage im Papierkorb.",
+  "bot.trash.remaining": "Löschung in {minutes} Min.",
+  "bot.trash.pending": "Löschung ausstehend",
+  "bot.selection.trashBody": "Die ausgewählten Arbeitsbereiche mit allen Chats und die ausgewählten Chats bleiben 15 Minuten im Papierkorb.",
   "bot.selection.trashConfirm": "In den Papierkorb",
   "bot.selection.cancel": "Abbrechen",
   "bot.edit.title": "Bot bearbeiten",
   "bot.chatActions.delete": "Chat löschen",
   "bot.chatActions.move": "Arbeitsbereich ändern",
-  "bot.chatActions.confirm": "„{name}“ wird 7 Tage im Papierkorb aufbewahrt.",
+  "bot.chatActions.confirm": "„{name}“ wird 15 Minuten im Papierkorb aufbewahrt.",
   "bot.chatActions.empty": "Keine anderen Arbeitsbereiche verfügbar.",
   "bot.chatActions.cancel": "Abbrechen",
   "bot.chatActions.failed": "Die Aktion konnte nicht abgeschlossen werden. Versuche es erneut.",
