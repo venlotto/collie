@@ -50,13 +50,13 @@ test.describe("en una pantalla ancha", () => {
     const draft = "Primera parte del mensaje\n\nSegunda parte pendiente";
     await page.locator("textarea").fill(draft);
     await row(page, "Beta").click();
-    const preview = win(page, "Alfa").getByRole("button", { name: /Borrador sin enviar/ });
-    await expect(preview).toContainText("Segunda parte pendiente");
+    const preview = win(page, "Alfa").getByRole("textbox");
+    await expect(preview).toHaveValue(draft);
     const bounds = await preview.boundingBox();
     const pane = await win(page, "Alfa").boundingBox();
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(pane!.y + pane!.height);
     await page.reload();
-    await expect(preview).toContainText("Segunda parte pendiente");
+    await expect(preview).toHaveValue(draft);
     await preview.click();
     await expect(win(page, "Alfa").locator("textarea")).toHaveValue(draft);
     await expect(win(page, "Alfa").locator("textarea")).toBeFocused();
@@ -81,7 +81,7 @@ test.describe("en una pantalla ancha", () => {
     const [a, b] = [await win(page, "Alfa").boundingBox(), await win(page, "Beta").boundingBox()];
     expect(a!.x + a!.width).toBeLessThanOrEqual(b!.x);
     expect(Math.abs(a!.y - b!.y)).toBeLessThan(2);
-    await expect(win(page, "Alfa").getByRole("button", { name: /Preguntar a/ })).toBeVisible();
+    await expect(win(page, "Alfa").getByRole("textbox", { name: /Preguntar a/ })).toBeVisible();
     await shot(page, "dos");
 
     await row(page, "Gamma").click();
@@ -110,7 +110,7 @@ test.describe("en una pantalla ancha", () => {
     await expect(page).toHaveURL(new RegExp(encodeURIComponent(agents[0]!.paneId)));
 
     // The reply box of a window without the focus hands it the focus and the cursor.
-    await win(page, "Gamma").getByRole("button", { name: /Preguntar a/ }).click();
+    await win(page, "Gamma").getByRole("textbox", { name: /Preguntar a/ }).click();
     await expect(page).toHaveURL(new RegExp(encodeURIComponent(agents[2]!.paneId)));
     await expect(win(page, "Gamma").locator("textarea")).toBeFocused();
 
