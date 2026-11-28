@@ -35,6 +35,15 @@ describe("reservedLead", () => {
     expect(reservedLead("/tmp/state/uploads/1-mvtrpn7j-e4f81595.txt", leads)).toBeNull();
   });
 
+  it("recognises terminal-owned attachments before text or newlines", () => {
+    const path = `/home/me/.local/state/collie/uploads/term.${"a".repeat(64)}.mx0g6qb2-475a0f8a.png`;
+    for (const text of [path, `${path} revisa esto`, `${path}\n\nsegunda linea`, path.replace(".png", ".txt")]) {
+      expect(reservedLead(text, leads)).toBeNull();
+    }
+    expect(reservedLead(path.replace("a".repeat(64), "abc"), leads)).toBe("/");
+    expect(reservedLead(`/status ${path}`, leads)).toBe("/");
+  });
+
   it("keeps every real command shape reserved", () => {
     expect(reservedLead("/compact", leads)).toBe("/");
     expect(reservedLead("/help", leads)).toBe("/");
