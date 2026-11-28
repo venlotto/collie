@@ -3630,7 +3630,7 @@ export function AgentChat({
                     />
                   )}
                   {mobileShell && !!agent?.lastActiveAt && <p className="bot-date">{botTime(agent.lastActiveAt, true)}</p>}
-                  {mobileShell && unreadSince !== undefined && <div className="bot-new-line"><span>Nuevos</span></div>}
+                  {mobileShell && unreadSince !== undefined && <div className="bot-new-line"><span>{t("bot.thread.new")}</span></div>}
                   <div className={mobileShell ? "bot-terminal" : undefined}>
                     {mobileShell && <p className="bot-terminal-label">{t("chat.mode.option.terminal")}</p>}
                     <AnsiOutput

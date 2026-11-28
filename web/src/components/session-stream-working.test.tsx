@@ -1,4 +1,5 @@
-import { fireEvent, render } from "@testing-library/react";
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
+import { act, fireEvent, render } from "@testing-library/react";
 import { createRef } from "react";
 import { SessionStream } from "./session-stream";
 import type { ChatMessageListHandle } from "./ui/chat/chat-message-list";
@@ -80,4 +81,16 @@ describe("the bot chat's working status", () => {
     const view = render(stream(true, [], false, false));
     expect(view.queryByRole("status", { name: "Still working…" })).not.toBeInTheDocument();
   });
+});
+
+
+it("updates bot message attribution and participant counts when the locale changes", async () => {
+  const view = render(stream(false, [entries[0]!, entries[2]!]));
+  expect(view.container).toHaveTextContent("To Reviewer");
+  expect(view.container).toHaveTextContent("2 messages");
+  await act(async () => { setLocale("es"); await whenLocaleReady("es"); });
+  expect(view.container).toHaveTextContent("Para Reviewer");
+  expect(view.container).toHaveTextContent("2 mensajes");
+  await act(async () => { setLocale("en"); await whenLocaleReady("en"); });
+  expect(view.container).toHaveTextContent("2 messages");
 });

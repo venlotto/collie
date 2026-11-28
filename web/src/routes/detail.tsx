@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLoaderData, useLocation, useMatch, useParams } from "react-router";
 
@@ -168,7 +169,7 @@ export function PaneScreen({ pane, paneId, location, active }: {
       // another device, from the terminal itself, or because the agent exited — and a poll is what
       // noticed. The status (and the orbit round it turns) is what stops the eviction that follows
       // being the first thing they see.
-      setStatus("Pane closed", "info");
+      setStatus(t("notice.paneClosed"), "info");
       nav.up(homePath(scope));
     }
   }, [active, gone, moved, root.bridge, root.error, root.stale, nav, scope, paneId, zoomed]);

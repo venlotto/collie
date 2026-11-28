@@ -1,3 +1,4 @@
+import { getLocaleSnapshot, t } from "@/lib/i18n";
 import { hashId } from "@/lib/hosts";
 import { paneName } from "@/lib/pane-name";
 import { paneScopeKey, type Scope } from "@/lib/scope";
@@ -23,8 +24,10 @@ export function botTime(ms: number, day = false) {
   if (!ms || !Number.isFinite(ms)) return "";
   const date = new Date(ms);
   const today = date.toDateString() === new Date().toDateString();
-  const clock = date.toLocaleTimeString("es-VE", { hour: "numeric", minute: "2-digit", hour12: true });
-  if (today) return day ? `Hoy ${clock}` : clock;
-  const short = date.toLocaleDateString("es-VE", { day: "numeric", month: "short" });
+  const selected = getLocaleSnapshot().locale;
+  const locale = selected === "es" ? "es-VE" : selected;
+  const clock = date.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+  if (today) return day ? t("bot.time.today", { time: clock }) : clock;
+  const short = date.toLocaleDateString(locale, { day: "numeric", month: "short" });
   return day ? short + " · " + clock : short;
 }

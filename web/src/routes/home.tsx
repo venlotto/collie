@@ -1,3 +1,4 @@
+import { useLocale } from "@/hooks/use-locale";
 import { useState } from "react";
 import { Link, useParams, useRevalidator } from "react-router";
 import { CreateBot } from "@/components/create-bot";
@@ -21,6 +22,7 @@ import { activeBotWorkspaces } from "@/lib/bot-workspaces";
 import { isReadOnly, type AgentView } from "@/lib/types";
 
 export function HomeRoute() {
+  useLocale();
   const data = useRootData();
   const revalidator = useRevalidator();
   const nav = useNav();
@@ -39,9 +41,9 @@ export function HomeRoute() {
   const createSpaces = activeBotWorkspaces(data.workspaces, panes, data.scope, data.servers, data.sessions);
   const writable = !refused && !data.authError && !isReadOnly(data.device) && !data.error && !data.stale && data.bridge === "connected";
   const accessNotice = refused ? (
-    <p className="bot-access" role="status">Dispositivo sin emparejar <Link to={pairedDevicesPath(data.scope)}>Emparejar</Link></p>
+    <p className="bot-access" role="status">{t("bot.access.unpaired")} <Link to={pairedDevicesPath(data.scope)}>{t("tour.pair.button")}</Link></p>
   ) : data.authError ? (
-    <p className="bot-access" role="status">Acceso restringido <a href={mounted(PROXY_AUTH_PATH)}>{t("connection.auth.signIn")}</a></p>
+    <p className="bot-access" role="status">{t("bot.access.restricted")} <a href={mounted(PROXY_AUTH_PATH)}>{t("connection.auth.signIn")}</a></p>
   ) : isReadOnly(data.device) ? <p className="bot-access" role="status">{t("space.readOnly.deviceUnauthorised")}</p> : null;
   return <>
     <MobileAgentHub onChanged={() => { stampTopology(); void revalidator.revalidate(); }} writable={writable} listScope={data.scope} panes={panes} workspaces={data.workspaces} scopeOf={scopeOf} active={active} featured={featured}

@@ -1,3 +1,4 @@
+import { setLocale, whenLocaleReady } from "@/lib/i18n";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { fixtureAgents, fixtureWorkspaces } from "@/test/handlers";
@@ -11,7 +12,9 @@ const move = vi.fn();
 vi.mock("@/hooks/use-spaces", () => ({ useSpaceActions: () => ({ start, creatingSpace: false }) }));
 vi.mock("@/lib/mux-capability", () => ({ useMuxCapability: () => ({ capable: true }) }));
 vi.mock("@/lib/api", async real => ({ ...await real<typeof import("@/lib/api")>(), renamePane: (...args: unknown[]) => rename(...args), actOnBot: (...args: unknown[]) => move(...args) }));
-beforeEach(() => {
+beforeEach(async () => {
+  setLocale("es");
+  await whenLocaleReady("es");
   rename.mockReset().mockResolvedValue({ ok: true });
   move.mockReset().mockResolvedValue({ ok: true });
   start.mockClear();
@@ -48,7 +51,7 @@ it("moves to the chosen workspace and keeps a failed move open", async () => {
   const pane = { ...fixtureAgents[0]!, terminalId: "move-terminal" };
   const destination = { ...fixtureWorkspaces[0]!, workspaceId: "destination", label: "Destino" };
   render(<CreateBot scope={{}} edit={pane} spaces={[...fixtureWorkspaces, destination]} writable close={vi.fn()} />);
-  fireEvent.change(screen.getByRole("combobox", { name: "Workspace existente" }), { target: { value: "destination" } });
+  fireEvent.change(screen.getByRole("combobox", { name: "Espacio de trabajo existente" }), { target: { value: "destination" } });
   fireEvent.submit(screen.getByRole("textbox", { name: "Nombre del bot" }).closest("form")!);
   await waitFor(() => expect(move).toHaveBeenCalledWith("move", pane, {}, "destination"));
   expect(await screen.findByRole("alert")).toBeInTheDocument();
