@@ -112,3 +112,15 @@ describe("actions from the open chat", () => {
     expect(screen.queryByText("Change workspace")).toBeNull();
   });
 });
+
+
+it("deletes an external bot from the open chat menu without a terminal", async () => {
+  const external = { ...pane, paneId: "agent-run:external", terminalId: undefined,
+    agentRun: { id: "external", rootId: "external", status: "done" as const, start: 1, end: 2 } };
+  render(<BotChatBar bot={bot} pane={external} unread={0} pinned={false} back={vi.fn()} pin={vi.fn()} terminal={false}
+    actions={{ scope: {}, writable: true, onDone, onChanged }} />);
+  const dialog = await open("Delete chat");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Delete chat" }));
+  await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+  expect(writes).toEqual([{ scope: null, body: { action: "trash", runId: "external" } }]);
+});

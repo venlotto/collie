@@ -73,3 +73,18 @@ it("does not enable selection or workspace writes for a read-only device", () =>
   expect(page.queryByRole("checkbox")).toBeNull();
   expect(page.queryByRole("dialog")).toBeNull();
 });
+
+it("right-click selects only the chosen external bot without a terminal", async () => {
+  const writes: unknown[] = [];
+  server.use(http.post("/api/bot-action", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ ok: true }); }));
+  const external = ["collie claudep long paste", "collie claudep questions"].map((name, i) => Object.assign({}, panes[i]!, {
+    paneLabel: name, paneId: "agent-run:run" + i, terminalId: undefined,
+    agentRun: { id: "run" + i, rootId: "root" + i, status: "done" as const, start: 1, end: 2 } }));
+  const page = render(<MobileAgentHub {...props} panes={external} />);
+  fireEvent.contextMenu(page.getByRole("button", { name: /^collie claudep long paste/ }));
+  expect(page.getByRole("checkbox", { name: /^collie claudep long paste/ })).toBeChecked();
+  expect(page.getByRole("checkbox", { name: /^collie claudep questions/ })).not.toBeChecked();
+  fireEvent.click(page.getByRole("button", { name: "Eliminar" }));
+  await waitFor(() => expect(writes).toEqual([{ action: "trash", runId: "run0" }]));
+  expect(props.onOpen).not.toHaveBeenCalled();
+});

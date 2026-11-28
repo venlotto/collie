@@ -201,9 +201,9 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     }
   }
   const groupRows = [...groups.values()].flatMap(group => group.rows);
-  const selectable = (p: AgentView) => writable && !!p.terminalId && !scopeOf(p).host;
+  const selectable = (p: AgentView) => writable && (!!p.terminalId || !!p.agentRun) && !scopeOf(p).host;
   const choices = (mode === "trash" ? trashRows : groupRows).filter(selectable);
-  const rowId = (p: AgentView) => JSON.stringify([scopeOf(p).session, p.terminalId, p.trash?.trashedAt]);
+  const rowId = (p: AgentView) => JSON.stringify([scopeOf(p).session, p.agentRun ? "agent-run:" + (p.agentRun.rootId ?? p.agentRun.id) : p.terminalId, p.trash?.trashedAt]);
   const workspaceChoices = mode === "chats" ? [...groups.values()].filter(g =>
     writable && !g.scope.host && g.id !== "agent-runs" && (!needle || g.rows.length > 0)) : [];
   const chosenWorkspaces = workspaceChoices.filter(g => workspaceSelection.has(sectionKey(g.scope, g.id)));
@@ -285,7 +285,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
     const current = !!active && paneRowKey(active) === paneRowKey(p);
     const matching = mode === (p.trash ? "trash" : "chats");
     const days = p.trash && Math.max(0, Math.ceil(7 - (Date.now() - p.trash.trashedAt) / 86_400_000));
-    return <li key={paneRowKey(p)} data-drag-pane={!p.trash && selectable(p) ? chatOrderId(p) : undefined}><BotRow current={current}
+    return <li key={paneRowKey(p)} data-drag-pane={!p.trash && selectable(p) && p.terminalId ? chatOrderId(p) : undefined}><BotRow current={current}
       checked={mode ? matching && (covered(p) || selection.has(rowId(p))) : undefined}
       disabled={busy || (!!mode && (!selectable(p) || !matching || covered(p)))}
       onHold={selectable(p) ? () => select(p, true) : undefined}
@@ -356,7 +356,7 @@ export function MobileAgentHub({ writable, listScope, onChanged, panes, workspac
           <button disabled={!chosenCount || busy} onClick={() => { if (chosenWorkspaces.length) openSheet("trash"); else void apply("trash"); }}><Trash2 size={18} />Eliminar</button>
         </> : <>
           <button disabled={!chosen.length || busy} onClick={() => {
-            if (chosen.every(p => p.workspaceId === p.trash?.originalWorkspaceId ||
+            if (chosen.every(p => p.workspaceId === p.trash?.originalWorkspaceId || (p.agentRun && p.trash?.originalWorkspaceId === "agent-runs") ||
               destinations.some(g => g.id === p.trash?.originalWorkspaceId))) void apply("restore");
             else openSheet("restore");
           }}><Undo2 size={18} />Restaurar</button>

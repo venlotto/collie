@@ -3565,12 +3565,19 @@ export function startServer(opts: {
           }
         }
         const terminalId = asJsonString(input?.terminalId);
-        if (!terminalId || (action !== "move" && action !== "trash" && action !== "restore" && action !== "purge")) {
+        const runId = asJsonString(input?.runId);
+        if ((!terminalId && !runId) || (action !== "move" && action !== "trash" && action !== "restore" && action !== "purge")) {
           return text("invalid chat action", 400);
         }
         try {
-          await opts.botTrash.act(rt.name, action, terminalId, asJsonString(input?.workspaceId), asJsonNumber(input?.trashedAt));
-          audit.record({ action: "bot." + action, session: rt.name, device: whois(req).device, detail: { terminalId } });
+          if (runId) {
+            if (!opts.agentRuns || !rt.isPrimary) return text("local primary session required", 400);
+            const body = localSnapshot(rt.name, null)!;
+            await opts.agentRuns.botAction(runId, action, body, rt.name, asJsonString(input?.workspaceId), asJsonNumber(input?.trashedAt));
+          } else {
+            await opts.botTrash.act(rt.name, action, terminalId!, asJsonString(input?.workspaceId), asJsonNumber(input?.trashedAt));
+          }
+          audit.record({ action: "bot." + action, session: rt.name, device: whois(req).device, detail: { terminalId, runId } });
           return json({ ok: true }, null);
         } catch (error) {
           return json({ ok: false, message: errorText(error) }, null, 409);

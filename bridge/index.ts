@@ -4553,7 +4553,7 @@ const server = listenOrExit("front door", cfg.host, cfg.port, () => startServer(
       const child = Bun.spawn([...argv], { stdin: "ignore", stdout: "pipe", stderr: "pipe", env: { ...process.env, PATH: path, ...extraEnv } });
       const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
       return { code, stdout, stderr };
-    }),
+    }, cfg.stateDir),
   uiSections,
   botFeatured,
   botDisplays,

@@ -1,4 +1,6 @@
 import { asJsonNumber, asJsonObject, asJsonString, parseJsonObject } from "../web/src/lib/json.ts";
+import { AgentRunTrash } from "./agent-run-trash.ts";
+import type { BotAction } from "./bot-trash.ts";
 import { randomUUID } from "node:crypto";
 import { readdir, stat, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
@@ -94,13 +96,17 @@ function rootOf(run: Run, rows: ReadonlyMap<string, Run>): string {
 }
 
 export class AgentRuns {
+  private readonly trash: AgentRunTrash;
+  private trashLane = Promise.resolve();
   private listing?: { expires: number; rows: Promise<Run[]> };
   private panes: PaneWire[] = [];
   private readonly requests = new Map<string, { fingerprint: string; answer: Promise<AgentRunActionResult> }>();
   private readonly launching = new Map<string, Promise<AgentRunActionResult>>();
 
   constructor(private dir: string, private stopRun: (id: string, dir: string) => Promise<boolean>,
-    private activity: ActivityLedger, private process?: AgentRunProcess) {}
+    private activity: ActivityLedger, private process?: AgentRunProcess, stateDir = dir) {
+    this.trash = new AgentRunTrash(stateDir);
+  }
 
   async read(id: string): Promise<Run | null> {
     if (!RUN_ID.test(id)) return null;
@@ -147,14 +153,15 @@ export class AgentRuns {
     for (const name of names) {
       if (!name.endsWith(".status")) continue;
       const run = await this.read(name.slice(0, -7));
-      if (run && (run.status === "running" || (run.end ?? run.start) >= Date.now() - DAY)) rows.push(run);
+      if (run) rows.push(run);
     }
     const byId = new Map(rows.map(row => [row.id, row]));
     for (const row of rows) {
       row.rootId = rootOf(row, byId);
       row.canResume = resumable(row);
     }
-    return rows.toSorted((a, b) => b.start - a.start || b.id.localeCompare(a.id));
+    const placements = this.trash.read();
+    return rows.filter(run => run.status === "running" || (run.end ?? run.start) >= Date.now() - DAY || placements.has(run.rootId ?? run.id)).toSorted((a, b) => b.start - a.start || b.id.localeCompare(a.id));
   }
 
   async attach(body: SnapshotResponse, primary: string) {
@@ -165,25 +172,80 @@ export class AgentRuns {
     const panes = body.shellPanes.filter(p => !p.session || p.session === primary);
     const claimed = new Set<string>();
     const rows = await this.listing.rows;
+    const placements = this.trash.read();
     const parents = new Set(rows.map(row => row.continues).filter(id => id !== null));
     for (const run of rows) {
       if (parents.has(run.id)) continue;
       const pane = boundPane(run, panes);
       const rootId = run.rootId ?? run.id;
+      const placement = placements.get(rootId);
+      if (placement && (placement.purged || placement.trashedAt !== null)) {
+        // Hide only the shell this run currently owns; an interactive replacement never binds.
+        if (pane?.terminalId && pane.terminalId === placement.terminalId && !claimed.has(pane.paneId)) {
+          claimed.add(pane.paneId);
+          body.shellPanes = body.shellPanes.filter(p => p !== pane);
+        }
+        if (placement.purged) continue;
+        if (this.trash.expired(placement)) {
+          await this.botAction(run.id, "purge", body, primary, undefined, placement.trashedAt ?? undefined).catch(() => undefined);
+          continue;
+        }
+      }
       const agentRun = { id: run.id, rootId, status: run.status, start: run.start, end: run.end,
         name: run.name, harness: run.agent, canResume: run.canResume, plan: run.plan };
       const times = { lastActiveAt: run.end ?? run.start, lastSeenAt: this.activity.get(RUN_RECEIPTS, rootId)?.seenAt ?? 0 };
-      if (pane && !claimed.has(pane.paneId)) {
+      if (pane && !placement && !claimed.has(pane.paneId)) {
         claimed.add(pane.paneId);
         Object.assign(pane, times, { agentRun, paneLabel: run.name });
         continue;
       }
-      const workspace = body.workspaces.find(w => w.workspaceId === (pane?.workspaceId ?? run.workspace) || w.label === run.workspace);
-      body.shellPanes.push({ paneId: "agent-run:" + rootId, paneLabel: run.name, agentRun, ...times,
+      const workspace = body.workspaces.find(w => placement ? w.workspaceId === placement.workspace
+        : w.workspaceId === (pane?.workspaceId ?? run.workspace) || w.label === run.workspace);
+      if (pane?.terminalId && placement && pane.terminalId === placement.terminalId && !claimed.has(pane.paneId)) {
+        claimed.add(pane.paneId);
+        body.shellPanes = body.shellPanes.filter(p => p !== pane);
+      }
+      const virtual: PaneWire = { paneId: "agent-run:" + rootId, session: primary, paneLabel: run.name, agentRun, ...times,
         workspaceId: workspace?.workspaceId ?? "agent-runs", workspaceLabel: workspace?.label ?? "Agent runs",
         workspaceNumber: workspace?.number ?? 0, tabId: "", agent: run.agent, status: "unknown",
-        kind: "shell", cwd: run.cwd, focused: false });
+        kind: "shell", cwd: run.cwd, focused: false };
+      if (placement?.trashedAt != null) virtual.trash = { originalWorkspaceId: placement.workspace, trashedAt: placement.trashedAt };
+      body.shellPanes.push(virtual);
     }
+  }
+
+  botAction(id: string, action: BotAction, body: SnapshotResponse, primary: string, workspaceId?: string, trashedAt?: number): Promise<void> {
+    const work = this.trashLane.then(async () => {
+      const rows = await this.scan();
+      const run = rows.find(row => row.id === id);
+      if (!run) throw new Error("El chat ya no está disponible.");
+      const root = run.rootId ?? run.id;
+      if (rows.some(row => row.rootId === root && this.launching.has(row.id))) throw new Error("El bot está iniciando otra tarea. Vuelve a intentar.");
+      const placement = this.trash.read().get(root);
+      const pane = boundPane(run, body.shellPanes.filter(p => !p.session || p.session === primary));
+      const original = body.workspaces.find(w => w.workspaceId === (pane?.workspaceId ?? run.workspace) || w.label === run.workspace);
+      const current = placement?.workspace ?? original?.workspaceId ?? "agent-runs";
+      if (action === "move" || action === "restore") {
+        const destination = workspaceId ?? current;
+        if (destination !== "agent-runs" && !body.workspaces.some(w => w.workspaceId === destination)) {
+          throw new Error("Elige un workspace disponible.");
+        }
+        if (action === "move" && !workspaceId) throw new Error("Elige un workspace disponible.");
+      }
+      if (action === "purge") {
+        if (!placement || placement.purged || placement.trashedAt === null || placement.trashedAt !== trashedAt) {
+          throw new Error("La selección de Papelera ha cambiado.");
+        }
+        for (const member of rows.filter(row => row.rootId === root && row.status === "running")) {
+          if (!await this.stopRun(member.id, this.dir)) throw new Error("No se pudo detener el bot.");
+        }
+      }
+      this.trash.act(root, action, current, workspaceId, trashedAt, pane?.terminalId);
+      this.listing = undefined;
+      return;
+    });
+    this.trashLane = work.catch(() => undefined);
+    return work;
   }
 
   async stop(id: string) {
@@ -263,7 +325,12 @@ export class AgentRuns {
     if (earlier) return earlier.fingerprint === fingerprint ? earlier.answer : Promise.resolve({ ok: false, reason: "bad-request" });
     const active = this.launching.get(id);
     if (active) return active.then(() => ({ ok: false, reason: "busy" }));
-    const answer = start().finally(() => {
+    const answer = this.trashLane.then(async (): Promise<AgentRunActionResult> => {
+      const run = (await this.scan()).find(row => row.id === id);
+      const placement = run && this.trash.read().get(run.rootId ?? run.id);
+      if (placement && (placement.purged || placement.trashedAt !== null)) return { ok: false, reason: "unavailable" };
+      return start();
+    }).finally(() => {
       if (this.launching.get(id) === answer) this.launching.delete(id);
     });
     this.launching.set(id, answer);

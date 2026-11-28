@@ -46,7 +46,7 @@ export function BotChatActionSheet({ action, pane, bot, actions, close }: {
     return () => controller.abort();
   }, [action, host, session]);
   const destinations = workspaces?.filter(w => w.workspaceId !== "agent-runs" && w.workspaceId !== pane.workspaceId) ?? [];
-  const allowed = actions.writable && !actions.scope.host && !!pane.terminalId && !pane.trash;
+  const allowed = actions.writable && !actions.scope.host && (!!pane.terminalId || !!pane.agentRun) && !pane.trash;
   async function apply(workspaceId?: string) {
     if (!allowed || locked.current || leaving) return;
     locked.current = true;
@@ -62,8 +62,10 @@ export function BotChatActionSheet({ action, pane, bot, actions, close }: {
       return;
     }
     // Preserve the portrait across pane relocation; only deletion closes the chat.
-    saveBot(actions.scope, pane.terminalId!, bot);
-    if (pane.paneId !== pane.terminalId) forgetBot(actions.scope, pane.paneId);
+    if (pane.terminalId) {
+      saveBot(actions.scope, pane.terminalId, bot);
+      if (pane.paneId !== pane.terminalId) forgetBot(actions.scope, pane.paneId);
+    }
     clearFeatured(pane);
     if (action === "trash") {
       updateDesk(d => closeWindow(d, paneRowKey(pane)));

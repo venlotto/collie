@@ -2211,7 +2211,7 @@ export function implementAgentRun(id: string, text: string, agent: string, effor
 
 export function actOnBot(action: BotAction, pane: AgentView, scope: Scope, workspaceId?: string) {
   return req<{ ok: boolean }>(withScope("/api/bot-action", scope), {
-    method: "POST", body: JSON.stringify({ action, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),
+    method: "POST", body: JSON.stringify({ action, runId: pane.agentRun?.id, terminalId: pane.terminalId, trashedAt: pane.trash?.trashedAt, workspaceId }),
   });
 }
 

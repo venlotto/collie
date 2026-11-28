@@ -23,7 +23,7 @@ export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, t
   useLocale();
   const menu = useId();
   const [action, setAction] = useState<"move" | "trash" | null>(null);
-  const manageable = actions && !actions.scope.host && !!pane.terminalId && !pane.trash;
+  const manageable = actions && !actions.scope.host && (!!pane.terminalId || !!pane.agentRun) && !pane.trash;
   // On the desk (wide screens) the window controls stand where the phone keeps its Back arrow.
   const desk = useDeskControls();
   return <><header className={`bot-bar bot-chat-bar ${className}`}>
@@ -41,6 +41,6 @@ export function BotChatBar({ bot, pane, unread, pinned, back, pin, toggleView, t
       </>}
     </div>
   </header>
-    {action && manageable && createPortal(<BotChatActionSheet key={pane.terminalId} action={action} pane={pane} bot={bot} actions={actions} close={() => setAction(null)} />, document.body)}
+    {action && manageable && createPortal(<BotChatActionSheet key={pane.agentRun?.rootId ?? pane.terminalId ?? pane.paneId} action={action} pane={pane} bot={bot} actions={actions} close={() => setAction(null)} />, document.body)}
   </>;
 }
