@@ -559,3 +559,25 @@ describe("a write whose connection Herdr closed before the reply", () => {
     expect(keys.ok ? "ok" : keys.reason).toBe("unreachable");
   });
 });
+
+
+describe("workspace creation order", () => {
+  test("keeps allocation order even when the newest workspace is moved first", async () => {
+    const records = [
+      { ...plainWorkspace("w10", "Newest"), number: 1 },
+      { ...plainWorkspace("wZ", "Older"), number: 3 },
+      { ...plainWorkspace("w0", "First"), number: 2 },
+    ];
+    const { spaces } = await new HerdrMux(new CapturedHerdr(records), () => []).snapshot();
+    expect(spaceOf(spaces, "w10").creationOrder).toBeGreaterThan(spaceOf(spaces, "wZ").creationOrder!);
+    expect(spaceOf(spaces, "w0").creationOrder).toBe(0);
+    expect(spaceOf(spaces, "w10").number).toBe(1);
+  });
+
+  test("leaves opaque legacy workspace ids without an inferred creation order", async () => {
+    const { spaces } = await new HerdrMux(new CapturedHerdr([
+      plainWorkspace("w0000000000000", "Legacy"), plainWorkspace("other", "Unknown"),
+    ]), () => []).snapshot();
+    expect(spaces.every(space => space.creationOrder === undefined)).toBe(true);
+  });
+});

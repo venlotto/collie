@@ -722,6 +722,7 @@ export class StateEngine {
             view.isWorktree = s.isWorktree === true;
           }
           if (s.folder !== undefined) view.folder = s.folder;
+          if (s.creationOrder !== undefined) view.creationOrder = s.creationOrder;
           return view;
         })
         .toSorted((a, b) => a.number - b.number);

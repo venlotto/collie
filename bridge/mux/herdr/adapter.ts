@@ -704,6 +704,12 @@ function toMuxSpace(raw: WireWorkspace): MuxSpace {
     tabCount: raw.tab_count,
     paneCount: raw.pane_count,
   };
+  // Workspace ids keep their allocation order when workspace.move renumbers the list.
+  // Decode only the compact counter shape; legacy opaque ids carry no creation claim.
+  // Base 36 preserves the ordering of Herdr's uppercase counter alphabet (including gaps).
+  if (/^w[0-9A-Z]{1,10}$/.test(raw.workspace_id)) {
+    space.creationOrder = parseInt(raw.workspace_id.slice(1), 36);
+  }
   // herdr 0.8.2 carries the checkout on the workspace itself (`worktree.checkout_path`), the only
   // folder its record names (probed 2026-09-23 on herdr 0.9.0, which carries none). OMITTED, never
   // set to undefined, when there is none.
