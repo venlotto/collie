@@ -12,6 +12,7 @@ import { __resetOperatorCommands, getMuxConfig } from "@/lib/operator-config";
 import { server } from "@/test/setup";
 import type { AgentView } from "@/lib/types";
 import { __forgetTabPaneMemory, rememberedPaneId } from "@/lib/tab-pane-memory";
+import { loadDraft, saveDraft } from "@/lib/drafts";
 import { DetailRoute } from "./detail";
 
 // Stub the heavy terminal view: this test is about DetailRoute's routing/freshPane logic, not the
@@ -277,4 +278,43 @@ describe("DetailRoute — remembers the pane a tab was last open on", () => {
     });
     await waitFor(() => expect(rememberedPaneId({ tabId: "w1:t9" })).toBe("w1:p2"));
   });
+});
+
+
+describe("DetailRoute — workspace moves", () => {
+  it.each([false, true])("follows the same terminal without visiting Home (old address reused: %s)", async reused => {
+    const original = { ...agentView("w1:p1", "agent"), terminalId: "stable-terminal" };
+    let home = connected([original]);
+    const router = makeRouter(panePath(original.paneId), () => home);
+    render(<RouterProvider router={router} />);
+    await screen.findByTestId("chat");
+    saveDraft({}, original.paneId, "Unsent message for this bot");
+    const paths: string[] = [];
+    const unsubscribe = router.subscribe(state => paths.push(state.location.pathname));
+    const moved = { ...original, paneId: "w2:p4", workspaceId: "w2", tabId: "w2:t1" };
+    home = connected(reused ? [{ ...original, terminalId: "replacement" }, moved] : [moved]);
+    await act(() => router.revalidate());
+    await waitFor(() => expect(router.state.location.pathname).toBe(panePath(moved.paneId)));
+    expect(await screen.findByTestId("chat")).toHaveTextContent("pane:w2:p4:live");
+    expect(paths).not.toContain("/");
+    expect(loadDraft({}, moved.paneId)).toBe("Unsent message for this bot");
+    expect(loadDraft({}, original.paneId)).toBeNull();
+    expect(router.state.historyAction).toBe("REPLACE");
+    unsubscribe();
+  });
+
+  it.each([{ host: "other-host" }, { session: "other-session" }, { trash: { originalWorkspaceId: "w1", trashedAt: 1 } }])(
+    "does not follow a matching terminal outside the chat scope or in Trash: %j", async extra => {
+      const original = { ...agentView("w1:p1", "agent"), terminalId: "stable-terminal" };
+      let home = connected([original]);
+      home.sessions = [{ name: "local", isPrimary: true, reachable: true, agents: 1, working: 0, blocked: 0 }];
+      const router = makeRouter(panePath(original.paneId), () => home);
+      render(<RouterProvider router={router} />);
+      await screen.findByTestId("chat");
+      home = { ...home, agents: [{ ...original, paneId: "w2:p4", ...extra }] };
+      await act(() => router.revalidate());
+      await screen.findByTestId("home");
+      expect(router.state.location.pathname).toBe("/");
+    },
+  );
 });

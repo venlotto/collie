@@ -16,6 +16,7 @@ import { readAgentLaunch } from "@/lib/agent-startup";
 import { paneScopeKey } from "@/lib/scope";
 import { findPane, paneRowKey, paneScope } from "@/lib/hosts";
 import { panePlaceParts } from "@/lib/pane-name";
+import { clearDraft, loadDraftEntry, saveDraft } from "@/lib/drafts";
 import { setStatus } from "@/lib/status";
 import { rememberTabPane } from "@/lib/tab-pane-memory";
 import { rememberRecentPane } from "@/lib/recent-panes";
@@ -94,11 +95,23 @@ export function PaneScreen({ pane, paneId, location, active }: {
   // pane's address (the dashboard's was widened, or another machine's), and the pane is then still
   // the pane the operator opened, drawn from what was saved. A live herd without the pane outranks
   // it: that is the one answer that may say the pane closed.
-  const agent =
+  const addressed =
     findPane(root.agents, paneId, scope, root.servers, root.sessions) ??
     findPane(root.shellPanes, paneId, scope, root.servers, root.sessions) ??
     (fresh && fresh.paneId === paneId && !seen ? fresh : undefined) ??
     (root.error ? pane.savedPane : undefined);
+  // Herdr gives a moved terminal a new pane address. Keep its stable identity for this
+  // route entry so a workspace move follows the chat instead of treating it as closed.
+  const address = paneScopeKey(scope, paneId);
+  const identity = useRef<{ address: string; terminalId?: string }>({ address });
+  if (identity.current.address !== address) identity.current = { address };
+  if (!identity.current.terminalId && addressed?.terminalId) identity.current.terminalId = addressed.terminalId;
+  const terminalId = identity.current.terminalId;
+  const agent = !terminalId || addressed?.terminalId === terminalId ? addressed : undefined;
+  const moved = !agent && terminalId ? [...root.agents, ...root.shellPanes].find(candidate =>
+    candidate.terminalId === terminalId && !candidate.trash && candidate.paneId !== paneId &&
+    findPane([candidate], candidate.paneId, scope, root.servers, root.sessions) !== undefined,
+  ) : undefined;
   const gone = !agent;
 
   // This pane is now its tab's pane on this device: the tab strip opens a tab on the pane it was last
@@ -136,7 +149,16 @@ export function PaneScreen({ pane, paneId, location, active }: {
   const zoomed = useMatch("/pane/:paneId/zoom") !== null;
   const exited = useRef<string | null>(null);
   useEffect(() => {
-    if (active && gone && root.bridge === "connected" && !root.error && exited.current !== paneId) {
+    if (active && gone && root.bridge === "connected" && !root.error && !root.stale && exited.current !== paneId) {
+      if (moved) {
+        const draft = loadDraftEntry(scope, paneId);
+        if (draft) {
+          saveDraft(scope, moved.paneId, draft.text, draft.attachments, draft.next);
+          clearDraft(scope, paneId);
+        }
+        nav.side(zoomed ? zoomPath(moved.paneId, scope) : panePath(moved.paneId, scope), { freshPane: moved });
+        return;
+      }
       if (zoomed) {
         nav.up(panePath(paneId, scope));
         return;
@@ -149,7 +171,7 @@ export function PaneScreen({ pane, paneId, location, active }: {
       setStatus("Pane closed", "info");
       nav.up(homePath(scope));
     }
-  }, [active, gone, root.bridge, root.error, nav, scope, paneId, zoomed]);
+  }, [active, gone, moved, root.bridge, root.error, root.stale, nav, scope, paneId, zoomed]);
 
   // Up one level: to the space or the dashboard the pane was opened from (ADR 0067). A pane with no screen
   // is a durable program's conversation, and its way up is the machine's home, which is the conversation
