@@ -148,6 +148,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 - **Bot workspace choices exclude the Trash.** Editing and creating a bot offer only active workspaces as destinations.
 
 - **Working agents no longer have a circular outline.** Their avatars stay still in the chat list and header while the working status remains visible.
+- **Desktop replies meet the bottom of the chat panel.** The reply dock no longer leaves a strip below the message field on wide screens.
+- **General checks cover the newer chat and attachment paths.** Private stores name their state roots, route checks exercise optional attachment and agent-run URLs, and captured screens and header tests stay within the fixture and file-size rules.
+
 
 - **Bots created by other agents can enter the Trash.** Right-click or hold a background bot to delete it, restore it within seven days, or delete it permanently, even when it has no terminal.
 

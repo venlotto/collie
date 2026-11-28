@@ -421,6 +421,11 @@
   -webkit-backdrop-filter: var(--glass-filter);
   backdrop-filter: var(--glass-filter);
 }
+@media (min-width: 768px) {
+  .bot-conversation [data-slot="pane-bottom"], .bot-conversation > .agent-run-bottom, .bot-conversation > .bot-desk-reply-row {
+    padding-bottom: 0;
+  }
+}
 .bot-detail [data-slot="chrome-block"], .bot-detail [data-slot="chrome-block"] > .bg-chrome { background: transparent; }
 
 [data-bots] [role="dialog"] > [data-presentation] {

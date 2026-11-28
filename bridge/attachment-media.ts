@@ -10,8 +10,8 @@ import { asJsonString, parseJsonObject } from "../web/src/lib/json.ts";
 export const ATTACHMENT_NAME = /^[A-Za-z0-9_.-]+-[0-9a-f]{8}\.[a-z0-9]+$/;
 const HEADERS = { "cache-control": "private, no-store", "x-content-type-options": "nosniff",
   "content-security-policy": "default-src 'none'; sandbox" };
-export async function saveAttachmentName(dir: string, saved: string, name: string): Promise<void> {
-  await writeFile(join(dir, saved + ".name.json"), JSON.stringify({ name: name.slice(0, 255) }), { mode: 0o600 });
+export async function saveAttachmentName(uploadsDir: string, saved: string, name: string): Promise<void> {
+  await writeFile(join(uploadsDir, saved + ".name.json"), JSON.stringify({ name: name.slice(0, 255) }), { mode: 0o600 });
 }
 export async function attachmentResponse(dir: string, id: string, image: boolean, maxBytes: number): Promise<Response> {
   const missing = () => new Response("Attachment unavailable", { status: 404, headers: HEADERS });

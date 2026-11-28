@@ -105,6 +105,11 @@
   }
  },
  "fixtures": {
+  "codex--upload-history-padded-well.txt": {
+   "harness": "codex",
+   "version": "unversioned",
+   "state": "idle"
+  },
   "agy--ask-multi.txt": {
    "harness": "agy",
    "version": "1.3.5",

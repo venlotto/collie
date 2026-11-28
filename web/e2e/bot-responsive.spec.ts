@@ -335,3 +335,21 @@ for (const entry of ["title", "menu"] as const) test(`moving the open bot from $
   await expect(page.locator(".bot-layout")).toHaveAttribute("data-detail", "true");
   expect(returnedToList).toEqual([]);
 });
+
+
+test("desktop reply meets the bottom edge in chat and terminal", async ({ page }) => {
+  await page.setViewportSize({ width: 1630, height: 900 });
+  await page.getByRole("button").filter({ hasText: TITLE }).first().click();
+  const field = page.getByRole("textbox");
+  for (const view of ["chat", "terminal"]) {
+    if (view === "terminal") {
+      await page.getByRole("button", { name: "Opciones del chat" }).click();
+      await page.getByRole("radio", { name: "Terminal", exact: true }).click();
+      await page.keyboard.press("Escape");
+    }
+    await field.fill("Borrador de escritorio");
+    await capture(page, "desktop-" + view);
+    const bottom = await field.evaluate(el => el.closest('[data-slot="composer-box"]')!.getBoundingClientRect().bottom);
+    expect(Math.abs(page.viewportSize()!.height - bottom)).toBeLessThanOrEqual(1);
+  }
+});

@@ -100,7 +100,7 @@ function routeRegexSources(): string[] {
  * checked against the regex itself in the test, so a shape this expander gets wrong fails loudly.
  */
 function samplesOf(source: string): string[] {
-  let variants = [source.replace(/^\^/, "").replace(/\$$/, "").replaceAll("([^/]+)", "id1")];
+  let variants = [source.replace(/^\^/, "").replace(/\$$/, "").replaceAll("([^/]+)", "id1").replaceAll("([a-zA-Z0-9._-]+)", "id1")];
   const expand = (re: RegExp, alts: (inner: string) => string[]): void => {
     let changed = true;
     while (changed) {
@@ -119,6 +119,8 @@ function samplesOf(source: string): string[] {
     }
   };
   expand(/\(\?:\\\/\(([^()]*)\)\)\?/, (inner) => ["", ...inner.split("|").map((a) => `\\/${a}`)]);
+  expand(/\(([^()?]*)\)\?/, (inner) => ["", ...inner.split("|")]);
+  expand(/\(\?:([^()?]*)\)/, (inner) => inner.split("|"));
   expand(/\(([^()?]*)\)/, (inner) => inner.split("|"));
   return variants.map((v) => v.replaceAll("\\/", "/").replaceAll("\\.", "."));
 }
@@ -137,6 +139,10 @@ describe("the route table read off server.ts", () => {
     expect(paths.length).toBeGreaterThanOrEqual(45);
     for (const known of [
       "/api/snapshot",
+      "/api/attachments/id1",
+      "/api/attachments/id1/image",
+      "/api/pane/agent-run:id1/chat",
+      "/api/pane/agent-run%3aid1/chat",
       "/api/devices/revoke",
       "/api/pane/id1/reply",
       "/api/pane/id1/subagent/id1",
