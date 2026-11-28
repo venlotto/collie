@@ -66,6 +66,8 @@ export interface CannotTellCardProps {
   readonly lines: StyledLine[];
   /** The device's Wrap lines setting, as the pane mirror follows it. */
   readonly wrap?: boolean;
+  /** False when the main body already mirrors this screen. */
+  readonly showScreen?: boolean;
   /** Raised each time a tap on Send met the unchanged kept draft: each one is a new tick. A card mounted at a tick rings for later ones only. */
   readonly ring?: number;
   /** "It arrived": what became of the person's word (`ArrivedAnswer`). */
@@ -94,7 +96,7 @@ function Screen({ lines, wrap }: { lines: StyledLine[]; wrap: boolean }) {
   );
 }
 
-export function CannotTellCard({ facts, lines, wrap = false, ring = 0, onArrived, onAgain, onClose }: CannotTellCardProps) {
+export function CannotTellCard({ facts, lines, wrap = false, showScreen = true, ring = 0, onArrived, onAgain, onClose }: CannotTellCardProps) {
   useLocale();
   const { awaitingUntil, secret, readOnly } = facts;
   const [busy, setBusy] = useState(false);
@@ -168,12 +170,12 @@ export function CannotTellCard({ facts, lines, wrap = false, ring = 0, onArrived
       data-highlight={ringed ? "" : undefined}
       className={cn("flex min-h-0 shrink flex-col rounded-xl transition-shadow motion-reduce:transition-none", ringed && "ring-2 ring-primary")}
     >
-      <PromptPanel ariaLabel={sentence} wrap={wrap} fit>
+      <PromptPanel ariaLabel={sentence} wrap={wrap} fit={showScreen}>
         {/* A live region: while the card stands in for the box's notice, a screen reader hears it as it heard the notice. */}
         <OptionGroupCaption>
           <span role="status">{sentence}</span>
         </OptionGroupCaption>
-        <Screen lines={lines} wrap={wrap} />
+        {showScreen && <Screen lines={lines} wrap={wrap} />}
         {!readOnly && (
           <div className="flex gap-2">
             {final === null ? (
