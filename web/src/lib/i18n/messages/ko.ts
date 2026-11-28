@@ -7,13 +7,15 @@ import type { Dictionary } from "./en";
 
 export const ko: Dictionary = {
   "bot.selection.trashTitle": "선택한 항목을 삭제할까요?",
-  "bot.selection.trashBody": "선택한 워크스페이스와 그 안의 모든 채팅, 선택한 채팅은 휴지통에 7일간 보관됩니다.",
+  "bot.trash.remaining": "{minutes}분 후 삭제",
+  "bot.trash.pending": "삭제 대기 중",
+  "bot.selection.trashBody": "선택한 워크스페이스와 그 안의 모든 채팅, 선택한 채팅은 휴지통에 15분간 보관됩니다.",
   "bot.selection.trashConfirm": "휴지통으로 이동",
   "bot.selection.cancel": "취소",
   "bot.edit.title": "봇 편집",
   "bot.chatActions.delete": "채팅 삭제",
   "bot.chatActions.move": "워크스페이스 변경",
-  "bot.chatActions.confirm": "“{name}”은(는) 휴지통에 7일 동안 보관됩니다.",
+  "bot.chatActions.confirm": "“{name}”은(는) 휴지통에 15분 동안 보관됩니다.",
   "bot.chatActions.empty": "사용 가능한 다른 워크스페이스가 없습니다.",
   "bot.chatActions.cancel": "취소",
   "bot.chatActions.failed": "작업을 완료하지 못했습니다. 다시 시도하세요.",

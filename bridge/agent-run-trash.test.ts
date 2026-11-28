@@ -85,6 +85,35 @@ test("expired trash cannot be restored and purged entries cannot be resurrected"
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test("background expiry stops runs and closes terminals without any browser snapshot, retrying failures", async () => {
+  const root = await mkdtemp(join(tmpdir(), "collie-run-background-expiry-"));
+  const ledger = new ActivityLedger({ stateDir: root });
+  const closed: string[] = [];
+  const stopped: string[] = [];
+  let canClose = false;
+  try {
+    for (const id of [A, B]) await writeFile(join(root, id + ".status"), JSON.stringify({ id, name: id,
+      agent: "claudep", cwd: "/external", status: "running", created_at: new Date().toISOString() }));
+    const store = new AgentRunTrash(root, () => Date.now() - 15 * 60 * 1000);
+    store.act(A, "trash", "w1", undefined, undefined, "expired-terminal");
+    const source = new AgentRuns(root, async id => { stopped.push(id); return true; }, ledger, undefined, root,
+      async terminal => { closed.push(terminal); if (!canClose) throw new Error("Herdr unavailable"); });
+    const first = source.sweepTrash();
+    expect(source.sweepTrash()).toBe(first);
+    await first;
+    expect(store.read().get(A)?.purged).toBe(0);
+    canClose = true;
+    await source.sweepTrash();
+    expect(store.read().get(A)?.purged).toBe(1);
+    expect(stopped.every(id => id === A)).toBe(true);
+    expect(closed).toEqual(["expired-terminal", "expired-terminal"]);
+    expect(store.read().has(B)).toBe(false);
+    const count = stopped.length;
+    await source.sweepTrash();
+    expect(stopped).toHaveLength(count);
+  } finally { ledger.stop(); await rm(root, { recursive: true, force: true }); }
+});
+
 test("trashing a bound run hides its own terminal but keeps a reused pane visible", async () => {
   const root = await mkdtemp(join(tmpdir(), "collie-run-reused-"));
   const ledger = new ActivityLedger({ stateDir: root });

@@ -167,9 +167,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 
 - **Unfocused desktop chats keep their unsent draft in view.** Opening another bot shows the saved words with an unsent label instead of an empty reply placeholder. Tap the draft to return to its editor.
+- **The search bar floats above transparent bottom spacing.** Chats scroll behind the glass controls all the way to the screen edge, without a solid strip underneath.
+- **Messages keep their view while a new session becomes readable.** Recovery controls no longer duplicate an already visible terminal, and a later readable screen dismisses an unread warning even when the terminal revision stays zero. A newly recorded prompt containing only complete retry copies also retires the delivery warning and its unchanged draft.
 
 - **Codex chats hide automatically loaded repository instructions.** AGENTS.md setup blocks no longer appear as messages you sent, including in existing conversations.
 - **Every open bot window offers an editable reply field.** Click or tab into “Preguntar a…” to write directly, keeping unsent text when switching between chats.
+
+- **Trash frees terminal resources after fifteen minutes.** Deleted chats and workspaces remain recoverable for fifteen minutes, then their terminals and attachments are removed automatically, even with the browser closed. Refused deletions now show their reason and leave an audit entry.
 - **Codex stays readable when long titles wrap its status bar.** Narrow terminals now recognise up to three status rows, including a separator at a line break and monochrome warning footers, while real pickers still block typing.
 
 ## [1.31.0] - 2026-11-24

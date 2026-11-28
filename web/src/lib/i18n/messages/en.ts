@@ -15,13 +15,15 @@
 
 export const en = {
   "bot.selection.trashTitle": "Delete selection?",
-  "bot.selection.trashBody": "The selected workspaces, all their chats, and the selected chats will stay in Trash for 7 days.",
+  "bot.trash.remaining": "Deletes in {minutes} min",
+  "bot.trash.pending": "Pending deletion",
+  "bot.selection.trashBody": "The selected workspaces, all their chats, and the selected chats will stay in Trash for 15 minutes.",
   "bot.selection.trashConfirm": "Move to Trash",
   "bot.selection.cancel": "Cancel",
   "bot.edit.title": "Edit bot",
   "bot.chatActions.delete": "Delete chat",
   "bot.chatActions.move": "Change workspace",
-  "bot.chatActions.confirm": "“{name}” will move to Trash for 7 days.",
+  "bot.chatActions.confirm": "“{name}” will move to Trash for 15 minutes.",
   "bot.chatActions.empty": "No other workspaces are available.",
   "bot.chatActions.cancel": "Cancel",
   "bot.chatActions.failed": "Could not complete the action. Try again.",
